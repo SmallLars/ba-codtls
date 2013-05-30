@@ -30,22 +30,22 @@ Layer Security (DTLS) Protocol"' \cite{rfc6347}. Dieses ist TLS sehr ähnlich, w
 zu TCP fehlen. Dazu gehört insbesondere die Transportsicherung beim Verbindungsaufbau und somit der Aushandlung der Sicherheitsmechanismen.
 Diese Sicherheitsprotokolle haben sich im Internet bewährt, sind jedoch zu einer Zeit entstanden, als Sensornetze und das
 "`Web of Things"' noch nicht vertreten waren. Die dort verwendeten Geräte haben nur sehr wenig Ressourcen zur Verfügung.
-Dies betrifft neben wenig Rechenleistung und Speicher auch den Energievorrat. Etabliert haben sich dort das "`Constrained
-Application Protocol (CoAP)"' \cite{draftcoap} über das UDP-Protokoll aufgrund ihres schlanken Designs. Passend zu UDP ist
-das umfangreiche DTLS-Protokoll welches sich jedoch nicht so einfach auf "`kleinen"' Endgeräten realisieren lässt.
-Genau hier soll diese Arbeit ansetzen und DTLS als Lösung bestätigen oder Alternativen aufweisen und realisieren.
+Dies betrifft neben wenig Rechenleistung und Speicher auch den Energievorrat. Etabliert hat sich dort das "`Constrained
+Application Protocol (CoAP)"' \cite{draftcoap} über das UDP-Protokoll aufgrund seines schlanken Designs. Passend zu UDP ist
+das umfangreiche DTLS-Protokoll, welches sich jedoch nicht so einfach auf "`kleinen"' Endgeräten realisieren lässt.
+Genau hier soll diese Arbeit ansetzen und DTLS als Lösung bestätigen oder Alternativen aufzeigen und realisieren.
 
 \section{Verwandte Arbeiten}
 Im Internet-Entwurf "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} haben K. Hartke und O. Bergmann
-bereits einige Probleme aufgewiesen, die der Einsatz von DTLS in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
+bereits einige Probleme aufgezeigt, die der Einsatz von DTLS in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
 
 Eines der Hauptprobleme ist hier die geringe Paketgröße in 6LoWPAN-Netzen. Insbesondere beim Aufbau der sicheren Verbindung (Handshake) müssen
-viele Daten ausgetauscht werden, was bei der Verwendung von DTLS die Paketgröße sprengen würde. Lösen würde das Problem bspw. eine Nutzung der
+viele Daten ausgetauscht werden, was bei der Verwendung von DTLS die Paketgröße überschreiten würde. Lösen würde das Problem bspw. eine Nutzung der
 IP-Fragmentierung, was aber bei Verlust einzelner Pakete zu einem neuen Versand aller IP-Fragmente führen würde und somit hohen Traffic erzeugt,
 der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin, die Menge der Daten sowohl beim Verbindungsaufbau als auch
 bei der Datenübertragung durch Komprimierung der Headerdaten zu verringern wofür es unterschiedliche Vorschläge gibt. Bei Nutzung von CoAP wäre
 es auch möglich, den Verbindungsaufbau über CoAP zu realisieren. Dadurch ist die Transportsicherung gegeben und große Pakete könnten mit einer
-blockweise Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die Verlorenen erneut übertragen werden müssten.
+blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden müssten.
 
 Beachtet werden müssen auch die Zeiten, nach denen ein Paket als verloren angesehen und erneut gesendet wird. Gerade beim Verbindungsaufbau
 kann es durch aufwendige Berechnungen zu einer erhöhten Antwortzeit kommen, was nicht zu einem erneuten Paketversand führen sollte.
@@ -84,7 +84,7 @@ Ebenso soll die Größe/Komplexität des zugrunde liegenden Quellcodes bewertet 
 
 \section{Ziel}
 Ziel soll es sein DTLS als geeignetes Sicherheitsprotokoll auch für eingeschränkten Umgebungen zu bestätigen oder geeignete Alternativen
-aufzuweisen welche nachweislich die gleichen Sicherheitsmerkmale aufweisen wie DTLS, was sich über Jahre hinweg bewährt hat.
+aufzuzeigen welche nachweislich die gleichen Sicherheitsmerkmale aufweisen wie DTLS, was sich über Jahre hinweg bewährt hat.
 
 \section{Zeitplanung}
 \begin{description}
