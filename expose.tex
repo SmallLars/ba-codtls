@@ -27,15 +27,27 @@ Während es im Internet schon seit Mitte der 90er Jahre das  "`Transport Layer S
 um den Datenverkehr über das "`Transmission Control Protocol (TCP)"' abzusichern, kam es erst 2004 zu einem ersten Versuch den Datenverkehr
 über das "`User Datagram Protocol (UDP)"' zu sichern. Dieser Versuch führte 2006 schließlich zu der Standardisierung des "`Datagram Transport
 Layer Security (DTLS) Protocol"' \cite{rfc6347}. Dieses ist TLS sehr ähnlich, wurde jedoch um Mechanismen ergänzt, welche in UDP im Gegensatz
-zu TCP fehlen. Dazu gehört insbesondere die Transportsicherung beim Verbindungsaufbau und somit der Aushandlung der Sicherheitsmechanismen.
-Diese Sicherheitsprotokolle haben sich im Internet bewährt, sind jedoch zu einer Zeit entstanden, als Sensornetze und das
+zu TCP fehlen. Dazu gehört insbesondere die Zuverlässigkeit welche beim Verbindungsaufbau und somit der Aushandlung der Sicherheitsmechanismen
+notwendig ist. TLS und DTLS haben sich im Internet bewährt, sind jedoch zu einer Zeit entstanden, als Sensornetze und das
 "`Web of Things"' noch nicht vertreten waren. Die dort verwendeten Geräte haben nur sehr wenig Ressourcen zur Verfügung.
 Dies betrifft neben wenig Rechenleistung und Speicher auch den Energievorrat. Etabliert hat sich dort das "`Constrained
 Application Protocol (CoAP)"' \cite{draftcoap} über das UDP-Protokoll aufgrund seines schlanken Designs. Passend zu UDP ist
 das umfangreiche DTLS-Protokoll, welches sich jedoch nicht so einfach auf "`kleinen"' Endgeräten realisieren lässt.
 Genau hier soll diese Arbeit ansetzen und DTLS als Lösung bestätigen oder Alternativen aufzeigen und realisieren.
 
+%  Hm, worauf stuetzt sich die Aussage mit dem "ersten Versuch"? Ich
+%  wuerde fast Geld darauf wetten, dass es frueher bereits Versuche 
+%  dazu gab. SRTP ist z.B. auch aelter als DTLS; und das SNMP-Volk hat
+%  sich auch viele kranke Dinge ausgedacht, bevor DTLS in ihr Universum 
+%  aufgenommen wurde.
+
+%  "Sind jedoch zu einer Zeit enstanden, als..." -- das trifft auf das
+%  Web of Things wohl zu, auf Sensornetze sicher nicht. Die sind schon
+%  ziemlich lange da (und als Begriff ein bisschen olivgruen).
+
 \section{Verwandte Arbeiten}
+
+\subsection{Datagram Transport Layer Security in Constrained Environments}
 Im Internet-Entwurf "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} haben K. Hartke und O. Bergmann
 bereits einige Probleme aufgezeigt, die der Einsatz von DTLS in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
 
@@ -48,7 +60,8 @@ es auch möglich, den Verbindungsaufbau über CoAP zu realisieren. Dadurch ist d
 blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden müssten.
 
 Beachtet werden müssen auch die Zeiten, nach denen ein Paket als verloren angesehen und erneut gesendet wird. Gerade beim Verbindungsaufbau
-kann es durch aufwendige Berechnungen zu einer erhöhten Antwortzeit kommen, was nicht zu einem erneuten Paketversand führen sollte.
+kann es durch aufwendige Berechnungen, wie sie bspw. im Elliptic Curve Diffie-Hellman Schlüsselaustausch benötigt werden, zu einer erhöhten
+Antwortzeit kommen, was nicht zu einem erneuten Paketversand führen sollte.
 
 Beim Verbindungsaufbau werden viele Daten ausgetauscht, was gerade in eingeschränkten Umgebungen einige Zeit dauern kann. Um die Zeit
 möglichst kurz zu halten, ist es wichtig die Anzahl der Kommunikationsvorgänge gering zu halten oder den Verbindungsaufbau schon durchzuführen
@@ -57,9 +70,16 @@ bevor Anwendungsdaten ausgetauscht werden, damit diese dann sofort übertragen w
 Um Speicher zu sparen müssen auch die Anzahl der sicheren Verbindungen begrenzt werden und/oder Verbindungen nach einiger Zeit
 automatisch geschlossen werden um neue Verbindungen zu ermöglichen.
 
+\subsection{A Hitchhiker's Guide to the (Datagram) Transport Layer Security Protocol}
+todo \cite{draftmintls}
+
+\subsection{Generic Header Compression}
+todo
+
 \section{Umfeld/Vorgehensweise}
 Im Vordergrund soll die Implementierung eines Sicherheitsprotokolls stehen, welches sich an den Prinzipien von DTLS orientiert
 und einige der Vorschläge aus dem Internet-Entwurf von K. Hartke und O. Bergmann, und/oder eigene Ideen, realisiert.
+%TODO Insbesondere ist hier die Realsierung des Handshakes über CoAP von Interesse,
 Die Implementierung wird im Anschluss durch einen Vergleich mit DTLS evaluiert, wobei folgende Punkte eine Rolle spielen sollen:
 Volumen des generierten Traffics, Größe/Komplexität des Quellcodes und die vom Protokoll benötigte Speichermenge.
 
@@ -84,7 +104,7 @@ Ebenso soll die Größe/Komplexität des zugrunde liegenden Quellcodes bewertet 
 
 \section{Ziel}
 Ziel soll es sein DTLS als geeignetes Sicherheitsprotokoll auch für eingeschränkten Umgebungen zu bestätigen oder geeignete Alternativen
-aufzuzeigen welche nachweislich die gleichen Sicherheitsmerkmale aufweisen wie DTLS, was sich über Jahre hinweg bewährt hat.
+aufzuzeigen die die gleichen Sicherheitsmerkmale aufweisen wie DTLS, was sich über Jahre hinweg bewährt hat.
 
 \section{Zeitplanung}
 \begin{description}

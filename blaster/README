@@ -1,0 +1,11 @@
+./blaster <MAC-Endnummer> [-t] < EINGABEDATEI > AUSGABEDATEI
+
+Fügt die MAC-Adresse mit Hilfe der MAC-Endnummer in die Firmware ein.
+Bei -t als 2. Param wird der Standardpin "11111111" gesetzt.
+Außerdem wird eine UUID generiert.
+
+Die EINGABEDATEI ist die kompilierte .bin Firmware Datei.
+AUSGABEDATEI ist die knapp 124Kb grosse aufgeblasene Firmware.
+
+!!! ACHTUNG !!! Zum Flashen ist eine neue flasher.c erforderlich.
+
