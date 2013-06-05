@@ -39,7 +39,6 @@
 #include "tests.h"
 #include "config.h"
 
-#undef DEBUG
 #define DEBUG 1
 #if DEBUG
 #define dbg_putchr(...) putchr(__VA_ARGS__)
@@ -131,13 +130,10 @@ void main(void) {
 	/* write the OKOK magic */
 
 #if BOOT_OK
-	dbg_putstr("OK");
 	((uint8_t *)buf)[0] = 'O'; ((uint8_t *)buf)[1] = 'K'; ((uint8_t *)buf)[2] = 'O'; ((uint8_t *)buf)[3] = 'K';	
 #elif BOOT_SECURE
-	dbg_putstr("SECURE");
 	((uint8_t *)buf)[0] = 'S'; ((uint8_t *)buf)[1] = 'E'; ((uint8_t *)buf)[2] = 'C'; ((uint8_t *)buf)[3] = 'U';	
 #else
-	dbg_putstr("NONO");
 	((uint8_t *)buf)[0] = 'N'; ((uint8_t *)buf)[1] = 'O'; ((uint8_t *)buf)[2] = 'N'; ((uint8_t *)buf)[3] = 'O';
 #endif
 
@@ -160,20 +156,15 @@ void main(void) {
 	dbg_putstr("\n\r");
 
 	/* write the length */
+	// Auskommentiert -> Die vom Pearl-Script ermittelte Länge wird ignoriert -> Länge steht in Firmware
 	//err = nvm_write(gNvmInternalInterface_c, type, (uint8_t *)&len, 4, 4);
 
 	/* read a byte, write a byte */
 	for(i=0; i<len; i++) {
-		c = getc();	       
+		c = getc();
+		// Da die Firmware die Länge enthält, geht es bei 4 los anstatt bei 8
 		err = nvm_write(gNvmInternalInterface_c, type, (uint8_t *)&c, 4+i, 1);
-        if (err != 0) {
-	        dbg_putstr("Schreibfehler: 0x");
-	        dbg_put_hex(err);
-	        dbg_putstr("\n\r");
-        }
 	}
-    dbg_putstr("\n\r");
-    flushrx();
 
 	/* read and output real len */
 	err = nvm_read(gNvmInternalInterface_c, type, (uint8_t *)&len, 4, 4);

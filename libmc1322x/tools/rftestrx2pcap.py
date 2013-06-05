@@ -1,4 +1,4 @@
-#!/usr/bin/python -u
+#!/usr/bin/python
 # (C) 2012, Mariano Alvira <mar@devl.org>
 
 import sys,os,time
