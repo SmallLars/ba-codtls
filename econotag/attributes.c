@@ -2,7 +2,7 @@
 #include "persist.h"
 
 #include <erbium.h>
-#include <er-coap-12.h>
+#include <er-coap-13.h>
 #include <string.h>
 
 /*************************************************************************/

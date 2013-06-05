@@ -6,17 +6,17 @@ all: $(CONTIKI_PROJECT)
 
 WITH_UIP6=1
 UIP_CONF_IPV6=1
-WITH_COAP=12
+WITH_COAP=13
 
-CFLAGS += -DWITH_COAP=12
+CFLAGS += -DWITH_COAP=13
 CFLAGS += -DREST=coap_rest_implementation
 CFLAGS += -DUIP_CONF_TCP=0
-CFLAGS += -I../../contiki/apps/er-coap-12
+CFLAGS += -I../../contiki/apps/er-coap-13
 
 LDFLAGS += "-Wl,-gc-sections"
 
 # zusätzliche Bibliotheken aus $(CONTIKI)/apps
-APPS += er-coap-12
+APPS += er-coap-13
 APPS += erbium
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
