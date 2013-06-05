@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = server
+CONTIKI_PROJECT = device
 
 CONTIKI = ../contiki
 TARGET = redbee-econotag
@@ -20,13 +20,13 @@ APPS += er-coap-12
 APPS += erbium
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
-PROJECT_SOURCEFILES = persist.c
+PROJECT_SOURCEFILES = tools.c persist.c attributes.c handshake.c
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag erase
 
 upload:
-	../blaster/blaster 19 < server_redbee-econotag.bin > server_e_redbee-econotag.bin 2> server_e_redbee-econotag.txt
-	../libmc1322x/tools/mc1322x-load.pl -f ../libmc1322x/tests/flasher_redbee-econotag.bin -s server_e_redbee-econotag.bin -t /dev/ttyUSB1
+	../blaster/blaster 19 < device_redbee-econotag.bin > device_e_redbee-econotag.bin 2> device_e_redbee-econotag.txt
+	../libmc1322x/tools/mc1322x-load.pl -f ../libmc1322x/tests/flasher_redbee-econotag.bin -s device_e_redbee-econotag.bin -t /dev/ttyUSB1
 
 include $(CONTIKI)/Makefile.include

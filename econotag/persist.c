@@ -1,6 +1,6 @@
-#include <string.h>
-
 #include "persist.h"
+
+#include <string.h>
 
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes) {
     if (address < 8192) {
