@@ -5,8 +5,9 @@
  * This file is part of the CoAP library libcoap. Please see
  * README for terms of use. 
  */
+#include "coap_client.h"
 
-#include "config.h"
+#include "libcoap-4.0.1/config.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -20,8 +21,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-
-#include "coap.h"
 
 int flags = 0;
 
@@ -40,15 +39,11 @@ static unsigned short proxy_port = COAP_DEFAULT_PORT;
 /* reading is done when this flag is set */
 static int ready = 0;
 
-static str output_file = { 0, NULL }; /* output file name */
-static FILE *file = NULL;	/* output file stream */
-
 static str payload = { 0, NULL }; /* optional payload to send */
 
 unsigned char msgtype = COAP_MESSAGE_CON; /* usually, requests are sent confirmable */
 
-typedef unsigned char method_t;
-method_t method = 1;		/* the method we are using in our requests */
+method_t method = COAP_REQUEST_GET;		/* the method we are using in our requests */
 
 coap_block_t block = { .num = 0, .m = 0, .szx = 6 };
 
@@ -57,6 +52,9 @@ coap_tick_t max_wait;		/* global timeout (changed by set_timeout()) */
 
 unsigned int obs_seconds = 30;	/* default observe time */
 coap_tick_t obs_wait = 0;	/* timeout for current subscription */
+
+static unsigned char answer_s[512];
+static str answer = { 0, answer_s };
 
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
@@ -68,40 +66,10 @@ set_timeout(coap_tick_t *timer, const unsigned int seconds) {
 
 int
 append_to_output(const unsigned char *data, size_t len) {
-  size_t written;
-
-  if (!file) {
-    if (!output_file.s || (output_file.length && output_file.s[0] == '-')) 
-      file = stdout;
-    else {
-      if (!(file = fopen((char *)output_file.s, "w"))) {
-	perror("fopen");
-	return -1;
-      }
-    }
-  }
-
-  do {
-    written = fwrite(data, 1, len, file);
-    len -= written;
-    data += written;
-  } while ( written && len );
-  fflush(file);
+  memcpy(answer.s + answer.length, data, len);
+  answer.length += len;
 
   return 0;
-}
-
-void
-close_output() {
-  if (file) {
-
-    /* add a newline before closing in case were writing to stdout */
-    if (!output_file.s || (output_file.length && output_file.s[0] == '-')) 
-      fwrite("\n", 1, 1, file);
-
-    fflush(file);
-    fclose(file);
-  }
 }
 
 coap_pdu_t *
@@ -334,7 +302,7 @@ message_handler(struct coap_context_t  *ctx,
 
       if (COAP_OPT_BLOCK_MORE(block_opt)) {
 	/* more bit is set */
-	debug("found the M bit, block size is %u, block nr. %u\n",
+	      debug("found the M bit, block size is %u, block nr. %u\n",
 	      COAP_OPT_BLOCK_SZX(block_opt), COAP_OPT_BLOCK_NUM(block_opt));
 
 	/* create pdu with request for next block */
@@ -856,18 +824,6 @@ cmdline_input_from_file(char *filename, str *buf) {
   return result;
 }
 
-method_t
-cmdline_method(char *arg) {
-  static char *methods[] =
-    { 0, "get", "post", "put", "delete", 0};
-  unsigned char i;
-
-  for (i=1; methods[i] && strcasecmp(arg,methods[i]) != 0 ; ++i)
-    ;
-
-  return i;	     /* note that we do not prevent illegal methods */
-}
-
 coap_context_t *
 get_context(const char *node, const char *port) {
   coap_context_t *ctx = NULL;  
@@ -910,8 +866,7 @@ get_context(const char *node, const char *port) {
   return ctx;
 }
 
-int
-main(int argc, char **argv) {
+void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *target) {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
   static char addr[INET6_ADDRSTRLEN];
@@ -925,11 +880,15 @@ main(int argc, char **argv) {
   static str server;
   unsigned short port = COAP_DEFAULT_PORT;
   char port_str[NI_MAXSERV] = "0";
-  int opt, res;
+  int res; //,opt
   char *group = NULL;
   coap_log_t log_level = LOG_WARN;
   coap_tid_t tid = COAP_INVALID_TID;
 
+  memset(answer_s, 0, 512);
+  answer.length = 0;
+
+/*
   while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:")) != -1) {
     switch (opt) {
     case 'b' :
@@ -955,6 +914,9 @@ main(int argc, char **argv) {
       break;
     case 'm' :
       method = cmdline_method(optarg);
+*/
+      method = my_method;
+/*
       break;
     case 'N' :
       msgtype = COAP_MESSAGE_NON;
@@ -970,7 +932,7 @@ main(int argc, char **argv) {
 	fprintf(stderr, "cannot set output file: insufficient memory\n");
 	exit(-1);
       } else {
-	/* copy filename including trailing zero */
+	// copy filename including trailing zero
 	memcpy(output_file.s, optarg, output_file.length + 1);
       }
       break;
@@ -1000,15 +962,27 @@ main(int argc, char **argv) {
       exit( 1 );
     }
   }
+*/
 
   coap_set_log_level(log_level);
 
+/*
   if ( optind < argc )
     cmdline_uri( argv[optind] );
   else {
     usage( argv[0], PACKAGE_VERSION );
     exit( 1 );
   }
+*/
+  char my_uri[128];
+  memset(my_uri, 0, 128);
+  memcpy(my_uri, "coap://[", 8);
+  inet_ntop(AF_INET6, ip, my_uri+8, 120);
+  strcat(my_uri, "]/");
+  strcat(my_uri, my_res);
+  printf("%s\n", my_uri);
+
+  cmdline_uri(my_uri);
 
   if (proxy.length) {
     server = proxy;
@@ -1050,7 +1024,7 @@ main(int argc, char **argv) {
 
   if (!ctx) {
     coap_log(LOG_EMERG, "cannot create context\n");
-    return -1;
+    return; //-1
   }
 
   coap_register_option(ctx, COAP_OPTION_BLOCK2);
@@ -1078,7 +1052,7 @@ main(int argc, char **argv) {
     set_blocksize();
 
   if (! (pdu = coap_new_request(ctx, method, optlist)))
-    return -1;
+    return; //-1;
 
 #ifndef NDEBUG
   if (LOG_DEBUG <= coap_get_log_level()) {
@@ -1151,11 +1125,12 @@ main(int argc, char **argv) {
     }
   }
 
-  close_output();
+  memcpy(target, answer.s, answer.length);
 
   coap_free_context( ctx );
 
   coap_delete_list(optlist);
+  optlist = NULL;
 
-  return 0;
+  //return 0;
 }
