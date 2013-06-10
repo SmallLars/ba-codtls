@@ -20,7 +20,7 @@ APPS += er-coap-13
 APPS += erbium
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
-PROJECT_SOURCEFILES = tools.c persist.c attributes.c handshake.c
+PROJECT_SOURCEFILES = tools.c persist.c attributes.c handshake.c random-mc1322x.c aes-mc1322x.c
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag erase

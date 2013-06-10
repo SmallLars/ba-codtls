@@ -4,7 +4,12 @@
 
 #include <stdlib.h>
 
-#define PRINTF(...) printf(__VA_ARGS__)
+#if DEBUG
+  #include <stdio.h>
+  #define PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define PRINTF(...)
+#endif
 
 #define max(x,y) ((x)>(y)?(x):(y))
 
