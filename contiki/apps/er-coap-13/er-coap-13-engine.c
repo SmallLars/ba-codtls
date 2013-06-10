@@ -43,6 +43,7 @@
 #include "contiki-net.h"
 
 #include "er-coap-13-engine.h"
+#include "er-coap-13-dtls.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -95,7 +96,9 @@ coap_receive(void)
     PRINTBITS(uip_appdata, uip_datalen());
     PRINTF("\n");
 
-    coap_error_code = coap_parse_message(message, uip_appdata, uip_datalen());
+    plaintext_t plaintext = coap_dtls_decrypt(uip_appdata, uip_datalen());
+    if (!plaintext.valid) return NOT_ACCEPTABLE_4_06;
+    coap_error_code = coap_parse_message(message, plaintext.data, plaintext.data_len);
 
     if (coap_error_code==NO_ERROR)
     {
@@ -483,6 +486,9 @@ well_known_core_handler(void* request, void* response, uint8_t *buffer, uint16_t
 PROCESS_THREAD(coap_receiver, ev, data)
 {
   PROCESS_BEGIN();
+
+  aes_init();
+
   PRINTF("Starting CoAP-13 receiver...\n");
 
   rest_activate_resource(&resource_well_known_core);

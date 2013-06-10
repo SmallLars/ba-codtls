@@ -1,11 +1,20 @@
-#include "aes-mc1322x.h"
+#include "er-coap-13-dtls-aes.h"
 
 #include "mc1322x.h"
-#include "random-mc1322x.h"
-#include "tools.h"
+#include "er-coap-13-dtls-random.h"
 
-#include <stdio.h>
 #include <string.h>
+
+/*---------------------------------------------------------------------------*/
+
+#define DEBUG 0
+
+#if DEBUG
+  #include <stdio.h>
+  #define PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define PRINTF(...)
+#endif
 
 /*---------------------------------------------------------------------------*/
 // initialize aes module (ASM - advanced security module)
@@ -46,7 +55,7 @@ uint32_t aes_init() {
 	/* bypass defaults to off */
   ASM->CONTROL1bits.BYPASS = 0;
 
-  PRINTF(" finished ***\n");
+  PRINTF(" finished ***\n\n");
 
   return 0;
 }

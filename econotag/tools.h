@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 
-#if DEBUG
+#if DEBUG_PRINT
   #include <stdio.h>
   #define PRINTF(...) printf(__VA_ARGS__)
 #else

@@ -11,6 +11,7 @@ WITH_COAP=13
 CFLAGS += -DWITH_COAP=13
 CFLAGS += -DREST=coap_rest_implementation
 CFLAGS += -DUIP_CONF_TCP=0
+CFLAGS += -DDEBUG_PRINT=1
 CFLAGS += -I../../contiki/apps/er-coap-13
 
 LDFLAGS += "-Wl,-gc-sections"
@@ -20,7 +21,7 @@ APPS += er-coap-13
 APPS += erbium
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
-PROJECT_SOURCEFILES = tools.c persist.c attributes.c handshake.c random-mc1322x.c aes-mc1322x.c
+PROJECT_SOURCEFILES = tools.c persist.c attributes.c handshake.c
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag erase

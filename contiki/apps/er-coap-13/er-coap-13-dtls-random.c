@@ -1,4 +1,4 @@
-#include "random-mc1322x.h"
+#include "er-coap-13-dtls-random.h"
 
 #include "mc1322x.h"
 
@@ -11,19 +11,19 @@
 
 #define RANDOM random_rand()
 
-uint32_t random_32() {
+uint32_t random_32( void ) {
   return RANDOM | (RANDOM<<16);
 }
 
-uint16_t random_16() {
+uint16_t random_16( void ) {
   return RANDOM;
 }
 
-uint8_t random_8() {
+uint8_t random_8( void ) {
   return (uint8_t) RANDOM;
 }
 
-void doRand (uint8_t *c, size_t len) {
+void doRand ( uint8_t *c, size_t len ) {
     int i;
     for (i = 0; i < len; i++) c[i] = random_8();
 }
