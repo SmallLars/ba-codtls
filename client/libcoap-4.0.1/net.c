@@ -35,6 +35,8 @@
 #include "encode.h"
 #include "net.h"
 
+#include "coap_dtls.h"
+
 #ifndef WITH_CONTIKI
 
 time_t clock_offset;
@@ -417,7 +419,7 @@ coap_send_impl(coap_context_t *context,
   if ( !context || !dst || !pdu )
     return id;
 
-  bytes_written = sendto( context->sockfd, pdu->hdr, pdu->length, 0,
+  bytes_written = dtls_sendto( context->sockfd, pdu->hdr, pdu->length, 0,
 			  &dst->addr.sa, dst->size);
 
   if (bytes_written >= 0) {
@@ -643,7 +645,7 @@ coap_read( coap_context_t *ctx ) {
   coap_address_init(&src);
 
 #ifndef WITH_CONTIKI
-  bytes_read = recvfrom(ctx->sockfd, buf, sizeof(buf), 0,
+  bytes_read = recvfrom(ctx->sockfd, buf, sizeof(buf), 0, //TODO tdls_ einfügen
 			&src.addr.sa, &src.size);
 #else /* WITH_CONTIKI */
   if(uip_newdata()) {

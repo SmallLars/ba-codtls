@@ -9,26 +9,28 @@
 RAND_GEN=1
 
 CC = gcc
-LIBS=libssl
 
 CFLAGS=-Wall -pthread -O2 -g
-LDFLAGS=
-PKG_CONFIG=`pkg-config --libs --cflags ${LIBS}`
+LDFLAGS= -lssl -lcrypto
 DEFINES= -DRND_DEV=${RAND_GEN}
 
-FLAGS=${CFLAGS} ${LDFLAGS} ${PKG_CONFIG} ${DEFINES}
+FLAGS=${CFLAGS} ${LDFLAGS} ${DEFINES}
 
 all: client
 
 HEADERS = ip_tools.h ip_list.h border_com.h node_com.h
 
 %.o: %.c $(HEADERS)
-	$(CC) -c $(FLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) -o $@ $< ${DEFINES}
 
-client: client.o ip_tools.o ip_list.o border_com.o node_com.o coap_client.o ./libcoap-4.0.1/libcoap.a
-	$(CC) $(FLAGS) -o $@ $^
+libcoap-4.0.1/libcoap.a:
+	make -C libcoap-4.0.1
+
+client: client.o ip_tools.o ip_list.o border_com.o node_com.o coap_client.o libcoap-4.0.1/libcoap.a
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ${DEFINES}
 
 clean:
 	rm *.o client
+	make -C libcoap-4.0.1 clean
 
 .PHONY: all clean
