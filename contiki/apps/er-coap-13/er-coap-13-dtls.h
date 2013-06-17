@@ -19,15 +19,15 @@ typedef enum {
 
 typedef struct {
   uint8_t nonce_explicit[8];
-  uint8_t aead_ciphered[0];
-} __attribute__ ((packed)) GenericAEADCipher;
+  uint8_t ccm_ciphered[0];
+} __attribute__ ((packed)) CCMData_t;
 
 typedef struct {
   ContentType type;
   ProtocolVersion version;
   uint16_t length;
-  GenericAEADCipher aead_fragment;
-} __attribute__ ((packed)) TLSCiphertext;
+  CCMData_t ccm_fragment;
+} __attribute__ ((packed)) DTLSCipher_t;
 
 /* ------------------------------------------------------------------------- */
 
@@ -37,6 +37,6 @@ typedef struct {
   uint16_t data_len;
 } plaintext_t;
 
-plaintext_t coap_dtls_decrypt(uint8_t *data, uint16_t data_len);
+plaintext_t coap_dtls_decrypt(DTLSCipher_t *data);
 
 #endif /* __ER_COAP_13_DTLS_H__ */

@@ -20,20 +20,21 @@
 #define M 8 // Element von {4, 6, 8, 10, 12, 14, 16} -> Länge des Authentication Fields
 #define L 7 // Element von {2, 3, 4, 5, 6, 7, 8} -> Länge des Längenfeldes
 #define N (15-L) // Es Ergibt sich die Länge der Nonce
-#define SETNONCE(a) memcpy(a, "ABCDEFGH", N)
 
 #define min(x,y) ((x)<(y)?(x):(y))
 
 /*---------------------------------------------------------------------------*/
 
+void aes_getData(uint8_t *dest, uint32_t *src, size_t len);
+void aes_setData(uint32_t *dest, uint8_t *src, size_t len);
 void aes_round();
 
 void printBytes(uint8_t *b, size_t c) {
   int i;
-  for (i = 0; i < c; i++) {
+  for (i = 0; i < 16; i++) {
+    if (i > 0 && i % 4 == 0) printf(" ");
     printf("%02X", b[i]);
   }
-  printf("\n");
 }
 
 /*---------------------------------------------------------------------------*/
@@ -85,57 +86,8 @@ uint32_t aes_init() {
 
 /*---------------------------------------------------------------------------*/
 
-void aes_setkey( uint8_t *key ) {
-  uint32_t new_key[4];
-  memcpy(new_key, key, 16);
-
-
-  ASM->KEY0 = new_key[0];
-  ASM->KEY1 = new_key[1];
-  ASM->KEY2 = new_key[2];
-  ASM->KEY3 = new_key[3];
-
-  // UIP_HTONL
-}
-
-void aes_setdata(uint8_t *data, size_t len) {
-  uint32_t new_data[4] = {0, 0, 0, 0};
-  memcpy(new_data, data, len);
-    
-  ASM->DATA0 = UIP_HTONL(new_data[0]);
-  ASM->DATA1 = UIP_HTONL(new_data[1]);
-  ASM->DATA2 = UIP_HTONL(new_data[2]);
-  ASM->DATA3 = UIP_HTONL(new_data[3]);
-
-
-/*  memcpy((void *) &ASM->KEY3, data +  0, 4);
-  memcpy((void *) &ASM->KEY2, data +  4, 4);
-  memcpy((void *) &ASM->KEY1, data +  8, 4);
-  memcpy((void *) &ASM->KEY0, data + 12, 4);
-
-	ASM->KEY0 = 0xccddeeff;  ffeeddcc
-	ASM->KEY1 = 0x8899aabb;  bbaa9988
-	ASM->KEY2 = 0x44556677;  77665544
-	ASM->KEY3 = 0x00112233;  33221100
-
-  uint32_t new_data[4] = {0, 0, 0, 0};
-  memcpy(new_data, data, len);
-
-  ASM->DATA0 = new_data[0];
-  ASM->DATA1 = new_data[1];
-  ASM->DATA2 = new_data[2];
-  ASM->DATA3 = new_data[3];
-
-  printf("Gesetzte ASM Daten 0,1,2,3]:\n    %08X %08X %08X %08X\n",
-      (unsigned int) ASM->DATA0, 
-      (unsigned int) ASM->DATA1, 
-      (unsigned int) ASM->DATA2, 
-      (unsigned int) ASM->DATA3); 
-*/
-}
-
-void getAuthCode(uint8_t *out, uint8_t *key, uint8_t *msg, size_t msg_len) {
-  aes_setkey(key);
+void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len) {
+  aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
 
   ASM->CONTROL1bits.CBC = 1;
 
@@ -143,40 +95,43 @@ void getAuthCode(uint8_t *out, uint8_t *key, uint8_t *msg, size_t msg_len) {
   uint8_t b_0[16];
   memset(b_0, 0, 16);
   // Flags
-/*  b_0[0] = (8 * ((M-2)/2)) + (L - 1);
+  b_0[0] = (8 * ((M-2)/2)) + (L - 1);
   // Nonce
-  SETNONCE(b_0 + 1);
+  memcpy(b_0 + 1, data->nonce_explicit, N);
   // Länge der Nachricht
-  size_t new_len = UIP_HTONL(msg_len);
+  size_t new_len = UIP_HTONL(len);
   memcpy(b_0 + 12, &new_len, 4);
-*/
 
-  printf("1: ");
-  printBytes(b_0, 16);
-  printf("\n");
-  printf("2: ");
-  printBytes(msg, msg_len);
-  printf("\n");
-
-  aes_setdata(b_0, 16);
+  aes_setData((uint32_t *) &(ASM->DATA0), b_0, 16);
   aes_round();
-/*  size_t i;
-  for (i = 0; i < msg_len; i+=16) {
-    aes_setdata(msg + i, min(16, msg_len - i));
+  size_t i;
+  for (i = 0; i < len; i+=16) {
+    aes_setData((uint32_t *) &(ASM->DATA0), data->ccm_ciphered + i, min(16, len - i));
     aes_round();
   }
-*/
-  printf("ASM Result 3,2,1,0]      :\n    %08X %08X %08X %08X\n",
-      (unsigned int) ASM->CBC3_RESULT, 
-      (unsigned int) ASM->CBC2_RESULT, 
-      (unsigned int) ASM->CBC1_RESULT, 
-      (unsigned int) ASM->CBC0_RESULT);
 
-  memcpy(out, (void *) &(ASM->CBC0_RESULT), 8);
-  // memcpy(out, (void *) &(ASM->CBC0_RESULT) + 8, 8)
+  aes_getData(out, (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
   ASM->CONTROL0bits.CLEAR = 1;
   ASM->CONTROL1bits.CBC = 0;  
+}
+
+void aes_getData(uint8_t *dest, uint32_t *src, size_t len) {
+  uint32_t data[4];
+  data[0] = UIP_HTONL(src[0]);
+  data[1] = UIP_HTONL(src[1]);
+  data[2] = UIP_HTONL(src[2]);
+  data[3] = UIP_HTONL(src[3]);
+  memcpy(dest, data, len);
+}
+
+void aes_setData(uint32_t *dest, uint8_t *src, size_t len) {
+  uint32_t data[4] = {0, 0, 0, 0};
+  memcpy(data, src, len);
+  dest[0] = UIP_HTONL(data[0]);
+  dest[1] = UIP_HTONL(data[1]);
+  dest[2] = UIP_HTONL(data[2]);
+  dest[3] = UIP_HTONL(data[3]);
 }
 
 void aes_round() {
@@ -187,40 +142,6 @@ void aes_round() {
 }
 
 /*---------------------------------------------------------------------------*/
-
-/*---------------------------------------------------------------------------
-// set counter registers
-void es_setctr( aes_info_t* aes ) {
-  ASM->CTR0 = aes->ctr[0];
-  ASM->CTR1 = aes->ctr[1];
-  ASM->CTR2 = aes->ctr[2];
-  ASM->CTR3 = aes->ctr[3];
-}
-
-/*---------------------------------------------------------------------------
-// increase counter registers
-void aes_incctr() {
-  ASM->CTR3++;
-  if (!ASM->CTR3) {
-    ASM->CTR2++;
-  }
-}
-
-/*---------------------------------------------------------------------------
-// read result from registers
-void aes_getresult( uint8_t *result ) {
-  memcpy( result, (void*)&(ASM->CTR0_RESULT), AES_BLKSIZE);
-}
-
-/*---------------------------------------------------------------------------
-// actually do the AES encryption on the filled registers
-void aes_round() {
-  /* set control bit to start encryption and wait until it finishes
-  ASM->CONTROL0bits.START = 1;
-  while(ASM->STATUSbits.DONE == 0) {
-    continue;
-  }
-}
 
 
 /*---------------------------------------------------------------------------
@@ -308,10 +229,4 @@ uint8_t *aes_decrypt( uint8_t *data, size_t data_length, uint8_t aes_key[AES_BLK
   return aes_crypt ( data, data_length, &aes_info);
 
 }
-
-/*---------------------------------------------------------------------------
-size_t aes_headerlen( void ) {
-  return NONCE_BYTE_COUNT;
-}
-
 */

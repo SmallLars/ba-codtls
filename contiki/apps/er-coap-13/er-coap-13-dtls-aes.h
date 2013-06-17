@@ -5,17 +5,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "er-coap-13-dtls.h"
+
 #define AES_BLKSIZE      16
 #define NONCE_BYTE_COUNT  8
 
-typedef struct aes_info_t{
-  uint32_t key[4];
-  uint32_t ctr[4];
-} aes_info_t;
-
 uint32_t aes_init();
 
-void getAuthCode(uint8_t *out, uint8_t *key, uint8_t *msg, size_t msg_len);
+void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len);
 
 /*
 uint8_t *aes_encrypt( uint8_t *data, size_t data_length, uint8_t aes_key[AES_BLKSIZE] );
