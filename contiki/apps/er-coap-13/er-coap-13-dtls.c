@@ -20,7 +20,7 @@ plaintext_t coap_dtls_decrypt(DTLSCipher_t *c) {
   getAuthCode(authCode, (uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), c->length - 16);
 
   uint32_t check = memcmp(c->ccm_fragment.ccm_ciphered + c->length - 16 , authCode, 8);
-  printf("Vergleich: %u\n", check);
+  if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
   plaintext_t pt = { check == 0 ? 1 : 0, c->ccm_fragment.ccm_ciphered, c->length - 16 };
   return pt;
 }

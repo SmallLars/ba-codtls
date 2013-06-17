@@ -77,6 +77,9 @@ uint32_t aes_init() {
 	/* bypass defaults to off */
   ASM->CONTROL1bits.BYPASS = 0;
 
+	ASM->CONTROL1bits.CTR = 1;
+	ASM->CONTROL1bits.CBC = 1;
+
   ASM->CONTROL0bits.CLEAR = 1;
 
   PRINTF(" finished ***\n\n");
@@ -88,8 +91,6 @@ uint32_t aes_init() {
 
 void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len) {
   aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
-
-  ASM->CONTROL1bits.CBC = 1;
 
   // b_0 generieren
   uint8_t b_0[16];
@@ -112,8 +113,17 @@ void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len) {
 
   aes_getData(out, (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
+  memset(b_0, 0, 16);
+  aes_setData((uint32_t *) &(ASM->DATA0), b_0, 16);
+  b_0[0] = (L - 1);
+  memcpy(b_0 + 1, data->nonce_explicit, N);
+  aes_setData((uint32_t *) &(ASM->CTR0), b_0, 16);
+  aes_round();
+  uint8_t s_0[8];
+  aes_getData(s_0, (uint32_t *) &(ASM->CTR0_RESULT), 8);
+  for (i = 0; i < 8; i++) out[i] = out[i] ^ s_0[i];
+
   ASM->CONTROL0bits.CLEAR = 1;
-  ASM->CONTROL1bits.CBC = 0;  
 }
 
 void aes_getData(uint8_t *dest, uint32_t *src, size_t len) {
