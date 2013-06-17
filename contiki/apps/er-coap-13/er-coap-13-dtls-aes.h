@@ -14,6 +14,8 @@ uint32_t aes_init();
 
 void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len);
 
+void crypt(uint8_t *key, CCMData_t *data, size_t len);
+
 /*
 uint8_t *aes_encrypt( uint8_t *data, size_t data_length, uint8_t aes_key[AES_BLKSIZE] );
 

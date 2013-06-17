@@ -63,7 +63,6 @@ uint32_t aes_init() {
     return -1;
   }
 
-
   /* disable self test mode */
   ASM->CONTROL1bits.SELF_TEST = 0;
 
@@ -90,20 +89,21 @@ uint32_t aes_init() {
 /*---------------------------------------------------------------------------*/
 
 void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len) {
+  uint8_t ab_0[16];
+
   aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
 
   // b_0 generieren
-  uint8_t b_0[16];
-  memset(b_0, 0, 16);
+  memset(ab_0, 0, 16);
   // Flags
-  b_0[0] = (8 * ((M-2)/2)) + (L - 1);
+  ab_0[0] = (8 * ((M-2)/2)) + (L - 1);
   // Nonce
-  memcpy(b_0 + 1, data->nonce_explicit, N);
+  memcpy(ab_0 + 1, data->nonce_explicit, N);
   // Länge der Nachricht
   size_t new_len = UIP_HTONL(len);
-  memcpy(b_0 + 12, &new_len, 4);
+  memcpy(ab_0 + 12, &new_len, 4);
 
-  aes_setData((uint32_t *) &(ASM->DATA0), b_0, 16);
+  aes_setData((uint32_t *) &(ASM->DATA0), ab_0, 16);
   aes_round();
   size_t i;
   for (i = 0; i < len; i+=16) {
@@ -113,15 +113,40 @@ void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len) {
 
   aes_getData(out, (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
-  memset(b_0, 0, 16);
-  aes_setData((uint32_t *) &(ASM->DATA0), b_0, 16);
-  b_0[0] = (L - 1);
-  memcpy(b_0 + 1, data->nonce_explicit, N);
-  aes_setData((uint32_t *) &(ASM->CTR0), b_0, 16);
+  // a_0 generieren, zu s_0 verschlüssel und mit CBC-MAC X-Oren
+  memset(ab_0, 0, 16);
+  aes_setData((uint32_t *) &(ASM->DATA0), ab_0, 16);
+  ab_0[0] = (L - 1);
+  memcpy(ab_0 + 1, data->nonce_explicit, N);
+  aes_setData((uint32_t *) &(ASM->CTR0), ab_0, 16);
   aes_round();
-  uint8_t s_0[8];
-  aes_getData(s_0, (uint32_t *) &(ASM->CTR0_RESULT), 8);
-  for (i = 0; i < 8; i++) out[i] = out[i] ^ s_0[i];
+  uint8_t s_0[N];
+  aes_getData(s_0, (uint32_t *) &(ASM->CTR0_RESULT), N);
+  for (i = 0; i < N; i++) out[i] = out[i] ^ s_0[i];
+  // ENDE S_0
+
+  ASM->CONTROL0bits.CLEAR = 1;
+}
+
+void crypt(uint8_t *key, CCMData_t *data, size_t len) {
+  uint8_t counter[16];
+  uint32_t length;
+
+  aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
+
+  memset(counter, 0, 16);
+  counter[0] = (L - 1);
+  memcpy(counter + 1, data->nonce_explicit, N);
+
+  size_t i;
+  for (i = 0; i < len; i+=16) {
+    length = UIP_HTONL((i/16)+1);
+    memcpy(counter + 12, &length, 4);
+    aes_setData((uint32_t *) &(ASM->CTR0), counter, 16);
+    aes_setData((uint32_t *) &(ASM->DATA0), data->ccm_ciphered + i, min(16, len - i));
+    aes_round();
+    aes_getData(data->ccm_ciphered + i, (uint32_t *) &(ASM->CTR0_RESULT), min(16, len - i));
+  }
 
   ASM->CONTROL0bits.CLEAR = 1;
 }
