@@ -5,21 +5,42 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "er-coap-13-dtls.h"
+#define MAC_LEN 8                 // Länge des Authentication Fields    Element von {4, 6, 8, 10, 12, 14, 16}
+#define LEN_LEN 7                 // Länge des Längenfeldes             Element von {2, 3, 4, 5, 6, 7, 8}
+#define NONCE_LEN (15-LEN_LEN)    // Es Ergibt sich die Länge der Nonce
 
-#define AES_BLKSIZE      16
-#define NONCE_BYTE_COUNT  8
+typedef struct {
+  uint8_t nonce_explicit[NONCE_LEN];
+  uint8_t ccm_ciphered[0];
+} __attribute__ ((packed)) CCMData_t;
 
+/**
+  * \brief    AES-Initialisierung
+  *
+  *           Muss beim Start des Econotags einmalig aufgerufen
+  *           werden um das AES-Modul zu initialisieren.
+  *
+  * \return   0 falls die Ausführung erfolgreich war
+  *           -1 falls ein FEhler aufgetreten ist
+  */
 uint32_t aes_init();
 
-void getAuthCode(uint8_t *out, uint8_t *key, CCMData_t *data, size_t len);
-
-void crypt(uint8_t *key, CCMData_t *data, size_t len);
-
-/*
-uint8_t *aes_encrypt( uint8_t *data, size_t data_length, uint8_t aes_key[AES_BLKSIZE] );
-
-uint8_t *aes_decrypt( uint8_t *data, size_t data_length, uint8_t aes_key[AES_BLKSIZE] );
-*/
+/**
+  * \brief    Ent- und Verschlüsselung
+  *
+  *           Ent- oder Verschlüsselt den unter data hinterlegten Text.
+  *           Unter data muss genug Speicher reserviert sein, damit das
+  *           Authentication Field an den Text gehangen werden kann.
+  *           Die Nonce muss in data hinterlegt sein und len muss die
+  *           Länge des Textes ohne Authentication Field enthalten.
+  *
+  * \param    key        Zeiger auf den 16 Byte langen Schlüssell
+  * \param    data       Zeiger auf die CCM-Daten in denen die Nonce und
+  *                      Klar- oder Geheimtext hinterlegt sein muss.
+  * \param    len        Länge des Textes ohne Authentication Field
+  * \param    nonce_only Falls 1, wird nur die Mac berechnet und an den
+  *                      Klar- oder Geheimtext gehangen.
+  */
+void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
 
 #endif /* __ER_COAP_13_DTLS_AES_H__ */
