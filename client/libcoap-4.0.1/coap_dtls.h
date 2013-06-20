@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include "ccm.h"
+
 typedef struct {
   uint8_t major;
   uint8_t minor;
@@ -17,11 +19,6 @@ typedef enum {
   application_data = 23,
   empty = 255
 } __attribute__ ((packed)) ContentType;
-
-typedef struct {
-  uint8_t nonce_explicit[8];
-  uint8_t ccm_ciphered[0];
-} __attribute__ ((packed)) CCMData_t;
 
 typedef struct {
   ContentType type;

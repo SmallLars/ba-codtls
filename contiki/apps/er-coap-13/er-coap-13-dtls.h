@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 
+#include "contiki-net.h"
 #include "er-coap-13-dtls-aes.h"
 
 typedef struct {
@@ -35,5 +36,7 @@ typedef struct {
 } plaintext_t;
 
 plaintext_t coap_dtls_decrypt(DTLSCipher_t *data);
+
+void dtls_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len);
 
 #endif /* __ER_COAP_13_DTLS_H__ */

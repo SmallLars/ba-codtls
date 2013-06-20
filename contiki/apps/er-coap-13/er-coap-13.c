@@ -43,6 +43,7 @@
 
 #include "er-coap-13.h"
 #include "er-coap-13-transactions.h"
+#include "er-coap-13-dtls.h"
 
 
 #define DEBUG 0
@@ -407,7 +408,7 @@ coap_send_message(uip_ipaddr_t *addr, uint16_t port, uint8_t *data, uint16_t len
   uip_ipaddr_copy(&udp_conn->ripaddr, addr);
   udp_conn->rport = port;
 
-  uip_udp_packet_send(udp_conn, data, length);
+  dtls_uip_udp_packet_send(udp_conn, data, length);
   PRINTF("-sent UDP datagram (%u)-\n", length);
 
   /* Restore server connection to allow data from any node */

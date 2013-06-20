@@ -5,44 +5,49 @@
 
 #include "coap_dtls.h"
 
-#include "ccm.h"
+#define SETNONCE(a) memcpy(a, "ABCDEFGH", NONCE_LEN)
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
-    uint8_t *key = (uint8_t *) "ABCDEFGHIJKLMNOP";
+  uint8_t *key = (uint8_t *) "ABCDEFGHIJKLMNOP";
 
-    DTLSCipher_t *c = (DTLSCipher_t *) malloc(sizeof(DTLSCipher_t) + len + 8); // 8 = Länge des MAC
-    c->type = application_data;
-    c->version.major = 3;
-    c->version.minor = 3;
-    c->length = len + 16;
-    memcpy(c->ccm_fragment.nonce_explicit, "ABCDEFGH", 8);
-    encrypt(&(c->ccm_fragment), key, buf, len);
+  DTLSCipher_t *c = (DTLSCipher_t *) malloc(sizeof(DTLSCipher_t) + len + 8); // 8 = Länge des MAC
+  c->type = application_data;
+  c->version.major = 3;
+  c->version.minor = 3;
+  c->length = len + 16;
+  memcpy(c->ccm_fragment.nonce_explicit, "ABCDEFGH", 8);
+  memcpy(c->ccm_fragment.ccm_ciphered, buf, len);
+  encrypt(&(c->ccm_fragment), key, len);
 
-    ssize_t send = sendto(sockfd, c, sizeof(DTLSCipher_t) + len + 8, flags, dest_addr, addrlen) - (sizeof(DTLSCipher_t) + 8);
+  ssize_t send = sendto(sockfd, c, sizeof(DTLSCipher_t) + len + 8, flags, dest_addr, addrlen) - (sizeof(DTLSCipher_t) + 8);
 
-    free(c);
+  free(c);
 
-    return send;
+  return send;
 }
 
-/*
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
-    size_t size = recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+  size_t size = recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 
-    struct sockaddr_in6 *addr = (struct sockaddr_in6 *) src_addr;
-    struct in6_addr *ip = &(addr->sin6_addr);
-    unsigned char *key = processorGetKey(ip);
+  DTLSCipher_t *c = (DTLSCipher_t *) malloc(size);
+  memcpy(c, buf, size);
 
-    char str[INET6_ADDRSTRLEN];
-    inet_ntop(AF_INET6, ip, str, INET6_ADDRSTRLEN);
-    if (key == NULL || AES_DISABLED) {
-        logWrite(L_DEBUG, "aes-udp - AES_recvfrom", "AES_recvfrom OFFEN benutzt. -> %s", str);
-        free(key);
-        return size;
-    }
+  printf("Type: %u\n", c->type);
+  printf("Version major: %u\n", c->version.major);
+  printf("Version minor: %u\n", c->version.minor);
+  printf("Länge: %u\n", c->length);
 
-    logWrite(L_DEBUG, "aes-udp - AES_recvfrom", "AES_recvfrom SICHER benutzt. -> %s", str);
-    aes_decrypt(buf, size, key);
-    free(key);
-    return size - aes_headerlen();
-}*/
+  uint8_t oldCode[MAC_LEN];
+  memcpy(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 8, 8);
+
+  decrypt(&(c->ccm_fragment), (uint8_t *) "ABCDEFGHIJKLMNOP", c->length - 16);
+
+  uint32_t check = memcmp(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 8, 8);
+  if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
+  ssize_t db_len = (check == 0 ? c->length - 16 : 0);
+  memcpy(buf, c->ccm_fragment.ccm_ciphered, c->length - 16);
+
+  free(c);
+
+  return db_len;
+}

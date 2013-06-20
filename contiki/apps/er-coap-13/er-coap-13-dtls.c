@@ -19,3 +19,18 @@ plaintext_t coap_dtls_decrypt(DTLSCipher_t *c) {
   plaintext_t pt = { check == 0 ? 1 : 0, c->ccm_fragment.ccm_ciphered, c->length - 16 };
   return pt;
 }
+
+void dtls_uip_udp_packet_send(struct uip_udp_conn *conn, const void *data, int len) {
+    uint8_t cipher[sizeof(DTLSCipher_t) + len + 8];
+    DTLSCipher_t *c = (DTLSCipher_t *) cipher;
+    c->type = application_data;
+    c->version.major = 3;
+    c->version.minor = 3;
+    c->length = len + 16;
+    memcpy(c->ccm_fragment.nonce_explicit, "ABCDEFGH", 8);
+    memcpy(c->ccm_fragment.ccm_ciphered, data, len);
+
+    crypt((uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), len, 0);
+
+    uip_udp_packet_send(conn, cipher, sizeof(DTLSCipher_t) + len + 8);
+}

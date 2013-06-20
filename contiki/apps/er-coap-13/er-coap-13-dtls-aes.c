@@ -74,7 +74,7 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
   memset(abs_0, 0, 16);
   abs_0[0] = (8 * ((MAC_LEN-2)/2)) + (LEN_LEN - 1);     // Flags
   memcpy(abs_0 + 1, data->nonce_explicit, NONCE_LEN);   // Nonce
-  turn_var = UIP_HTONL(len);                           // Länge der Nachricht
+  turn_var = UIP_HTONL(len);                            // Länge der Nachricht
   memcpy(abs_0 + 12, &turn_var, 4);                     // Länge der Nachricht
   aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
   aes_round();
