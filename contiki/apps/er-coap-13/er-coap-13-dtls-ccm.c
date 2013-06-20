@@ -1,8 +1,7 @@
-#include "er-coap-13-dtls-aes.h"
+#include "er-coap-13-dtls-ccm.h"
 
 #include "mc1322x.h"
 #include "../../core/net/uip.h"
-#include "er-coap-13-dtls-random.h"
 
 #include <string.h>
 

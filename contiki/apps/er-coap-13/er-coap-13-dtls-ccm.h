@@ -1,6 +1,6 @@
-/* __ER_COAP_13_DTLS_AES_H__ */
-#ifndef __ER_COAP_13_DTLS_AES_H__
-#define __ER_COAP_13_DTLS_AES_H__
+/* __ER_COAP_13_DTLS_CCM_H__ */
+#ifndef __ER_COAP_13_DTLS_CCM_H__
+#define __ER_COAP_13_DTLS_CCM_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -43,4 +43,4 @@ uint32_t aes_init();
   */
 void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
 
-#endif /* __ER_COAP_13_DTLS_AES_H__ */
+#endif /* __ER_COAP_13_DTLS_CCM_H__ */
