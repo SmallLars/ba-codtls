@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+// #include "er-coap-13-dtls-handom.h"
+
 plaintext_t coap_dtls_decrypt(DTLSCipher_t *c) {
   printf("Type: %u\n", c->type);
   printf("Version major: %u\n", c->version.major);
@@ -27,7 +29,7 @@ void dtls_uip_udp_packet_send(struct uip_udp_conn *conn, const void *data, int l
     c->version.major = 3;
     c->version.minor = 3;
     c->length = len + 16;
-    memcpy(c->ccm_fragment.nonce_explicit, "ABCDEFGH", 8);
+    random_x(c->ccm_fragment.nonce_explicit, 8);
     memcpy(c->ccm_fragment.ccm_ciphered, data, len);
 
     crypt((uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), len, 0);

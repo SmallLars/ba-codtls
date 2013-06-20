@@ -1,6 +1,6 @@
-/* __CCM_H__ */
-#ifndef __CCM_H__
-#define __CCM_H__
+/* __COAP_CCM_H__ */
+#ifndef __COAP_CCM_H__
+#define __COAP_CCM_H__
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -11,11 +11,11 @@
 
 typedef struct {
   uint8_t nonce_explicit[8];
-  uint8_t ccm_ciphered[0];
+  uint8_t ccm_ciphered[];
 } __attribute__ ((packed)) CCMData_t;
 
 void encrypt(CCMData_t *c, uint8_t *key, size_t len);
 
 void decrypt(CCMData_t *c, uint8_t *key, size_t len);
 
-#endif /* __CCM__ */
+#endif /* __COAP_CCM__ */

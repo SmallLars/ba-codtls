@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "contiki-net.h"
-#include "er-coap-13-dtls-aes.h"
+#include "er-coap-13-dtls-ccm.h"
 
 typedef struct {
   uint8_t major;

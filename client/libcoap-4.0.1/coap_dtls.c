@@ -1,11 +1,11 @@
+#include "coap_dtls.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
 
-#include "coap_dtls.h"
-
-#define SETNONCE(a) memcpy(a, "ABCDEFGH", NONCE_LEN)
+#include "coap_random.h"
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   uint8_t *key = (uint8_t *) "ABCDEFGHIJKLMNOP";
@@ -15,7 +15,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
   c->version.major = 3;
   c->version.minor = 3;
   c->length = len + 16;
-  memcpy(c->ccm_fragment.nonce_explicit, "ABCDEFGH", 8);
+  random_x(c->ccm_fragment.nonce_explicit, 8);
   memcpy(c->ccm_fragment.ccm_ciphered, buf, len);
   encrypt(&(c->ccm_fragment), key, len);
 
