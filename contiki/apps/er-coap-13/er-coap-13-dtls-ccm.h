@@ -34,7 +34,7 @@ uint32_t aes_init();
   *           Die Nonce muss in data hinterlegt sein und len muss die
   *           Länge des Textes ohne Authentication Field enthalten.
   *
-  * \param    key        Zeiger auf den 16 Byte langen Schlüssell
+  * \param    key        Zeiger auf den 16 Byte langen Schlüssel
   * \param    data       Zeiger auf die CCM-Daten in denen die Nonce und
   *                      Klar- oder Geheimtext hinterlegt sein muss.
   * \param    len        Länge des Textes ohne Authentication Field

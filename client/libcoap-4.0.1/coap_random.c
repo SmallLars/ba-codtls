@@ -10,7 +10,7 @@ void random_x(uint8_t *c, size_t len) {
   int fd_random = open("/dev/random", O_RDONLY);  // Block
   int fd_urandom = open("/dev/urandom", O_RDONLY); // Non Block
 /*
-  if (fd_random == -1) {
+  if (fd_random == -1 || fd_urandom == -1) {
     perror("Öffnen von random fehlgeschlagen: ");
     return;
   }
