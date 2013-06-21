@@ -10,16 +10,16 @@
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   uint8_t *key = (uint8_t *) "ABCDEFGHIJKLMNOP";
 
-  DTLSCipher_t *c = (DTLSCipher_t *) malloc(sizeof(DTLSCipher_t) + len + 8); // 8 = Länge des MAC
+  DTLSCipher_t *c = (DTLSCipher_t *) malloc(sizeof(DTLSCipher_t) + len + MAC_LEN);
   c->type = application_data;
   c->version.major = 3;
   c->version.minor = 3;
-  c->length = len + 16;
-  random_x(c->ccm_fragment.nonce_explicit, 8);
+  c->length = sizeof(CCMData_t) + len + MAC_LEN;
+  random_x(c->ccm_fragment.nonce_explicit, NONCE_LEN);
   memcpy(c->ccm_fragment.ccm_ciphered, buf, len);
-  encrypt(&(c->ccm_fragment), key, len);
+  encrypt(&(c->ccm_fragment), key, c->length);
 
-  ssize_t send = sendto(sockfd, c, sizeof(DTLSCipher_t) + len + 8, flags, dest_addr, addrlen) - (sizeof(DTLSCipher_t) + 8);
+  ssize_t send = sendto(sockfd, c, sizeof(DTLSCipher_t) + len + MAC_LEN, flags, dest_addr, addrlen) - (sizeof(DTLSCipher_t) + MAC_LEN);
 
   free(c);
 
@@ -38,14 +38,14 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
   printf("Länge: %u\n", c->length);
 
   uint8_t oldCode[MAC_LEN];
-  memcpy(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 8, 8);
+  memcpy(oldCode, getMAC(&(c->ccm_fragment), c->length), MAC_LEN);
 
-  decrypt(&(c->ccm_fragment), (uint8_t *) "ABCDEFGHIJKLMNOP", c->length - 16);
+  decrypt(&(c->ccm_fragment), (uint8_t *) "ABCDEFGHIJKLMNOP", c->length);
 
-  uint32_t check = memcmp(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 8, 8);
+  uint32_t check = memcmp(oldCode, getMAC(&(c->ccm_fragment), c->length), MAC_LEN);
   if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-  ssize_t db_len = (check == 0 ? c->length - 16 : 0);
-  memcpy(buf, c->ccm_fragment.ccm_ciphered, c->length - 16);
+  ssize_t db_len = (check == 0 ? size - sizeof(DTLSCipher_t) - MAC_LEN : 0);
+  memcpy(buf, c->ccm_fragment.ccm_ciphered, size - sizeof(DTLSCipher_t) - MAC_LEN);
 
   free(c);
 

@@ -4,7 +4,33 @@
 #include <arpa/inet.h>
 #include <openssl/evp.h>
 
+#define OVERHEAD 16
+
 #define min(x,y) ((x)<(y)?(x):(y))
+
+/* Private Funktionsprototypen --------------------------------------------- */
+
+void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index);
+void setAuthCode(CCMData_t *c, uint8_t *key, size_t msg_len);
+void crypt(CCMData_t *c, unsigned char *key, size_t len);
+
+/* Öffentliche Funktionen -------------------------------------------------- */
+
+uint8_t *getMAC(CCMData_t *c, size_t len) {
+  return c->ccm_ciphered + len - OVERHEAD;
+}
+
+void encrypt(CCMData_t *c, uint8_t *key, size_t len) {
+  setAuthCode(c, key, len - OVERHEAD);
+  crypt(c, key, len - OVERHEAD);
+}
+
+void decrypt(CCMData_t *c, uint8_t *key, size_t len) {
+  crypt(c, key, len - OVERHEAD);
+  setAuthCode(c, key, len - OVERHEAD);
+}
+
+/* Private Funktionen ------------------------------------------------------ */
 
 void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
   uint8_t a[16];
@@ -74,12 +100,4 @@ void crypt(CCMData_t *c, unsigned char *key, size_t len) {
   }
 }
 
-void encrypt(CCMData_t *c, uint8_t *key, size_t len) {
-  setAuthCode(c, key, len);
-  crypt(c, key, len);
-}
 
-void decrypt(CCMData_t *c, uint8_t *key, size_t len) {
-  crypt(c, key, len);
-  setAuthCode(c, key, len);
-}
