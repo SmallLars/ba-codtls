@@ -11,27 +11,46 @@
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
-  uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
+  if (1) {
+    // Klartext für Handshake
+    DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + len);
+    record->type = handshake;
+    record->version.major = 3;
+    record->version.minor = 3;
+    record->length = htons(len);
 
-  DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
-  record->type = application_data;
-  record->version.major = 3;
-  record->version.minor = 3;
-  record->length = htons(payload_length);
+    memcpy(record->payload, buf, len);
 
-  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + len, flags, dest_addr, addrlen);
+    send -= sizeof(DTLSRecord_t);
 
-  random_x(ccmdata->nonce_explicit, NONCE_LEN);
-  memcpy(ccmdata->ccm_ciphered, buf, len);
+    free(record);
 
-  encrypt(ccmdata, KEY, payload_length);
+    return send;
+  } else {
+    // Geheimtext für Application Data
+    uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
-  ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + payload_length, flags, dest_addr, addrlen);
-  send -= (sizeof(DTLSRecord_t) + sizeof(CCMData_t) + MAC_LEN);
+    DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
+    record->type = application_data;
+    record->version.major = 3;
+    record->version.minor = 3;
+    record->length = htons(payload_length);
 
-  free(record);
+    CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
-  return send;
+    random_x(ccmdata->nonce_explicit, NONCE_LEN);
+    memcpy(ccmdata->ccm_ciphered, buf, len);
+
+    encrypt(ccmdata, KEY, payload_length);
+
+    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + payload_length, flags, dest_addr, addrlen);
+    send -= (sizeof(DTLSRecord_t) + sizeof(CCMData_t) + MAC_LEN);
+
+    free(record);
+
+    return send;
+  }
 }
 
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
@@ -46,22 +65,36 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
 
   record->length = ntohs(record->length);
 
-  printf("Type: %u\n", record->type);
-  printf("Länge: %u\n", record->length);
+  switch (record->type) {
+    case alert:
+      printf("Record-Type: Alert.\n");
+      return 0;
+    case handshake:
+      printf("Record-Type: Handshake.\n");
+      memcpy(buf, record->payload, record->length);
+      return record->length;
+    case change_cipher_spec:
+      printf("Record-Type: Change Cipher Spec.\n");
+      return 0;
+    case application_data:
+      printf("Record-Type: Application Data.\n");
+      CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
-  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+      uint8_t oldCode[MAC_LEN];
+      memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
 
-  uint8_t oldCode[MAC_LEN];
-  memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+      decrypt(ccmdata, KEY, record->length);
 
-  decrypt(ccmdata, KEY, record->length);
+      uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+      if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
+      ssize_t db_len = (check == 0 ? record->length - sizeof(CCMData_t) - MAC_LEN : 0);
+      memcpy(buf, ccmdata->ccm_ciphered, db_len);
 
-  uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
-  if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-  ssize_t db_len = (check == 0 ? record->length - sizeof(CCMData_t) - MAC_LEN : 0);
-  memcpy(buf, ccmdata->ccm_ciphered, db_len);
+      free(record);
 
-  free(record);
-
-  return db_len;
+      return db_len;
+    default:
+      printf("Unbekannter Record-Type.\n");
+      return 0;
+  }
 }

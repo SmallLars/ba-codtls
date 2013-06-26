@@ -14,39 +14,73 @@ CoapData_t dtls_parse_message(DTLSRecord_t *record) {
 
   record->length = uip_ntohs(record->length);
 
-  printf("Type: %u\n", record->type);
-  printf("Länge: %u\n", record->length);
+  CoapData_t coapdata = {0, NULL, 0};
+  switch (record->type) {
+    case alert:
+      printf("Record-Type: Alert.\n");
+      break;
+    case handshake:
+      printf("Record-Type: Handshake.\n");
+      coapdata.valid = 1;
+      coapdata.data = record->payload;
+      coapdata.data_len = record->length;
+      break;
+    case change_cipher_spec:
+      printf("Record-Type: Change Cipher Spec.\n");
+      break;
+    case application_data:
+      printf("Record-Type: Application Data.\n");
+      CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
-  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+      uint8_t oldCode[MAC_LEN];
+      memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
 
-  uint8_t oldCode[MAC_LEN];
-  memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+      crypt(KEY, ccmdata, record->length, 0);
+      crypt(KEY, ccmdata, record->length, 1);
 
-  crypt(KEY, ccmdata, record->length, 0);
-  crypt(KEY, ccmdata, record->length, 1);
-
-  uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
-  if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-  CoapData_t coapdata = { check == 0 ? 1 : 0, ccmdata->ccm_ciphered, record->length - sizeof(CCMData_t) - MAC_LEN };
+      uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+      if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
+      coapdata.valid = (check == 0 ? 1 : 0);
+      coapdata.data = ccmdata->ccm_ciphered;
+      coapdata.data_len = record->length - sizeof(CCMData_t) - MAC_LEN;
+      break;
+    default:
+      printf("Unbekannter Record-Type.\n");
+  }
   return coapdata;
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
-  uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
+  if (1) {
+    // Klartext für Handshake
+    uint8_t packet[sizeof(DTLSRecord_t) + len];
+    DTLSRecord_t *record = (DTLSRecord_t *) packet;
+    record->type = handshake;
+    record->version.major = 3;
+    record->version.minor = 3;
+    record->length = uip_htons(len);
 
-  uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
-  DTLSRecord_t *record = (DTLSRecord_t *) packet;
-  record->type = application_data;
-  record->version.major = 3;
-  record->version.minor = 3;
-  record->length = uip_htons(payload_length);
+    memcpy(record->payload, data, len);
 
-  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+    uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + len);
+  } else {
+    // Geheimtext für Application Data
+    uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
-  random_x(ccmdata->nonce_explicit, NONCE_LEN);
-  memcpy(ccmdata->ccm_ciphered, data, len);
+    uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
+    DTLSRecord_t *record = (DTLSRecord_t *) packet;
+    record->type = application_data;
+    record->version.major = 3;
+    record->version.minor = 3;
+    record->length = uip_htons(payload_length);
 
-  crypt(KEY, ccmdata, payload_length, 0);
+    CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
-  uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + payload_length);
+    random_x(ccmdata->nonce_explicit, NONCE_LEN);
+    memcpy(ccmdata->ccm_ciphered, data, len);
+
+    crypt(KEY, ccmdata, payload_length, 0);
+
+    uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + payload_length);
+  }
 }
