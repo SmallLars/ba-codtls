@@ -2,10 +2,10 @@
 #ifndef __COAP_DTLS_H__
 #define __COAP_DTLS_H__
 
+#include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-
-#include "coap_ccm.h"
 
 typedef struct {
   uint8_t major;
@@ -24,8 +24,8 @@ typedef struct {
   ContentType type;
   ProtocolVersion version;
   uint16_t length;
-  CCMData_t ccm_fragment;
-} __attribute__ ((packed)) DTLSCipher_t;
+  uint8_t payload[0];
+} __attribute__ ((packed)) DTLSRecord_t;
 
 /* ------------------------------------------------------------------------- */
 

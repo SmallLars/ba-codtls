@@ -5,6 +5,8 @@
 #include "er-coap-13-dtls-ccm.h"
 #include "er-coap-13-dtls-random.h"
 
+#define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
+
 CoapData_t dtls_parse_message(DTLSRecord_t *record) {
   // TODO Versionprüfung
   //   printf("Version major: %u\n", record->version.major);
@@ -20,8 +22,8 @@ CoapData_t dtls_parse_message(DTLSRecord_t *record) {
   uint8_t oldCode[MAC_LEN];
   memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
 
-  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, record->length, 0);
-  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, record->length, 1);
+  crypt(KEY, ccmdata, record->length, 0);
+  crypt(KEY, ccmdata, record->length, 1);
 
   uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
   if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
@@ -44,7 +46,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
   random_x(ccmdata->nonce_explicit, NONCE_LEN);
   memcpy(ccmdata->ccm_ciphered, data, len);
 
-  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, payload_length, 0);
+  crypt(KEY, ccmdata, payload_length, 0);
 
   uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + payload_length);
 }
