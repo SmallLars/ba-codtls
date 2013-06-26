@@ -96,7 +96,8 @@ coap_receive(void)
     PRINTBITS(uip_appdata, uip_datalen());
     PRINTF("\n");
 
-    CoapData_t coapdata = dtls_parse_message(uip_appdata);
+    CoapData_t coapdata = {0, NULL, 0};
+    dtls_parse_message(uip_appdata, &coapdata);
     if (!coapdata.valid) return NO_ERROR;
     coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
 

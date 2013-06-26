@@ -7,14 +7,18 @@
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
 
-CoapData_t dtls_parse_message(DTLSRecord_t *record) {
+/* Private Funktionsprototypen --------------------------------------------- */
+
+
+/* Öffentliche Funktionen -------------------------------------------------- */
+
+void dtls_parse_message(DTLSRecord_t *record, CoapData_t *coapdata) {
   // TODO Versionprüfung
   //   printf("Version major: %u\n", record->version.major);
   //   printf("Version minor: %u\n", record->version.minor);
 
   record->length = uip_ntohs(record->length);
 
-  CoapData_t coapdata = {0, NULL, 0};
   switch (record->type) {
     case alert:
       printf("Record-Type: Alert.\n");
@@ -47,7 +51,6 @@ CoapData_t dtls_parse_message(DTLSRecord_t *record) {
     default:
       printf("Unbekannter Record-Type.\n");
   }
-  return coapdata;
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
@@ -84,3 +87,5 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
     uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + payload_length);
   }
 }
+
+/* Private Funktionen ------------------------------------------------------ */
