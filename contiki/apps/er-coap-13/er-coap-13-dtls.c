@@ -25,9 +25,9 @@ void dtls_parse_message(DTLSRecord_t *record, CoapData_t *coapdata) {
       break;
     case handshake:
       printf("Record-Type: Handshake.\n");
-      coapdata.valid = 1;
-      coapdata.data = record->payload;
-      coapdata.data_len = record->length;
+      coapdata->valid = 1;
+      coapdata->data = record->payload;
+      coapdata->data_len = record->length;
       break;
     case change_cipher_spec:
       printf("Record-Type: Change Cipher Spec.\n");
@@ -44,9 +44,9 @@ void dtls_parse_message(DTLSRecord_t *record, CoapData_t *coapdata) {
 
       uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
       if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-      coapdata.valid = (check == 0 ? 1 : 0);
-      coapdata.data = ccmdata->ccm_ciphered;
-      coapdata.data_len = record->length - sizeof(CCMData_t) - MAC_LEN;
+      coapdata->valid = (check == 0 ? 1 : 0);
+      coapdata->data = ccmdata->ccm_ciphered;
+      coapdata->data_len = record->length - sizeof(CCMData_t) - MAC_LEN;
       break;
     default:
       printf("Unbekannter Record-Type.\n");
