@@ -51,7 +51,7 @@ CoapData_t dtls_parse_message(DTLSRecord_t *record) {
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
-  if (1) {
+  if (0) {
     // Klartext für Handshake
     uint8_t packet[sizeof(DTLSRecord_t) + len];
     DTLSRecord_t *record = (DTLSRecord_t *) packet;
