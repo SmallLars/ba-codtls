@@ -14,11 +14,12 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
   c->type = application_data;
   c->version.major = 3;
   c->version.minor = 3;
-  c->length = sizeof(CCMData_t) + len + MAC_LEN;
+  c->length = sizeof(CCMData_t) + len + MAC_LEN; // TODO htons
   random_x(c->ccm_fragment.nonce_explicit, NONCE_LEN);
   memcpy(c->ccm_fragment.ccm_ciphered, buf, len);
   encrypt(&(c->ccm_fragment), key, c->length);
 
+  c->length = htons(c->length);
   ssize_t send = sendto(sockfd, c, sizeof(DTLSCipher_t) + len + MAC_LEN, flags, dest_addr, addrlen) - (sizeof(DTLSCipher_t) + MAC_LEN);
 
   free(c);
@@ -27,10 +28,14 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 }
 
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
+  uint8_t *key = (uint8_t *) "ABCDEFGHIJKLMNOP";
+
   size_t size = recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 
   DTLSCipher_t *c = (DTLSCipher_t *) malloc(size);
   memcpy(c, buf, size);
+
+  c->length = ntohs(c->length);
 
   printf("Type: %u\n", c->type);
   printf("Version major: %u\n", c->version.major);
@@ -40,7 +45,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
   uint8_t oldCode[MAC_LEN];
   memcpy(oldCode, getMAC(&(c->ccm_fragment), c->length), MAC_LEN);
 
-  decrypt(&(c->ccm_fragment), (uint8_t *) "ABCDEFGHIJKLMNOP", c->length);
+  decrypt(&(c->ccm_fragment), key, c->length);
 
   uint32_t check = memcmp(oldCode, getMAC(&(c->ccm_fragment), c->length), MAC_LEN);
   if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");

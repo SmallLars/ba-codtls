@@ -2,37 +2,49 @@
 
 #include <string.h>
 
-// #include "er-coap-13-dtls-handom.h"
+#include "er-coap-13-dtls-ccm.h"
+#include "er-coap-13-dtls-random.h"
 
-plaintext_t coap_dtls_decrypt(DTLSCipher_t *c) {
-  printf("Type: %u\n", c->type);
-  printf("Version major: %u\n", c->version.major);
-  printf("Version minor: %u\n", c->version.minor);
-  printf("Länge: %u\n", c->length);
+CoapData_t dtls_parse_message(DTLSRecord_t *record) {
+  // TODO Versionprüfung
+  //   printf("Version major: %u\n", record->version.major);
+  //   printf("Version minor: %u\n", record->version.minor);
 
-  uint8_t oldCode[8];
-  memcpy(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 16, 8);
+  record->length = uip_ntohs(record->length);
 
-  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), c->length - 16, 0);
-  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), c->length - 16, 1);
+  printf("Type: %u\n", record->type);
+  printf("Länge: %u\n", record->length);
 
-  uint32_t check = memcmp(oldCode, c->ccm_fragment.ccm_ciphered + c->length - 16, 8);
+  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+
+  uint8_t oldCode[MAC_LEN];
+  memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+
+  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, record->length, 0);
+  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, record->length, 1);
+
+  uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
   if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-  plaintext_t pt = { check == 0 ? 1 : 0, c->ccm_fragment.ccm_ciphered, c->length - 16 };
-  return pt;
+  CoapData_t coapdata = { check == 0 ? 1 : 0, ccmdata->ccm_ciphered, record->length - sizeof(CCMData_t) - MAC_LEN };
+  return coapdata;
 }
 
-void dtls_uip_udp_packet_send(struct uip_udp_conn *conn, const void *data, int len) {
-    uint8_t cipher[sizeof(DTLSCipher_t) + len + 8];
-    DTLSCipher_t *c = (DTLSCipher_t *) cipher;
-    c->type = application_data;
-    c->version.major = 3;
-    c->version.minor = 3;
-    c->length = len + 16;
-    random_x(c->ccm_fragment.nonce_explicit, 8);
-    memcpy(c->ccm_fragment.ccm_ciphered, data, len);
+void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
+  uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
-    crypt((uint8_t *) "ABCDEFGHIJKLMNOP", &(c->ccm_fragment), len, 0);
+  uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
+  DTLSRecord_t *record = (DTLSRecord_t *) packet;
+  record->type = application_data;
+  record->version.major = 3;
+  record->version.minor = 3;
+  record->length = uip_htons(payload_length);
 
-    uip_udp_packet_send(conn, cipher, sizeof(DTLSCipher_t) + len + 8);
+  CCMData_t *ccmdata = (CCMData_t*) record->payload;
+
+  random_x(ccmdata->nonce_explicit, NONCE_LEN);
+  memcpy(ccmdata->ccm_ciphered, data, len);
+
+  crypt((uint8_t *) "ABCDEFGHIJKLMNOP", ccmdata, payload_length, 0);
+
+  uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + payload_length);
 }

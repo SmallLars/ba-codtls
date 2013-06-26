@@ -18,13 +18,13 @@
 
 #define min(x,y) ((x)<(y)?(x):(y))
 
-/*---------------------------------------------------------------------------*/
+/* Private Funktionsprototypen --------------------------------------------- */
 
 void aes_getData(uint8_t *dest, uint32_t *src, size_t len);
 void aes_setData(uint32_t *dest, uint8_t *src, size_t len);
 void aes_round();
 
-/*---------------------------------------------------------------------------*/
+/* Öffentliche Funktionen -------------------------------------------------- */
 
 uint32_t aes_init() {
   PRINTF("\n *** AMS self-test ");   // Das ASM-Modul ist deaktiviert bis der Test durchgelaufen ist
@@ -58,9 +58,9 @@ uint32_t aes_init() {
   return 0;
 }
 
-/*---------------------------------------------------------------------------*/
-
 void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
+  len -= (sizeof(CCMData_t) + MAC_LEN);
+
   uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
   uint32_t i, turn_var;
 
@@ -73,7 +73,7 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
   memset(abs_0, 0, 16);
   abs_0[0] = (8 * ((MAC_LEN-2)/2)) + (LEN_LEN - 1);     // Flags
   memcpy(abs_0 + 1, data->nonce_explicit, NONCE_LEN);   // Nonce
-  turn_var = UIP_HTONL(len);                            // Länge der Nachricht
+  turn_var = uip_htonl(len);                            // Länge der Nachricht
   memcpy(abs_0 + 12, &turn_var, 4);                     // Länge der Nachricht
   aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
   aes_round();
@@ -86,7 +86,7 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
   // Zentraler Verschlüsselungprozess
   for (i = 0; i < len; i+=16) {
     if (!nonce_only) {
-      turn_var = UIP_HTONL((i/16)+1);                  // Counter
+      turn_var = uip_htonl((i/16)+1);                   // Counter
       memcpy(abs_0 + 12, &turn_var, 4);                 // Counter
       aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
     }
@@ -110,22 +110,28 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
   for (i = 0; i < NONCE_LEN; i++) data->ccm_ciphered[len + i] = data->ccm_ciphered[len + i] ^ abs_0[i];
 }
 
+uint8_t *getMAC(CCMData_t *data, size_t len) {
+  return data->ccm_ciphered + len - (sizeof(CCMData_t) + MAC_LEN);
+}
+
+/* Private Funktionen ------------------------------------------------------ */
+
 void aes_getData(uint8_t *dest, uint32_t *src, size_t len) {
   uint32_t data[4];
-  data[0] = UIP_HTONL(src[0]);
-  data[1] = UIP_HTONL(src[1]);
-  data[2] = UIP_HTONL(src[2]);
-  data[3] = UIP_HTONL(src[3]);
+  data[0] = uip_htonl(src[0]);
+  data[1] = uip_htonl(src[1]);
+  data[2] = uip_htonl(src[2]);
+  data[3] = uip_htonl(src[3]);
   memcpy(dest, data, len);
 }
 
 void aes_setData(uint32_t *dest, uint8_t *src, size_t len) {
   uint32_t data[4] = {0, 0, 0, 0};
   memcpy(data, src, len);
-  dest[0] = UIP_HTONL(data[0]);
-  dest[1] = UIP_HTONL(data[1]);
-  dest[2] = UIP_HTONL(data[2]);
-  dest[3] = UIP_HTONL(data[3]);
+  dest[0] = uip_htonl(data[0]);
+  dest[1] = uip_htonl(data[1]);
+  dest[2] = uip_htonl(data[2]);
+  dest[3] = uip_htonl(data[3]);
 }
 
 void aes_round() {

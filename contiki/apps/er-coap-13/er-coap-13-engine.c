@@ -96,9 +96,9 @@ coap_receive(void)
     PRINTBITS(uip_appdata, uip_datalen());
     PRINTF("\n");
 
-    plaintext_t plaintext = coap_dtls_decrypt(uip_appdata);
-    if (!plaintext.valid) return NOT_ACCEPTABLE_4_06;
-    coap_error_code = coap_parse_message(message, plaintext.data, plaintext.data_len);
+    CoapData_t coapdata = dtls_parse_message(uip_appdata);
+    if (!coapdata.valid) return NO_ERROR;
+    coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
 
     if (coap_error_code==NO_ERROR)
     {

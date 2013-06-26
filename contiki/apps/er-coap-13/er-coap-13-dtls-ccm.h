@@ -37,10 +37,22 @@ uint32_t aes_init();
   * \param    key        Zeiger auf den 16 Byte langen Schlüssel
   * \param    data       Zeiger auf die CCM-Daten in denen die Nonce und
   *                      Klar- oder Geheimtext hinterlegt sein muss.
-  * \param    len        Länge des Textes ohne Authentication Field
+  * \param    len        Länge der übergebenen CCMData_t Struktur
   * \param    nonce_only Falls 1, wird nur die Mac berechnet und an den
   *                      Klar- oder Geheimtext gehangen.
   */
 void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
+
+/**
+  * \brief    MAC-Position
+  *
+  *           Liefert den Zeiger auf die Position an der der MAC hinterlegt ist.
+  *
+  * \param    data       Zeiger auf die CCM-Daten
+  * \param    len        Länge der übergebenen CCMData_t Struktur
+  *
+  * \return   Zeiger auf die Position an der der MAC hinterlegt ist
+  */
+uint8_t *getMAC(CCMData_t *data, size_t len);
 
 #endif /* __ER_COAP_13_DTLS_CCM_H__ */

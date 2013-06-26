@@ -5,7 +5,6 @@
 #include <stdint.h>
 
 #include "contiki-net.h"
-#include "er-coap-13-dtls-ccm.h"
 
 typedef struct {
   uint8_t major;
@@ -24,8 +23,8 @@ typedef struct {
   ContentType type;
   ProtocolVersion version;
   uint16_t length;
-  CCMData_t ccm_fragment;
-} __attribute__ ((packed)) DTLSCipher_t;
+  uint8_t payload[0];
+} __attribute__ ((packed)) DTLSRecord_t;
 
 /* ------------------------------------------------------------------------- */
 
@@ -33,10 +32,10 @@ typedef struct {
   uint8_t valid;
   uint8_t *data;
   uint16_t data_len;
-} plaintext_t;
+} CoapData_t;
 
-plaintext_t coap_dtls_decrypt(DTLSCipher_t *data);
+CoapData_t dtls_parse_message(DTLSRecord_t *data);
 
-void dtls_uip_udp_packet_send(struct uip_udp_conn *c, const void *data, int len);
+void dtls_send_message(struct uip_udp_conn *c, const void *data, int len);
 
 #endif /* __ER_COAP_13_DTLS_H__ */
