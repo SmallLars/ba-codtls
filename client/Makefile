@@ -11,7 +11,7 @@ RAND_GEN=1
 CC = gcc
 
 CFLAGS=-Wall -pthread -O2 -g
-LDFLAGS= -lssl -lcrypto
+LDFLAGS= -lssl -lcrypto -luuid
 DEFINES= -DRND_DEV=${RAND_GEN}
 
 FLAGS=${CFLAGS} ${LDFLAGS} ${DEFINES}

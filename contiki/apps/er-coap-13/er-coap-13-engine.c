@@ -44,6 +44,7 @@
 
 #include "er-coap-13-engine.h"
 #include "er-coap-13-dtls.h"
+#include "er-coap-13-dtls-handshake.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -493,6 +494,7 @@ PROCESS_THREAD(coap_receiver, ev, data)
   PRINTF("Starting CoAP-13 receiver...\n");
 
   rest_activate_resource(&resource_well_known_core);
+  rest_activate_resource(&resource_handshake);
 
   coap_register_as_transaction_handler();
   coap_init_connection(SERVER_LISTEN_PORT);

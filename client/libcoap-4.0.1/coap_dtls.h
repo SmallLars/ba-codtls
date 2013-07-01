@@ -23,6 +23,8 @@ typedef enum {
 typedef struct {
   ContentType type;
   ProtocolVersion version;
+  uint16_t epoch;
+  uint8_t sequence_number[3];
   uint16_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;

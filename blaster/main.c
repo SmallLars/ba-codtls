@@ -10,7 +10,7 @@
 // 0x1B000 - 0x1BFFF Random Zugriff Block 2.2
 // 0x1C000 - 0x1CFFF Fehlermeldungen
 // 0x1D000 - 0x1DFFF Fehlermeldungen
-// 0x1E000 - 0x1EFFF MAC, UUID, PIN
+// 0x1E000 - 0x1EFFF MAC, UUID, PIN, Name, Model
 // 0x1F000 - 0x1FFFF Systemreserviert
 
 #define RES_BLOCK_11     0x18000
@@ -27,6 +27,10 @@
 #define LEN_UUID         0x10
 #define RES_PIN          0x18018
 #define LEN_PIN          0x08
+#define RES_NAME         0x18020
+#define LEN_NAME         0x0F
+#define RES_MODEL        0x18040
+#define LEN_MODEL        0x0E
 
 #define RES_B_ERR_05     0x1C000
 #define LEN_B_ERR_05     73
@@ -104,6 +108,16 @@ int main(int nArgs, char **argv) {
         output[RES_PIN + i] = pin[i];
     }
     fprintf(stderr, "PIN: %c%c%c%c%c%c%c%c\n", pin[0], pin[1], pin[2], pin[3], pin[4], pin[5], pin[6], pin[7]);
+
+// Name setzen
+    char *name = "DTLS-Testserver";
+    memcpy(output + RES_NAME, name, LEN_NAME);
+    fprintf(stderr, "Name: %s\n", name);
+
+// Model setzen
+    char *model = "LARS-ABCD-1234";
+    memcpy(output + RES_MODEL, model, LEN_MODEL);
+    fprintf(stderr, "Model: %s\n", model);
 
 // Blöcke für Random Zugriff initialisieren
     output[RES_BLOCK_11] = 1;

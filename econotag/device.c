@@ -18,7 +18,6 @@
 #include "tools.h"
 #include "persist.h"
 #include "attributes.h"
-#include "handshake.h"
 
 #include <dev/button-sensor.h>
 
@@ -36,9 +35,7 @@ PROCESS_THREAD(server_firmware, ev, data)
 
   rest_activate_resource(&resource_device_name);
   rest_activate_resource(&resource_device_model);
-  rest_activate_resource(&resource_device_identifier);
-
-  rest_activate_resource(&resource_handshake);
+  rest_activate_resource(&resource_device_uuid);
 
 	while(1) {
 		PROCESS_WAIT_EVENT();

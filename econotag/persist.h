@@ -28,6 +28,10 @@
 #define LEN_UUID         0x10
 #define RES_PIN          0x18018
 #define LEN_PIN          0x08
+#define RES_NAME         0x18020
+#define LEN_NAME         0x0F
+#define RES_MODEL        0x18040
+#define LEN_MODEL        0x0E
 
 #define RES_B_ERR_05     0x1C000
 #define LEN_B_ERR_05     73
