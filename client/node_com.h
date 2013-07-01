@@ -10,6 +10,6 @@ void node_getModel(struct in6_addr *ip, char *target);
 
 void node_getUUID(struct in6_addr *ip, char *target);
 
-void node_handshake(struct in6_addr *ip, char *target);
+void node_handshake(struct in6_addr *ip);
 
 #endif /* __NODE_COM_H__ */

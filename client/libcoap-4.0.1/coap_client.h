@@ -4,7 +4,7 @@
 
 #include <netinet/in.h>
 
-#include "libcoap-4.0.1/coap.h"
+#include "coap.h"
 
 typedef unsigned char method_t;
 

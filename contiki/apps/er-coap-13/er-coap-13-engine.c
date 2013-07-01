@@ -494,7 +494,7 @@ PROCESS_THREAD(coap_receiver, ev, data)
   PRINTF("Starting CoAP-13 receiver...\n");
 
   rest_activate_resource(&resource_well_known_core);
-  rest_activate_resource(&resource_handshake);
+  rest_activate_resource(&resource_dtls_post);
 
   coap_register_as_transaction_handler();
   coap_init_connection(SERVER_LISTEN_PORT);

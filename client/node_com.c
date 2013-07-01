@@ -7,7 +7,8 @@
 
 #include "node_com.h"
 #include "ip_tools.h"
-#include "coap_client.h"
+#include "libcoap-4.0.1/coap_client.h"
+#include "libcoap-4.0.1/coap_dtls.h"
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
@@ -29,8 +30,8 @@ void node_getUUID(struct in6_addr *ip, char *target) {
   coap_request(ip, COAP_REQUEST_GET, "d/uuid", target);
 }
 
-void node_handshake(struct in6_addr *ip, char *target) {
-  coap_request(ip, COAP_REQUEST_GET, "handshake", target);
+void node_handshake(struct in6_addr *ip) {
+  dtls_handshake(ip);
 }
 
 /* Private Funktionen ------------------------------------------------------ */

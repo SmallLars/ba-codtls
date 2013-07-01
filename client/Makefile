@@ -26,7 +26,7 @@ HEADERS = ip_tools.h ip_list.h border_com.h node_com.h
 libcoap-4.0.1/libcoap.a:
 	make -C libcoap-4.0.1
 
-client: client.o ip_tools.o ip_list.o border_com.o node_com.o coap_client.o libcoap-4.0.1/libcoap.a
+client: client.o ip_tools.o ip_list.o border_com.o node_com.o libcoap-4.0.1/libcoap.a
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ${DEFINES}
 
 clean:

@@ -68,9 +68,7 @@ int main(int argc, char *argv[]) {
             case 11:
                 if (!memcmp("handshake", cbuffer, 9)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 10));
-                    memset(buffer, 0, 512);
-                    node_handshake(ip, buffer);
-                    printf("Handshake: %s\n", buffer);
+                    node_handshake(ip);
                     unknown = 0;
                 }
                 break;

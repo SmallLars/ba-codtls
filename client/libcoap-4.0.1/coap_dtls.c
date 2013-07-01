@@ -7,8 +7,41 @@
 
 #include "coap_ccm.h"
 #include "coap_random.h"
+#include "coap_client.h"
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
+
+void dtls_handshake(struct in6_addr *ip) {
+  uint8_t clientHello[512];
+  clientHello[0] = 3;            // ProtocolVersion major
+  clientHello[1] = 3;            // ProtocolVersion minor
+  clientHello[2] = 0x51;         // Random Time
+  clientHello[3] = 0xcc;         // Random Time
+  clientHello[4] = 0x2d;         // Random Time
+  clientHello[5] = 0x77;         // Random Time
+  random_x(clientHello + 6, 28); // Random Wert
+  clientHello[34] = 0;           // Länge von Session ID ist 0
+  clientHello[35] = 0;           // Länge von Cookie ist 0
+
+  char buffer[512];
+  memset(buffer, 0, 512);
+  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  printf("Handshake: %s\n", buffer);
+
+
+/*
+  typedef struct {
+    ProtocolVersion client_version
+    Random random
+    Data8 session_id
+    Data8 cookie
+    Data16 cipher_suites
+    Data8 compression_methods
+    Data16 extensions                 (elliptic_curves = 0x0A00    und    ec_point_formats = 0x0B00)
+  } __attribute__ ((packed)) ClientHello;
+*/
+
+}
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   if (1) {
