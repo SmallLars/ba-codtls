@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-// Record Layer Datenstrukturen
+/* Record Layer Datenstrukturen -------------------------------------------- */
 
 typedef struct {
   uint8_t major;
@@ -32,7 +32,7 @@ typedef struct {
   uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;
 
-// Handshake Datenstrukturen
+/* Handshake Datenstrukturen ----------------------------------------------- */
 
 typedef enum {
   hello_request = 0,
@@ -54,53 +54,22 @@ typedef struct {
   uint8_t payload[0];
 } __attribute__ ((packed)) Handshake;
 
-// Hilfsstrukturen
-typedef struct {
-  uint8_t length;
-  uint8_t data[0];
-} __attribute__ ((packed)) Data8;
-
-typedef struct {
-  uint16_t length;
-  uint8_t data[0];
-} __attribute__ ((packed)) Data16;
-
-// Random
 typedef struct {
   uint32_t gmt_unix_time;
   uint8_t random_bytes[28];
 } __attribute__ ((packed)) Random;
 
-// TODO suits
-
-// TODO compression
-
-// Extension Type -> Werte sind in Network Byte Order hinterlegt
-typedef enum {
-  server_name = 0x0000,
-  elliptic_curves = 0x0A00,
-  ec_point_formats = 0x0B00
-  // max = 0xFFFF
-} __attribute__ ((packed)) ExtensionType;
-
-typedef struct {
-  ExtensionType extension_type;
-  uint8_t extension_data[0];
-} __attribute__ ((packed)) Extension;
-
 typedef struct {
   ProtocolVersion client_version;
   Random random;
-/*
-  uint8_t session_id_length;
-  SessionID session_id[0];
+  uint8_t data[0];
+} __attribute__ ((packed)) ClientHello;
+
+typedef struct {
+  ProtocolVersion server_version;
   uint8_t cookie_len;
   uint8_t cookie[0];
-  CipherSuite cipher_suites<2..2^16-1>;
-  CompressionMethod compression_methods<1..2^8-1>;
-  Extension extensions<0..2^16-1>;                    // optional
-*/
-} __attribute__ ((packed)) ClientHello;
+} __attribute__ ((packed)) HelloVerifyRequest;
 
 /* ------------------------------------------------------------------------- */
 

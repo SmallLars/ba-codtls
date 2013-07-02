@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <time.h>
 
 #include "coap_ccm.h"
 #include "coap_random.h"
@@ -13,18 +14,41 @@
 
 void dtls_handshake(struct in6_addr *ip) {
   uint8_t clientHello[512];
-  clientHello[0] = 3;            // ProtocolVersion major
-  clientHello[1] = 3;            // ProtocolVersion minor
-  clientHello[2] = 0x51;         // Random Time
-  clientHello[3] = 0xcc;         // Random Time
-  clientHello[4] = 0x2d;         // Random Time
-  clientHello[5] = 0x77;         // Random Time
-  random_x(clientHello + 6, 28); // Random Wert
-  clientHello[34] = 0;           // Länge von Session ID ist 0
-  clientHello[35] = 0;           // Länge von Cookie ist 0
+  clientHello[0] = 0x03;                      // ProtocolVersion major
+  clientHello[1] = 0x03;                      // ProtocolVersion minor
+  clientHello[2] = (time(NULL) >> 24) & 0xff; // Time
+  clientHello[3] = (time(NULL) >> 16) & 0xff; // Time
+  clientHello[4] = (time(NULL) >>  8) & 0xff; // Time
+  clientHello[5] = (time(NULL) >>  0) & 0xff; // Time
+  random_x(clientHello + 6, 28);              // Random Wert
+  clientHello[34] = 0x00;                     // Länge von Session ID ist 0
+  clientHello[35] = 0x00;                     // Länge von Cookie ist 0
+  clientHello[36] = 0x00;                     // Länge der Cyphersuits
+  clientHello[37] = 0x02;                     // Länge der Cyphersuits
+  clientHello[38] = 0xff;                     // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
+  clientHello[39] = 0x03;                     // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
+  clientHello[40] = 0x01;                     // Länge der Compression Methods
+  clientHello[41] = 0x00;                     // Keine Compression
+  clientHello[42] = 0x00;                     // Länge der Extensions
+  clientHello[43] = 0x0e;                     // Länge der Extensions
+  clientHello[44] = 0x00;                     // Supported Elliptic Curves Extension
+  clientHello[45] = 0x0a;                     // Supported Elliptic Curves Extension
+  clientHello[46] = 0x00;                     // Länge der Supported Elliptic Curves Extension Daten
+  clientHello[47] = 0x04;                     // Länge der Supported Elliptic Curves Extension Daten
+  clientHello[48] = 0x00;                     // Länge des Elliptic Curves Arrays
+  clientHello[49] = 0x02;                     // Länge des Elliptic Curves Arrays
+  clientHello[50] = 0x00;                     // Elliptic Curve secp256r1 = 23
+  clientHello[51] = 0x17;                     // Elliptic Curve secp256r1 = 23
+  clientHello[52] = 0x00;                     // Supported Point Formats Extension
+  clientHello[53] = 0x0b;                     // Supported Point Formats Extension
+  clientHello[54] = 0x00;                     // Länge der Supported Point Formats Extension Daten
+  clientHello[55] = 0x02;                     // Länge der Supported Point Formats Extension Daten
+  clientHello[56] = 0x01;                     // Länge des Point Formats Arrays
+  clientHello[57] = 0x00;                     // Uncompressed Point = 0
 
   char buffer[512];
   memset(buffer, 0, 512);
+  coap_setPayload(clientHello, 58);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Handshake: %s\n", buffer);
 

@@ -617,9 +617,7 @@ coap_check_notify(coap_context_t *context) {
 }
 
 void
-coap_handle_failed_notify(coap_context_t *context, 
-			  const coap_address_t *peer, 
-			  const str *token) {
+coap_handle_failed_notify(coap_context_t *context, const coap_address_t *peer, const str *token) {
   coap_resource_t *r;
   coap_subscription_t *obs;
 

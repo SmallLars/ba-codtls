@@ -1134,3 +1134,8 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
 
   //return 0;
 }
+
+void coap_setPayload(uint8_t *data, size_t len) {
+  payload.s = data;
+  payload.length = len;
+}

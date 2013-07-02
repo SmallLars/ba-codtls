@@ -82,7 +82,5 @@ AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile
-                 doc/Doxyfile
-                 examples/Makefile
-                 tests/Makefile])
+                 doc/Doxyfile])
 AC_OUTPUT
