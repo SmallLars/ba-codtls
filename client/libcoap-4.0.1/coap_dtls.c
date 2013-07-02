@@ -50,20 +50,13 @@ void dtls_handshake(struct in6_addr *ip) {
   memset(buffer, 0, 512);
   coap_setPayload(clientHello, 58);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
-  printf("Handshake: %s\n", buffer);
 
+  HelloVerifyRequest *verify = (HelloVerifyRequest *) buffer;
+  uint8_t cookie[9];
+  memset(cookie, 0, 9);
+  memcpy(cookie, verify->cookie, 8);
 
-/*
-  typedef struct {
-    ProtocolVersion client_version
-    Random random
-    Data8 session_id
-    Data8 cookie
-    Data16 cipher_suites
-    Data8 compression_methods
-    Data16 extensions                 (elliptic_curves = 0x0A00    und    ec_point_formats = 0x0B00)
-  } __attribute__ ((packed)) ClientHello;
-*/
+  printf("Handshake Cookie: %s\n", cookie);
 
 }
 
