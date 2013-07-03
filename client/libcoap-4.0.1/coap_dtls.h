@@ -38,6 +38,7 @@ typedef enum {
   hello_request = 0,
   client_hello = 1,
   server_hello = 2,
+  hello_verify_request = 3, 
   certificate = 11,
   server_key_exchange = 12,
   certificate_request = 13,
@@ -52,7 +53,7 @@ typedef struct {
   HandshakeType msg_type;
   uint8_t length[3];
   uint8_t payload[0];
-} __attribute__ ((packed)) Handshake;
+} __attribute__ ((packed)) Handshake_t;
 
 typedef struct {
   uint32_t gmt_unix_time;
@@ -63,13 +64,13 @@ typedef struct {
   ProtocolVersion client_version;
   Random random;
   uint8_t data[0];
-} __attribute__ ((packed)) ClientHello;
+} __attribute__ ((packed)) ClientHello_t;
 
 typedef struct {
   ProtocolVersion server_version;
   uint8_t cookie_len;
   uint8_t cookie[0];
-} __attribute__ ((packed)) HelloVerifyRequest;
+} __attribute__ ((packed)) HelloVerifyRequest_t;
 
 /* ------------------------------------------------------------------------- */
 

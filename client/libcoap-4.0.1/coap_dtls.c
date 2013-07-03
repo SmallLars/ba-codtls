@@ -12,58 +12,97 @@
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
 
-void dtls_handshake(struct in6_addr *ip) {
-  uint8_t clientHello[512];
-  clientHello[0] = 0x03;                      // ProtocolVersion major
-  clientHello[1] = 0x03;                      // ProtocolVersion minor
-  clientHello[2] = (time(NULL) >> 24) & 0xff; // Time
-  clientHello[3] = (time(NULL) >> 16) & 0xff; // Time
-  clientHello[4] = (time(NULL) >>  8) & 0xff; // Time
-  clientHello[5] = (time(NULL) >>  0) & 0xff; // Time
-  random_x(clientHello + 6, 28);              // Random Wert
-  clientHello[34] = 0x00;                     // Länge von Session ID ist 0
-  clientHello[35] = 0x00;                     // Länge von Cookie ist 0
-  clientHello[36] = 0x00;                     // Länge der Cyphersuits
-  clientHello[37] = 0x02;                     // Länge der Cyphersuits
-  clientHello[38] = 0xff;                     // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
-  clientHello[39] = 0x03;                     // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
-  clientHello[40] = 0x01;                     // Länge der Compression Methods
-  clientHello[41] = 0x00;                     // Keine Compression
-  clientHello[42] = 0x00;                     // Länge der Extensions
-  clientHello[43] = 0x0e;                     // Länge der Extensions
-  clientHello[44] = 0x00;                     // Supported Elliptic Curves Extension
-  clientHello[45] = 0x0a;                     // Supported Elliptic Curves Extension
-  clientHello[46] = 0x00;                     // Länge der Supported Elliptic Curves Extension Daten
-  clientHello[47] = 0x04;                     // Länge der Supported Elliptic Curves Extension Daten
-  clientHello[48] = 0x00;                     // Länge des Elliptic Curves Arrays
-  clientHello[49] = 0x02;                     // Länge des Elliptic Curves Arrays
-  clientHello[50] = 0x00;                     // Elliptic Curve secp256r1 = 23
-  clientHello[51] = 0x17;                     // Elliptic Curve secp256r1 = 23
-  clientHello[52] = 0x00;                     // Supported Point Formats Extension
-  clientHello[53] = 0x0b;                     // Supported Point Formats Extension
-  clientHello[54] = 0x00;                     // Länge der Supported Point Formats Extension Daten
-  clientHello[55] = 0x02;                     // Länge der Supported Point Formats Extension Daten
-  clientHello[56] = 0x01;                     // Länge des Point Formats Arrays
-  clientHello[57] = 0x00;                     // Uncompressed Point = 0
+uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len) {
+  Handshake_t *handshake = (Handshake_t *) target;
 
-  char buffer[512];
-  memset(buffer, 0, 512);
-  coap_setPayload(clientHello, 58);
+  handshake->msg_type = client_hello;
+  handshake->length[0] = 0;
+  handshake->length[1] = 0;
+  handshake->length[2] = 0;
+
+  ClientHello_t *clientHello = (ClientHello_t *) handshake->payload;
+  clientHello->client_version.major = 3;
+  clientHello->client_version.minor = 3;
+  clientHello->random.gmt_unix_time = htonl(time);
+  memcpy(clientHello->random.random_bytes, random, 28);
+  handshake->length[2] += sizeof(ClientHello_t);
+
+  uint32_t data_index = 0;
+
+  if (sessionID && session_len) {
+    clientHello->data[data_index++] = session_len;
+    memcpy(clientHello->data + data_index, sessionID, session_len);
+    data_index += session_len;
+  } else {
+    clientHello->data[data_index++] = 0;
+  }
+
+  if (cookie && cookie_len) {
+    clientHello->data[data_index++] = cookie_len;
+    memcpy(clientHello->data + data_index, cookie, cookie_len);
+    data_index += cookie_len;
+  } else {
+    clientHello->data[data_index++] = 0;
+  }
+
+  clientHello->data[data_index++] = 0x00;        // Länge der Cyphersuits
+  clientHello->data[data_index++] = 0x02;        // Länge der Cyphersuits
+  clientHello->data[data_index++] = 0xff;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
+  clientHello->data[data_index++] = 0x03;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
+  clientHello->data[data_index++] = 0x01;        // Länge der Compression Methods
+  clientHello->data[data_index++] = 0x00;        // Keine Compression
+  clientHello->data[data_index++] = 0x00;        // Länge der Extensions
+  clientHello->data[data_index++] = 0x0e;        // Länge der Extensions
+  clientHello->data[data_index++] = 0x00;        // Supported Elliptic Curves Extension
+  clientHello->data[data_index++] = 0x0a;        // Supported Elliptic Curves Extension
+  clientHello->data[data_index++] = 0x00;        // Länge der Supported Elliptic Curves Extension Daten
+  clientHello->data[data_index++] = 0x04;        // Länge der Supported Elliptic Curves Extension Daten
+  clientHello->data[data_index++] = 0x00;        // Länge des Elliptic Curves Arrays
+  clientHello->data[data_index++] = 0x02;        // Länge des Elliptic Curves Arrays
+  clientHello->data[data_index++] = 0x00;        // Elliptic Curve secp256r1 = 23
+  clientHello->data[data_index++] = 0x17;        // Elliptic Curve secp256r1 = 23
+  clientHello->data[data_index++] = 0x00;        // Supported Point Formats Extension
+  clientHello->data[data_index++] = 0x0b;        // Supported Point Formats Extension
+  clientHello->data[data_index++] = 0x00;        // Länge der Supported Point Formats Extension Daten
+  clientHello->data[data_index++] = 0x02;        // Länge der Supported Point Formats Extension Daten
+  clientHello->data[data_index++] = 0x01;        // Länge des Point Formats Arrays
+  clientHello->data[data_index++] = 0x00;        // Uncompressed Point = 0
+  handshake->length[2] += data_index;
+
+  return sizeof(Handshake_t) + handshake->length[2];
+}
+
+void dtls_handshake(struct in6_addr *ip) {
+  uint8_t len;
+  uint8_t message[128];
+
+  time_t my_time = time(NULL);
+  uint8_t random[28];
+  random_x(random, 28);
+
+  len = makeClientHello(message, my_time, random, NULL, 0, NULL, 0);
+
+  char buffer[128];
+  memset(buffer, 0, 128);
+  coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
 
-  HelloVerifyRequest *verify = (HelloVerifyRequest *) buffer;
-  uint8_t cookie[9];
-  memset(cookie, 0, 9);
-  memcpy(cookie, verify->cookie, 8);
+  Handshake_t *handshake = (Handshake_t *) buffer;
+  HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) handshake->payload;
+  len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
 
-  printf("Handshake Cookie: %s\n", cookie);
+  memset(buffer, 0, 128);
+  coap_setPayload(message, len);
+  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
 
+  printf("Handshake Antwort: %s\n", buffer);
 }
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   if (1) {
     // Klartext für Handshake
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + len);
+    memset(record, 0, sizeof(DTLSRecord_t) + len);
     record->type = handshake;
     record->version.major = 3;
     record->version.minor = 3;
@@ -82,6 +121,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
+    memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
     record->type = application_data;
     record->version.major = 3;
     record->version.minor = 3;
