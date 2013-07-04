@@ -114,6 +114,7 @@ char *coap_response_phrase(unsigned char code);
 #if 0 /* this does not exist any more */
 #define COAP_RESPONSE_100      40 /* 100 Continue */
 #endif
+#define COAP_RESPONSE_102      COAP_RESPONSE_CODE(102)  /* 2.00 Verify */
 #define COAP_RESPONSE_200      COAP_RESPONSE_CODE(200)  /* 2.00 OK */
 #define COAP_RESPONSE_201      COAP_RESPONSE_CODE(201)  /* 2.01 Created */
 #define COAP_RESPONSE_304      COAP_RESPONSE_CODE(203)  /* 2.03 Valid */
@@ -173,7 +174,7 @@ typedef struct {
 #define COAP_MESSAGE_IS_EMPTY(MSG)    ((MSG)->code == 0)
 #define COAP_MESSAGE_IS_REQUEST(MSG)  (!COAP_MESSAGE_IS_EMPTY(MSG)	\
 				       && ((MSG)->code < 32))
-#define COAP_MESSAGE_IS_RESPONSE(MSG) ((MSG)->code >= 64 && (MSG)->code <= 191)
+#define COAP_MESSAGE_IS_RESPONSE(MSG) ((MSG)->code == 34 || ((MSG)->code >= 64 && (MSG)->code <= 191))
 
 #define COAP_OPT_LONG 0x0F	/* OC == 0b1111 indicates that the option list in a
 				 * CoAP message is limited by 0b11110000 marker */

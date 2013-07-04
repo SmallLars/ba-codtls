@@ -645,7 +645,7 @@ coap_read( coap_context_t *ctx ) {
   coap_address_init(&src);
 
 #ifndef WITH_CONTIKI
-  bytes_read = dtls_recvfrom(ctx->sockfd, buf, sizeof(buf), 0, //TODO tdls_ einfügen
+  bytes_read = dtls_recvfrom(ctx->sockfd, buf, sizeof(buf), 0,
 			&src.addr.sa, &src.size);
 #else /* WITH_CONTIKI */
   if(uip_newdata()) {

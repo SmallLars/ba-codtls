@@ -4,6 +4,6 @@
 
 #include "erbium.h"
 
-RESOURCE(dtls_post, METHOD_POST, "dtls", "rt=\"binary\";if=\"core.rp\";ct=40");
+RESOURCE(dtls, METHOD_POST, "dtls", "rt=\"handshake\";if=\"core.lb\";ct=42");
 
 #endif /* __ATTRIBUTES_H__ */

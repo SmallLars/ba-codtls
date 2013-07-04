@@ -278,7 +278,7 @@ message_handler(struct coap_context_t  *ctx,
   }
 
   /* output the received data, if any */
-  if (received->hdr->code == COAP_RESPONSE_CODE(205)) {
+  if (received->hdr->code == COAP_RESPONSE_CODE(205) || received->hdr->code == COAP_RESPONSE_CODE(201) || received->hdr->code == COAP_RESPONSE_CODE(102)) {
 
     /* set obs timer if we have successfully subscribed a resource */
     if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {

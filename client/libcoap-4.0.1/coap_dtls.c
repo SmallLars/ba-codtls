@@ -95,7 +95,10 @@ void dtls_handshake(struct in6_addr *ip) {
   coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
 
-  printf("Handshake Antwort: %s\n", buffer);
+  printf("Server Hello:");
+  int i;
+  for (i = 0; i < 60; i++) printf(" %02x", buffer[i]);
+  printf("\n");
 }
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
