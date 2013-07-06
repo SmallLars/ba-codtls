@@ -1,0 +1,21 @@
+1. client/libcoap-4.0.1
+    ./configure
+
+2. client
+    Notwendiges Paket: sudo apt-get install libssl-dev
+    make
+
+3. blaster
+    Notwendiges Paket: sudo apt-get install uuid-dev
+    make
+
+4. Notwendiges Paket falls 64-bit-System: sudo apt-get install ia32-libs
+
+5. libmc1322x/tests
+    make TARGET=redbee-econotag
+
+6. libmc1322x/tools/ftditools
+    Notwendiges Paket: sudo apt-get install libftdi-dev
+    make
+
+7. Notwendige Pakete: sudo apt-get install libdevice-serialport-perl libterm-readkey-perl
