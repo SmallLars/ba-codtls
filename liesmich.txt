@@ -36,6 +36,6 @@ border-router und econotag:
 
 
 
---- TODO ->
+--- TODO vielleicht. Ist noch zu testen ob sinnvoll ->
 usermod -aG dialout lars
 groups lars
