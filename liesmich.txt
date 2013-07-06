@@ -1,21 +1,32 @@
-1. client/libcoap-4.0.1
-    ./configure
+Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 64 bit):
 
-2. client
-    Notwendiges Paket: sudo apt-get install libssl-dev
-    make
+    Benötigte Pakete:
+        Nur für 64 bit System: ia32-libs
+        Für client:            libssl-dev
+        Für blaster:           uuid-dev
+        Für ftditools:         libftdi-dev
+        Für das Flashen:       libdevice-serialport-perl, libterm-readkey-perl
 
-3. blaster
-    Notwendiges Paket: sudo apt-get install uuid-dev
-    make
+    Kompiler:
+        arm-2008q3-66-arm-none-eabi-i686-pc-linux-gnu.tar.bz2 entpacken
+        Pfad in .bashrc anpassen: export PATH=$PATH:/?...?/arm-2008q3/bin
 
-4. Notwendiges Paket falls 64-bit-System: sudo apt-get install ia32-libs
+    Maken der Hilfsmittel:
+        blaster:                    make
+        libmc1322x/tests:           make TARGET=redbee-econotag
+        libmc1322x/tools/ftditools: make
 
-5. libmc1322x/tests
-    make TARGET=redbee-econotag
+client kompilieren:
+    client/libcoap-4.0.1: ./configure
+    client                make
 
-6. libmc1322x/tools/ftditools
-    Notwendiges Paket: sudo apt-get install libftdi-dev
-    make
+border-router und econotag:
+    Der border-router ist mit der MAC xxx konfiguriert.     0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, 22
+    Der econotag ist mit der MAC xxx konfiguriert.          0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, 19
 
-7. Notwendige Pakete: sudo apt-get install libdevice-serialport-perl libterm-readkey-perl
+    Kompilieren:   make
+    Bereinigen:    make clean
+    Flashen:       make upload
+    Flash löschen: make clear
+
+    make upload verwendet in beiden fällen /dev/ttyUSB1
