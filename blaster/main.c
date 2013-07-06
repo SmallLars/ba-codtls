@@ -70,10 +70,7 @@ int main(int nArgs, char **argv) {
 
 // Ursprüngliche Länge der Firmware setzen im little Endian Encoding
     unsigned int length = i - 8;
-    output[4] = (length >>  0) & 0xFF;
-    output[5] = (length >>  8) & 0xFF;
-    output[6] = (length >> 16) & 0xFF;
-    output[7] = (length >> 24) & 0xFF;
+    memcpy(output + 4, (const void *) &length, 4);
     fprintf(stderr, "Länge: %u = 0x%02x%02x%02x%02x\n", length, output[7], output[6], output[5], output[4]);
 
     for (; i < 0x1F000; i++) output[i] = 0xFF;

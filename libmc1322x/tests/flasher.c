@@ -67,13 +67,6 @@ uint8_t getc(void)
 void flushrx(void);
 uint32_t to_u32(volatile uint32_t *c);
 
-enum parse_states {
-	SCAN_X,
-	READ_CHARS,
-	PROCESS,
-	MAX_STATE,
-};
-
 void main(void) {
 	nvmType_t type=0;
 	nvmErr_t err;
@@ -81,8 +74,6 @@ void main(void) {
 	volatile uint32_t i;
 	volatile uint32_t buf[4];
 	volatile uint32_t len=0;
-	volatile uint32_t state = SCAN_X;
-	volatile uint32_t addr,data;
 
 	uart_init(UART1, 115200);
 
@@ -107,10 +98,6 @@ void main(void) {
 	dbg_put_hex(err);
 	dbg_putstr("\n\r");
 
-	dbg_putstr(" type is: 0x");
-	dbg_put_hex32(type);
-	dbg_putstr("\n\r");
-
 	/* say we are ready */
 	len = 0;
 	putstr("ready");
@@ -123,7 +110,7 @@ void main(void) {
 		len += (c<<(i*8));
 	}
 
-	dbg_putstr("len: ");
+	dbg_putstr("len: 0x");
 	dbg_put_hex32(len);
 	dbg_putstr("\n\r");
 	
@@ -137,10 +124,6 @@ void main(void) {
 	((uint8_t *)buf)[0] = 'N'; ((uint8_t *)buf)[1] = 'O'; ((uint8_t *)buf)[2] = 'N'; ((uint8_t *)buf)[3] = 'O';
 #endif
 
-	dbg_putstr(" type is: 0x");
-	dbg_put_hex32(type);
-	dbg_putstr("\n\r");
-
 	/* don't make a valid boot image if the received length is zero */
 	if(len == 0) {
 		((uint8_t *)buf)[0] = 'N'; 
@@ -149,11 +132,7 @@ void main(void) {
 		((uint8_t *)buf)[3] = 'O';
 	}
 	
-	err = nvm_write(gNvmInternalInterface_c, type, (uint8_t *)buf, 0, 4);
-
-	dbg_putstr("nvm_write returned: 0x");
-	dbg_put_hex(err);
-	dbg_putstr("\n\r");
+	uint32_t err_count = nvm_write(gNvmInternalInterface_c, type, (uint8_t *)buf, 0, 4);
 
 	/* write the length */
 	// Auskommentiert -> Die vom Pearl-Script ermittelte Länge wird ignoriert -> Länge steht in Firmware
@@ -163,53 +142,24 @@ void main(void) {
 	for(i=0; i<len; i++) {
 		c = getc();
 		// Da die Firmware die Länge enthält, geht es bei 4 los anstatt bei 8
-		err = nvm_write(gNvmInternalInterface_c, type, (uint8_t *)&c, 4+i, 1);
+		err_count += nvm_write(gNvmInternalInterface_c, type, (uint8_t *)&c, 4+i, 1);
+	}
+
+  if (err_count > 0) {
+		dbg_putstr("ALERT nvm_write error-count: ");
+		dbg_put_hex32(err_count);
+		dbg_putstr("\n\r");
+	} else {
+		dbg_putstr("write successfully done\n\r");
 	}
 
 	/* read and output real len */
 	err = nvm_read(gNvmInternalInterface_c, type, (uint8_t *)&len, 4, 4);
-	dbg_putstr("real-len: ");
+	dbg_putstr("real-len: 0x");
 	dbg_put_hex32(len);
 	dbg_putstr("\n\r");
 
-	putstr("flasher done\n\r");
-
-	state = SCAN_X; addr=0;
-	while((c=getc())) {
-		if(state == SCAN_X) {
-			/* read until we see an 'x' */
-			if(c==0) { break; }
-			if(c!='x'){ continue; } 	
-			/* go to read_chars once we have an 'x' */
-			state = READ_CHARS;
-			i = 0; 
-		}
-		if(state == READ_CHARS) {
-			/* read all the chars up to a ',' */
-			((uint8_t *)buf)[i++] = c;
-			/* after reading a ',' */
-			/* goto PROCESS state */
-			if((c == ',') || (c == 0)) { state = PROCESS; }				
-		}
-		if(state == PROCESS) {
-			if(addr==0) {
-				/*interpret the string as the starting address */
-				addr = to_u32(buf);				
-			} else {
-				/* string is data to write */
-				data = to_u32(buf);
-				putstr("writing addr ");
-				put_hex32(addr);
-				putstr(" data ");
-				put_hex32(data);
-				putstr("\n\r");
-				err = nvm_write(gNvmInternalInterface_c, 1, (uint8_t *)&data, addr, 4);
-				addr += 4;
-			}
-			/* look for the next 'x' */
-			state=SCAN_X;
-		}
-	}
+	putstr("flasher done");
 
 	while(1) {continue;};
 }

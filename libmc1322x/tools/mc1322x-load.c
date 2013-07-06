@@ -62,8 +62,33 @@ int sfd;
 
 void help(void);
 
-int main(int argc, char **argv)
-{
+void waitFor(const char *needle, const char sendZero) {
+  int r = 0;
+  int i = 0;
+
+  printf("Waiting for %s...\n", needle);
+  while (1) {
+    if (sendZero) write(pfd, (const void*)"\0", 1);
+    sleep(1);
+    r = read(pfd, &buf[i], sizeof(buf)-1-i);
+    if (r > 0) {
+      buf[i+r] = '\0';
+      printf("%s", &buf[i]); fflush(stdout);
+      if (strstr(&buf[i], needle)) {
+        printf("\n");
+        break;
+      }
+      i += r;
+      if (i >= sizeof(buf)-1) {
+        i = 0;
+      }
+    } else {
+      printf("."); fflush(stdout);
+    }
+  }
+}
+
+int main(int argc, char **argv) {
   int c = 0;
   int r = 0;
   int i = 0;
@@ -168,34 +193,14 @@ int main(int argc, char **argv)
   tcsetattr(pfd, TCSANOW, &options);
 
   /* Reset the board if we can */
-  printf("Reset the board to enter bootloader (waiting for CONNECT)...\n");
+  printf("Reset the board to enter bootloader\n");
   if (command) {
     printf("Performing reset: %s\n", command);
     system(command);
   }
 
   /* Primary bootloader wait loop */
-  i = 0;
-  while (1) {
-    /* Wait for CONNECT */
-    r = write(pfd, (const void*)"\0", 1);
-    sleep(1);
-    r = read(pfd, &buf[i], sizeof(buf)-1-i);
-    if (r > 0) {
-      buf[i+r] = '\0';
-      printf("%s", &buf[i]); fflush(stdout);
-      if (strstr(&buf[i], "CONNECT")) {
-        printf("\n");
-        break;
-      }
-      i += r;
-      if (i >= sizeof(buf)-1) {
-        i = 0;
-      }
-    } else {
-      printf("."); fflush(stdout);
-    }
-  }
+  waitFor("CONNECT", 1);
 
   /* Send primary file */
   if (!filename) {
@@ -230,26 +235,8 @@ int main(int argc, char **argv)
   /* Secondary loader wait loop */
   if (second || zerolen) {
     /* Wait for ready */
-    printf("Sending secondary file (waiting for ready)...\n");
-    i = 0;
-    while (1) {
-      sleep(1);
-      r = read(pfd, &buf[i], sizeof(buf)-1-i);
-      if (r > 0) {
-        buf[i+r] = '\0';
-        printf("%s", &buf[i]); fflush(stdout);
-        if (strstr(buf, "ready")) {
-          printf("\n");
-          break;
-        }
-        i += r;
-        if (i >= sizeof(buf)-1) {
-          i = 0;
-        }
-      } else {
-        printf("."); fflush(stdout);
-      }
-    }
+    printf("Sending secondary file\n");
+    waitFor("ready", 0);
 
     /* Send secondary file */
     if (second) {
@@ -284,12 +271,8 @@ int main(int argc, char **argv)
     }
   }
 
-  /* Send the remaining arguments */
-  if (args) {
-    printf("Sending %s\n", args);
-    r = write(pfd, (const void*)args, strlen(args));
-    r = write(pfd, (const void*)",", 1);
-  }
+  /* Wait for flasher done */
+  waitFor("flasher done", 0);
 
   /* Drop in echo mode */
   if (!do_exit) {
@@ -301,6 +284,8 @@ int main(int argc, char **argv)
       }
     }
   }
+
+  exit(EXIT_SUCCESS);
 }
 
 
@@ -321,5 +306,4 @@ void help(void)
   printf("       -a first  intercharacter delay, passed to usleep\n");
   printf("       -b second intercharacter delay, passed to usleep\n");
   printf("\n");
-  printf("Anything on the command line is sent after all of the files.\n\n");
 }
