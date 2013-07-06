@@ -28,7 +28,8 @@ clear:
 
 upload:
 	../blaster/blaster 19 < $(CONTIKI_PROJECT)_redbee-econotag.bin > $(CONTIKI_PROJECT)_e_redbee-econotag.bin 2> $(CONTIKI_PROJECT)_e_redbee-econotag.txt
-	../libmc1322x/tools/mc1322x-load.pl -f ../libmc1322x/tests/flasher_redbee-econotag.bin -s $(CONTIKI_PROJECT)_e_redbee-econotag.bin -t /dev/ttyUSB1
+	../libmc1322x/tools/mc1322x-load.pl -f ../libmc1322x/tests/flasher_redbee-econotag.bin -s $(CONTIKI_PROJECT)_e_redbee-econotag.bin -t /dev/ttyUSB1 -e
+	../libmc1322x/tools/ftditools/bbmc -l redbee-econotag reset
 
 listen:
 	while true; do cat /dev/ttyUSB1; done
