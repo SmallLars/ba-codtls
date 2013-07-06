@@ -21,12 +21,20 @@ client kompilieren:
     client                make
 
 border-router und econotag:
-    Der border-router ist mit der MAC xxx konfiguriert.     0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, 22
-    Der econotag ist mit der MAC xxx konfiguriert.          0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, 19
+    Der border-router ist mit der MAC 62:B1:60:B1:60:B1:00:22 konfiguriert.
+    Der econotag ist mit der MAC 62:B1:60:B1:60:B1:00:19 konfiguriert.
 
     Kompilieren:   make
     Bereinigen:    make clean
     Flashen:       make upload
     Flash löschen: make clear
 
+    Nur bei econotag: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
+
     make upload verwendet in beiden fällen /dev/ttyUSB1
+
+
+
+--- TODO ->
+usermod -aG dialout lars
+groups lars
