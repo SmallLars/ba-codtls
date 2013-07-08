@@ -1,4 +1,4 @@
-Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 64 bit):
+Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
 
     Benötigte Pakete:
         Nur für 64 bit System: ia32-libs
@@ -14,7 +14,7 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 64 bit):
     Maken der Hilfsmittel:
         blaster:                    make
         libmc1322x/tests:           make TARGET=redbee-econotag
-	libmc1322x/tools:           gcc mc1322x-load.c -o mc1322x-load
+        libmc1322x/tools:           gcc mc1322x-load.c -o mc1322x-load
         libmc1322x/tools/ftditools: make
 
 client kompilieren:
