@@ -19,18 +19,17 @@
 #define RES_BLOCK_21     0x1A000
 #define RES_BLOCK_22     0x1B000
 #define LEN_BLOCK_XX     0x1000
-#define LEN_BLOCK        0x01
 
 //Read Only Vars
-#define RES_MAC          0x1e000
+#define RES_MAC          0x1E000
 #define LEN_MAC          0x08
-#define RES_UUID         0x18008
+#define RES_UUID         0x1E008
 #define LEN_UUID         0x10
-#define RES_PIN          0x18018
+#define RES_PIN          0x1E018
 #define LEN_PIN          0x08
-#define RES_NAME         0x18020
+#define RES_NAME         0x1E020
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x18040
+#define RES_MODEL        0x1E040
 #define LEN_MODEL        0x0E
 
 #define RES_B_ERR_05     0x1C000
@@ -45,20 +44,15 @@
 #define LEN_B_ERR_01     61
 
 //Random Access Vars - Byte 0 bis 8192
-#define RES_BLK_1_ACTIVE    0
-#define LEN_BLK_1_ACTIVE    1
+#define RES_BLK_1_ACTIVE       0
+#define RES_BLK_2_ACTIVE    4096
+#define LEN_BLK_X_ACTIVE       1
 
-#define RES_AES_KEY         1 //Erstes Byte ist 1 falls Key vorhanden, sonst 0
-#define LEN_AES_KEY        17
+#define RES_CLIENT_LIST_LEN    1
+#define LEN_CLIENT_LIST_LEN    1
 
-#define RES_PIN_VERIFIED   18
-#define LEN_PIN_VERIFIED    1
-
-#define RES_KEY_CALC       19
-#define LEN_KEY_CALC       51
-
-#define RES_BLK_2_ACTIVE 4096
-#define LEN_BLK_2_ACTIVE    1
+#define RES_CLIENT_LIST        2
+#define LEN_CLIENT_LIST      600
 
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes);
 

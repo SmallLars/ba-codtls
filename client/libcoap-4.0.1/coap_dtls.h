@@ -16,6 +16,23 @@ typedef struct {
 } __attribute__ ((packed)) ProtocolVersion;
 
 typedef enum {
+  none = 0,
+  coap = 1
+  // max = 255
+} __attribute__ ((packed)) ContentProtocol;
+
+typedef struct {
+  ContentProtocol protocol;
+  ProtocolVersion version;
+  uint16_t epoch;
+  uint8_t sequence_number[3];
+  uint16_t length;
+  uint8_t payload[0];
+} __attribute__ ((packed)) DTLSRecord_t;
+
+/* ------------------------------------------------------------------------- */
+
+typedef enum {
   change_cipher_spec = 20,
   alert = 21,
   handshake = 22,
@@ -25,12 +42,8 @@ typedef enum {
 
 typedef struct {
   ContentType type;
-  ProtocolVersion version;
-  uint16_t epoch;
-  uint8_t sequence_number[3];
-  uint16_t length;
   uint8_t payload[0];
-} __attribute__ ((packed)) DTLSRecord_t;
+} __attribute__ ((packed)) Content;
 
 /* Handshake Datenstrukturen ----------------------------------------------- */
 

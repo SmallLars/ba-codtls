@@ -16,7 +16,11 @@ int main(int argc, char *argv[]) {
     char buffer[512];
     char cbuffer[32];
 
-    border_getNodes(&liste);
+    if (argc == 2) {
+      add_ip(&liste, argv[1], NULL);
+    } else {
+      border_getNodes(&liste);
+    }
     border_printNodes(liste);
 
     char run = 1;

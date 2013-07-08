@@ -21,15 +21,15 @@
 #define LEN_BLOCK        0x01
 
 //Read Only Vars
-#define RES_MAC          0x1e000
+#define RES_MAC          0x1E000
 #define LEN_MAC          0x08
-#define RES_UUID         0x18008
+#define RES_UUID         0x1E008
 #define LEN_UUID         0x10
-#define RES_PIN          0x18018
+#define RES_PIN          0x1E018
 #define LEN_PIN          0x08
-#define RES_NAME         0x18020
+#define RES_NAME         0x1E020
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x18040
+#define RES_MODEL        0x1E040
 #define LEN_MODEL        0x0E
 
 #define RES_B_ERR_05     0x1C000

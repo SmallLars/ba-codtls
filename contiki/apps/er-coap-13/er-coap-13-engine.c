@@ -44,7 +44,7 @@
 
 #include "er-coap-13-engine.h"
 #include "er-coap-13-dtls.h"
-#include "er-coap-13-dtls-handshake.h"
+#include "er-coap-13-dtls-resource.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -98,7 +98,7 @@ coap_receive(void)
     PRINTF("\n");
 
     CoapData_t coapdata = {0, NULL, 0};
-    dtls_parse_message(uip_appdata, &coapdata);
+    dtls_parse_message((uint8_t *) &UIP_IP_BUF->srcipaddr, uip_appdata, &coapdata);
     if (!coapdata.valid) return NO_ERROR;
     coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
 
