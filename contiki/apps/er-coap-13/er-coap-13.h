@@ -45,7 +45,7 @@
 
 #define COAP_LINK_FORMAT_FILTERING           1
 
-#define COAP_DEFAULT_PORT                    5683
+#define COAP_DEFAULT_PORT                    5684
 
 #ifndef COAP_SERVER_PORT
 #define COAP_SERVER_PORT                     COAP_DEFAULT_PORT

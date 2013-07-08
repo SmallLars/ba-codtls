@@ -1129,6 +1129,10 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
 
   coap_free_context( ctx );
 
+  the_token.length = 0;
+  block.num = 0;
+  block.m = 0;
+  block.szx = 6;
   coap_delete_list(optlist);
   optlist = NULL;
 
