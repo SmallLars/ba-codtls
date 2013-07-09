@@ -24,8 +24,7 @@ typedef enum {
 typedef struct {
   ContentProtocol protocol;
   ProtocolVersion version;
-  uint16_t epoch;
-  uint8_t sequence_number[3];
+  uint8_t epoch;
   uint16_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;

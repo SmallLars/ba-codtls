@@ -73,7 +73,7 @@ int main(int nArgs, char **argv) {
     memcpy(output + 4, (const void *) &length, 4);
     fprintf(stderr, "Länge: %u = 0x%02x%02x%02x%02x\n", length, output[7], output[6], output[5], output[4]);
 
-    for (; i < 0x1F000; i++) output[i] = 0xFF;
+    for (; i < 0x1F000; i++) output[i] = 0;
 
 // UUID setzen
     unsigned char uuid_bin[16];

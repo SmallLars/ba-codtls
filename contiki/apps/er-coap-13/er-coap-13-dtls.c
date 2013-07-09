@@ -12,12 +12,6 @@
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, CoapData_t *coapdata) {
-  ClientInfo_t c;
-  memset(&c, 0, 60);
-  memcpy(c.ip, ip, 16);
-  memcpy(c.key, "ABCDEFGHIJKLMNOP", 16);
-  insert(&c);
-
   // TODO Versionprüfung
   //   printf("Version major: %u\n", record->version.major);
   //   printf("Version minor: %u\n", record->version.minor);
@@ -25,8 +19,8 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, CoapData_t *coapdata)
   record->length = uip_ntohs(record->length);
 
   // Bei Bedarf entschlüsseln
-  uint8_t key[17];
-  if (getKey(key, ip)) {
+  uint8_t key[16];
+  if (getKey(key, ip, record->epoch)) {
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
     uint8_t oldCode[MAC_LEN];
@@ -55,8 +49,9 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, CoapData_t *coapdata)
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
   // Bei Bedarf verschlüsseln
+  int8_t epoch = getEpoch(conn->ripaddr.u8);
   uint8_t key[16];
-  if (getKey(key, conn->ripaddr.u8)) {
+  if (getKey(key, conn->ripaddr.u8, epoch)) {
     uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
     uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
@@ -64,6 +59,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
     record->protocol = coap;
     record->version.major = 3;
     record->version.minor = 3;
+    record->epoch = epoch;
     record->length = uip_htons(payload_length);
 
     CCMData_t *ccmdata = (CCMData_t*) record->payload;

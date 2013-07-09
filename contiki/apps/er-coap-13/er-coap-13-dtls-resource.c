@@ -57,6 +57,21 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         // TODO answer->extensions;
 
         set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
+/*
+  ClientInfo_t ci;
+  memset(&ci, 0, 60);
+  memcpy(ci.ip, ip, 16);
+  memcpy(ci.session, "IJKLMNOP", 8);
+  ci.epoch = 1;
+  ci.pending = 0;
+  insert(&ci);
+
+  ClientKey ck;
+  ck.index = 0;
+  ck.epoch = 1;
+  memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
+  insert(&ck);
+*/
       }
     }
 

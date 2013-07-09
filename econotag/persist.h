@@ -48,11 +48,19 @@
 #define RES_BLK_2_ACTIVE    4096
 #define LEN_BLK_X_ACTIVE       1
 
-#define RES_CLIENT_LIST_LEN    1
-#define LEN_CLIENT_LIST_LEN    1
+#define RES_CLIENT_INFO_LEN    1
+#define LEN_CLIENT_INFO_LEN    1
 
-#define RES_CLIENT_LIST        2
-#define LEN_CLIENT_LIST      600
+#define RES_CLIENT_INFO        2
+#define LEN_CLIENT_INFO      580
+
+#define RES_CLIENT_KEYS_LEN  582
+#define LEN_CLIENT_KEYS_LEN    1
+
+#define RES_CLIENT_KEYS      583
+#define LEN_CLIENT_KEYS      360
+
+
 
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes);
 
