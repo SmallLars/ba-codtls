@@ -14,29 +14,12 @@ void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_
   buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
   set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_NAME, REST_MAX_CHUNK_SIZE - 1));
 */
-  printf("Offset: %i\n", *offset);
-  switch (*offset) {
-    case 0:
-      memset(buffer, 'A', 128);
-      REST.set_response_payload(response, buffer, 128);
-      *offset = 128;
-      break;
-    case 128:
-      memset(buffer, 'B', 128);
-      REST.set_response_payload(response, buffer, 128);
-      *offset = 256;
-      break;
-    case 256:
-      memset(buffer, 'C', 128);
-      REST.set_response_payload(response, buffer, 128);
-      *offset = 384;
-      break;
-    case 384:
-      memset(buffer, 'D', 64);
-      REST.set_response_payload(response, buffer, 64);
-      *offset = -1;
-      break;
-  }
+  printf("Preferred Size: %u\n", preferred_size);
+
+  memset(buffer, (uint8_t) *offset, preferred_size);
+  REST.set_response_payload(response, buffer, preferred_size);
+  *offset += preferred_size;
+  if (*offset > 250) *offset = -1;
 }
 
 /*************************************************************************/

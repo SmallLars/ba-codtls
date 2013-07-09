@@ -8,22 +8,32 @@
 
 /* Record Layer Datenstrukturen -------------------------------------------- */
 
+/*
+protocol: 0 = none
+          1 = coap
+version:  0 = Version 254.255 (DTLS 1.0)
+          1 = 16-bit version field
+          2 = Version 254.253 (DTLS 1.2)
+          3 = Reserved for future use
+epoch:    0 = Epoch 0
+          1 = Epoch 1
+          2 = Epoch 2
+          3 = Epoch 3
+          4 = Epoch 4
+          5 = 8-bit epoch field
+          6 = 16-bit epoch field
+          7 = Implicit -- same as previous record in the datagram
+len:      0 = Length 0
+          1 = 8-bit length field
+          2 = 16-bit length field
+          3 = Implicit -- last record in the datagram
+*/
 typedef struct {
-  uint8_t major;
-  uint8_t minor;
-} __attribute__ ((packed)) ProtocolVersion;
-
-typedef enum {
-  none = 0,
-  coap = 1
-  // max = 255
-} __attribute__ ((packed)) ContentProtocol;
-
-typedef struct {
-  ContentProtocol protocol;
-  ProtocolVersion version;
-  uint8_t epoch;
-  uint16_t length;
+  unsigned int protocol:1;    
+  unsigned int version:2;
+  unsigned int epoch:3;
+  unsigned int len:2;
+  uint8_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;
 
@@ -64,6 +74,11 @@ typedef struct {
   uint8_t length[3];
   uint8_t payload[0];
 } __attribute__ ((packed)) Handshake_t;
+
+typedef struct {
+  uint8_t major;
+  uint8_t minor;
+} __attribute__ ((packed)) ProtocolVersion;
 
 typedef struct {
   uint32_t gmt_unix_time;
@@ -180,7 +195,7 @@ typedef struct {
 typedef struct {
   uint8_t valid;
   uint8_t *data;
-  uint16_t data_len;
+  uint8_t data_len;
 } CoapData_t;
 
 /**

@@ -101,14 +101,15 @@ void dtls_handshake(struct in6_addr *ip) {
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln
   if (0) {
-    uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
+    uint8_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
     memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
-    record->protocol = coap;
-    record->version.major = 3;
-    record->version.minor = 3;
-    record->length = htons(payload_length);
+    record->protocol = 1;
+    record->version= 2;
+    record->epoch = 0;
+    record->len = 1;
+    record->length = payload_length;
 
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
@@ -126,10 +127,11 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
   } else {
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + len);
     memset(record, 0, sizeof(DTLSRecord_t) + len);
-    record->protocol = coap;
-    record->version.major = 3;
-    record->version.minor = 3;
-    record->length = htons(len);
+    record->protocol = 1;
+    record->version= 2;
+    record->epoch = 0;
+    record->len = 1;
+    record->length = len;
 
     memcpy(record->payload, buf, len);
 
@@ -148,11 +150,10 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
   DTLSRecord_t *record = (DTLSRecord_t *) malloc(size);
   memcpy(record, buf, size);
 
-  // TODO Versionprüfung
-  //   printf("Version major: %u\n", record->version.major);
-  //   printf("Version minor: %u\n", record->version.minor);
+  ssize_t db_len;
 
-  record->length = ntohs(record->length);
+  // TODO Versionprüfung
+  //   printf("Version major: %u\n", record->version);
 
   // Bei Bedarf entschlüsseln
   if (0) {
@@ -165,21 +166,20 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
 
     uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
     if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-    ssize_t db_len = (check == 0 ? record->length - sizeof(CCMData_t) - MAC_LEN : 0);
+    db_len = (check == 0 ? record->length - sizeof(CCMData_t) - MAC_LEN : 0);
     memcpy(buf, ccmdata->ccm_ciphered, db_len);
-
-    record->length = db_len;
   } else {
     memcpy(buf, record->payload, record->length);
+    db_len = record->length;
   }
 
-  if (record->protocol == none) {
+  if (record->protocol == 0) {
     printf("Alert erhalten.\n");
     // TODO Alert-Auswertung
-    record->length = 0;
+    db_len = 0;
   }
 
   free(record);
 
-  return record->length;
+  return db_len;
 }
