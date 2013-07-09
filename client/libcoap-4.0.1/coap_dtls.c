@@ -95,15 +95,12 @@ void dtls_handshake(struct in6_addr *ip) {
   coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
 
-  printf("Server Hello:");
-  int i;
-  for (i = 0; i < 60; i++) printf(" %02x", buffer[i]);
-  printf("\n");
+  printf("Server Hello erhalten.\n");
 }
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln
-  if (1) {
+  if (0) {
     uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
@@ -158,7 +155,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
   record->length = ntohs(record->length);
 
   // Bei Bedarf entschlüsseln
-  if (1) {
+  if (0) {
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
     uint8_t oldCode[MAC_LEN];

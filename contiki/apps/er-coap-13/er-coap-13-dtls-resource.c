@@ -4,6 +4,7 @@
 #include "erbium.h"
 #include "er-coap-13.h"
 #include "er-coap-13-dtls.h"
+#include "er-coap-13-dtls-data.h"
 #include "er-coap-13-dtls-random.h"
 
 /*************************************************************************/
@@ -56,22 +57,29 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         answer->compression_method = null;
         // TODO answer->extensions;
 
-        set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
-/*
-  ClientInfo_t ci;
-  memset(&ci, 0, 60);
-  memcpy(ci.ip, ip, 16);
-  memcpy(ci.session, "IJKLMNOP", 8);
-  ci.epoch = 1;
-  ci.pending = 0;
-  insert(&ci);
+        ClientInfo_t ci;
+        memset(&ci, 0, 60);
+        memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+        memcpy(ci.session, "IJKLMNOP", 8);
+        ci.epoch = 1;
+        ci.pending = 0;
+        insertClient(&ci);
 
-  ClientKey ck;
-  ck.index = 0;
-  ck.epoch = 1;
-  memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
-  insert(&ck);
-*/
+        ClientKey_t ck;
+        ck.index = 0;
+        ck.epoch = 1;
+        memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
+        insertKey(&ck);
+
+        uint8_t key[17];
+        key[16] = 0;
+        getKey(key, (uint8_t *) &UIP_IP_BUF->srcipaddr, 1);
+        printf("Key: %s - Ip: ", key);
+        int i;
+        for (i = 0; i < 16; i++) printf("%02x", ((uint8_t *) &UIP_IP_BUF->srcipaddr)[i]);
+        printf("\n");
+
+        set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
       }
     }
 

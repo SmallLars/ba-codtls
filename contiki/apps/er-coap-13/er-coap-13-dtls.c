@@ -20,7 +20,7 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, CoapData_t *coapdata)
 
   // Bei Bedarf entschlüsseln
   uint8_t key[16];
-  if (getKey(key, ip, record->epoch)) {
+  if (getKey(key, ip, record->epoch) == 0) {
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
     uint8_t oldCode[MAC_LEN];
@@ -51,7 +51,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
   // Bei Bedarf verschlüsseln
   int8_t epoch = getEpoch(conn->ripaddr.u8);
   uint8_t key[16];
-  if (getKey(key, conn->ripaddr.u8, epoch)) {
+  if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
     uint16_t payload_length = sizeof(CCMData_t) + len + MAC_LEN;
 
     uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
