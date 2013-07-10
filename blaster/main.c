@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uuid/uuid.h>
+#include <time.h>
 
 // Bloecke
 // 0x18000 - 0x18FFF Random Zugriff Block 1.1
@@ -31,6 +32,8 @@
 #define LEN_NAME         0x0F
 #define RES_MODEL        0x1E040
 #define LEN_MODEL        0x0E
+#define RES_FLASHTIME    0x1E060
+#define LEN_FLASHTIME    0x04
 
 #define RES_B_ERR_05     0x1C000
 #define LEN_B_ERR_05     73
@@ -115,6 +118,15 @@ int main(int nArgs, char **argv) {
     char *model = "LARS-ABCD-1234";
     memcpy(output + RES_MODEL, model, LEN_MODEL);
     fprintf(stderr, "Model: %s\n", model);
+
+// Zeit setzen
+    time_t my_time = time(NULL) + 34;
+    memcpy(output + RES_FLASHTIME, (void *) &my_time, LEN_FLASHTIME);
+    struct tm *timeinfo = localtime(&my_time);
+    char b[64];
+    memset(b, 0, 64);
+    strftime(b, 64, "Erzeugt am %d.%m.%Y um %H:%M:%S", timeinfo);
+    fprintf(stderr, "%s\n", b);
 
 // Blöcke für Random Zugriff initialisieren
     output[RES_BLOCK_11] = 1;

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <uuid/uuid.h>
+#include <time.h>
 
 #include "ip_list.h"
 #include "ip_tools.h"
@@ -57,6 +58,17 @@ int main(int argc, char *argv[]) {
                     char uuid[37];
                     uuid_unparse(buffer, uuid);
                     printf("UUID: %s\n", uuid);
+                    unknown = 0;
+                }
+                if (!memcmp("time", cbuffer, 4)) {
+                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    memset(buffer, 0, 512);
+                    node_getTime(ip, buffer);
+                    struct tm *timeinfo = localtime((const time_t *) buffer);
+                    char b[64];
+                    memset(b, 0, 64);
+                    strftime(b, 64, "%d.%m.%Y, %H:%M:%S", timeinfo);
+                    printf("%s\n", b);
                     unknown = 0;
                 }
                 break;

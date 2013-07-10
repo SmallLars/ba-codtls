@@ -31,6 +31,8 @@
 #define LEN_NAME         0x0F
 #define RES_MODEL        0x1E040
 #define LEN_MODEL        0x0E
+#define RES_FLASHTIME    0x1E060
+#define LEN_FLASHTIME    0x04
 
 #define RES_B_ERR_05     0x1C000
 #define LEN_B_ERR_05     73

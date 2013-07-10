@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <poll.h>
+#include <arpa/inet.h>
 
 #include "node_com.h"
 #include "ip_tools.h"
@@ -28,6 +29,12 @@ void node_getModel(struct in6_addr *ip, char *target) {
 
 void node_getUUID(struct in6_addr *ip, char *target) {
   coap_request(ip, COAP_REQUEST_GET, "d/uuid", target);
+}
+
+void node_getTime(struct in6_addr *ip, char *target) {
+  coap_request(ip, COAP_REQUEST_GET, "d/time", target);
+  uint32_t *time = (uint32_t *) target;
+  *time = ntohl(*time);
 }
 
 void node_handshake(struct in6_addr *ip) {

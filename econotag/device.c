@@ -36,6 +36,7 @@ PROCESS_THREAD(server_firmware, ev, data)
   rest_activate_resource(&resource_device_name);
   rest_activate_resource(&resource_device_model);
   rest_activate_resource(&resource_device_uuid);
+  rest_activate_resource(&resource_device_time);
 
 	while(1) {
 		PROCESS_WAIT_EVENT();
