@@ -6,6 +6,7 @@
 #include "er-coap-13-dtls.h"
 #include "er-coap-13-dtls-data.h"
 #include "er-coap-13-dtls-random.h"
+#include "../../../econotag/tools.h"
 
 /*************************************************************************/
 /*  HANDSHAKE                                                            */
@@ -49,7 +50,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         ServerHello_t *answer = (ServerHello_t *) handshake->payload;
         answer->server_version.major = 3;
         answer->server_version.minor = 3;
-        answer->random.gmt_unix_time = 0; // TODO
+        answer->random.gmt_unix_time = uip_htonl(getTime());
         random_x(answer->random.random_bytes, 28);
         answer->session_id.len = 8;
         memcpy (answer->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
@@ -62,7 +63,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
         memcpy(ci.session, "IJKLMNOP", 8);
         ci.epoch = 1;
-        ci.pending = 0;
+        ci.pending = 1;
+        // TODO private key
         insertClient(&ci);
 
         ClientKey_t ck;
@@ -70,14 +72,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         ck.epoch = 1;
         memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
         insertKey(&ck);
-
-        uint8_t key[17];
-        key[16] = 0;
-        getKey(key, (uint8_t *) &UIP_IP_BUF->srcipaddr, 1);
-        printf("Key: %s - Ip: ", key);
-        int i;
-        for (i = 0; i < 16; i++) printf("%02x", ((uint8_t *) &UIP_IP_BUF->srcipaddr)[i]);
-        printf("\n");
 
         set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
       }
