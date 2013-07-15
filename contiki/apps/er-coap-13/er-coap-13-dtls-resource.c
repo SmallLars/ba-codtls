@@ -13,70 +13,78 @@
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
   const uint8_t *payload = 0;
-  int len = REST.get_request_payload(request, &payload);
-  if (len && payload) {
-    Handshake_t *handshake = (Handshake_t *) payload;
+  size_t pay_len = REST.get_request_payload(request, &payload);
+  if (pay_len && payload) {
+    size_t session_len = 0;
+    const char *session = NULL;
+    if ((session_len = REST.get_query_variable(request, "s", &session))) {
+      PRINTF("Session: %.*s\n", session_len, session);
 
-    if (handshake->msg_type == client_hello) {
-      ClientHello_t *clienthello = (ClientHello_t *) handshake->payload;
+      ClientKey_t ck;
+      ck.index = 0;
+      ck.epoch = 1;
+      memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
+      insertKey(&ck);
 
-      uint8_t session_len = clienthello->data[0];
-      uint8_t cookie_len = clienthello->data[session_len + 1];
+      buffer[0] = 20;
+      set_response(response, CHANGED_2_04, APPLICATION_OCTET_STREAM, buffer, 1);
+    } else {
+      Handshake_t *handshake = (Handshake_t *) payload;
 
-      if (cookie_len == 0) {
-        Handshake_t *handshake = (Handshake_t *) buffer;
+      if (handshake->msg_type == client_hello) {
+        ClientHello_t *clienthello = (ClientHello_t *) handshake->payload;
 
-        handshake->msg_type = hello_verify_request;
-        handshake->length[0] = 0;
-        handshake->length[1] = 0;
-        handshake->length[2] = 11;
+        uint8_t session_len = clienthello->data[0];
+        uint8_t cookie_len = clienthello->data[session_len + 1];
 
-        HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) handshake->payload;
-        answer->server_version.major = 3;
-        answer->server_version.minor = 3;
-        answer->cookie_len = 8;
-        memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
-        set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 15);
-      } else {
-        uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
+        if (cookie_len == 0) {
+          Handshake_t *handshake = (Handshake_t *) buffer;
 
-        Handshake_t *handshake = (Handshake_t *) buffer;
+          handshake->msg_type = hello_verify_request;
+          handshake->length[0] = 0;
+          handshake->length[1] = 0;
+          handshake->length[2] = 11;
 
-        handshake->msg_type = server_hello;
-        handshake->length[0] = 0;
-        handshake->length[1] = 0;
-        handshake->length[2] = sizeof(ServerHello_t);
+          HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) handshake->payload;
+          answer->server_version.major = 3;
+          answer->server_version.minor = 3;
+          answer->cookie_len = 8;
+          memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
+          set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 15);
+        } else {
+          uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
-        ServerHello_t *answer = (ServerHello_t *) handshake->payload;
-        answer->server_version.major = 3;
-        answer->server_version.minor = 3;
-        answer->random.gmt_unix_time = uip_htonl(getTime());
-        random_x(answer->random.random_bytes, 28);
-        answer->session_id.len = 8;
-        memcpy (answer->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
-        answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
-        answer->compression_method = null;
-        // TODO answer->extensions;
+          Handshake_t *handshake = (Handshake_t *) buffer;
 
-        ClientInfo_t ci;
-        memset(&ci, 0, 60);
-        memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
-        memcpy(ci.session, "IJKLMNOP", 8);
-        ci.epoch = 1;
-        ci.pending = 1;
-        // TODO private key
-        insertClient(&ci);
+          handshake->msg_type = server_hello;
+          handshake->length[0] = 0;
+          handshake->length[1] = 0;
+          handshake->length[2] = sizeof(ServerHello_t);
 
-        ClientKey_t ck;
-        ck.index = 0;
-        ck.epoch = 1;
-        memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
-        insertKey(&ck);
+          ServerHello_t *answer = (ServerHello_t *) handshake->payload;
+          answer->server_version.major = 3;
+          answer->server_version.minor = 3;
+          answer->random.gmt_unix_time = uip_htonl(getTime());
+          random_x(answer->random.random_bytes, 28);
+          answer->session_id.len = 8;
+          memcpy (answer->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
+          answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
+          answer->compression_method = null;
+          // TODO answer->extensions;
 
-        set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
+          ClientInfo_t ci;
+          memset(&ci, 0, 60);
+          memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+          memcpy(ci.session, "IJKLMNOP", 8);
+          ci.epoch = 1;
+          ci.pending = 1;
+          // TODO private key
+          insertClient(&ci);
+
+          set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
+        }
       }
     }
-
   }
 }
 

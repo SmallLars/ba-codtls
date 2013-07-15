@@ -55,7 +55,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
     DTLSRecord_t *record = (DTLSRecord_t *) packet;
     record->protocol = 1;
     record->version= 2;
-    record->epoch = 0;
+    record->epoch = 1;
     record->len = 1;
     record->length = payload_length;
 
@@ -80,6 +80,8 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, int len) {
 
     uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + len);
   }
+
+  changeIfPending(conn->ripaddr.u8);
 }
 
 /* Private Funktionen ------------------------------------------------------ */

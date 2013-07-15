@@ -86,6 +86,7 @@ void dtls_handshake(struct in6_addr *ip) {
   memset(buffer, 0, 128);
   coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  printf("Step 1 done.\n");
 
   Handshake_t *handshake = (Handshake_t *) buffer;
   HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) handshake->payload;
@@ -94,8 +95,13 @@ void dtls_handshake(struct in6_addr *ip) {
   memset(buffer, 0, 128);
   coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  printf("Step 2 done.\n");
 
-  printf("Server Hello erhalten.\n");
+  memset(buffer, 0, 128);
+  message[0] = 20;
+  coap_setPayload(message, 1);
+  coap_request(ip, COAP_REQUEST_POST, "dtls?s=IJKLMNOP", buffer);
+  printf("Step 3 done.\n");
 }
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
@@ -153,10 +159,10 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
   ssize_t db_len;
 
   // TODO Versionprüfung
-  //   printf("Version major: %u\n", record->version);
+  //   printf("Version: %u\n", record->version);
 
   // Bei Bedarf entschlüsseln
-  if (0) {
+  if (record->epoch) {
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
     uint8_t oldCode[MAC_LEN];

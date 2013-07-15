@@ -10,31 +10,41 @@
 
 /* Record Layer Datenstrukturen -------------------------------------------- */
 
-/*
-protocol: 0 = none
-          1 = coap
-version:  0 = Version 254.255 (DTLS 1.0)
-          1 = 16-bit version field
-          2 = Version 254.253 (DTLS 1.2)
-          3 = Reserved for future use
-epoch:    0 = Epoch 0
-          1 = Epoch 1
-          2 = Epoch 2
-          3 = Epoch 3
-          4 = Epoch 4
-          5 = 8-bit epoch field
-          6 = 16-bit epoch field
-          7 = Implicit -- same as previous record in the datagram
-len:      0 = Length 0
-          1 = 8-bit length field
-          2 = 16-bit length field
-          3 = Implicit -- last record in the datagram
-*/
+typedef enum {
+  none = 0,
+  coap = 1
+} Protocol;
+
+typedef enum {
+  dtls_1_0 = 0,
+  version_16_bit = 1,
+  dtls_1_2 = 2,
+  version_future_use = 3
+} Version;
+
+typedef enum {
+  epoch_0 = 0,
+  epoch_1 = 1,
+  epoch_2 = 2,
+  epoch_3 = 3,
+  epoch_4 = 4,
+  epoch_8_bit = 5,
+  epoch_16_bit = 6,
+  epoch_implicit = 7 // same as previous record in the datagram
+} Epoch;
+
+typedef enum {
+  length_0 = 0,
+  length_8_bit = 1,
+  length_16_bit = 2,
+  length_implicit = 3 // last record in the datagram
+} Length;
+
 typedef struct {
-  unsigned int protocol:1;    
-  unsigned int version:2;
-  unsigned int epoch:3;
-  unsigned int len:2;
+  Protocol protocol:1;    
+  Version version:2;
+  Epoch epoch:3;
+  Length len:2;
   uint8_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;

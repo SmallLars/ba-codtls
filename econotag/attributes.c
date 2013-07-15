@@ -11,18 +11,17 @@
 /*  DEVICE NAME                                                          */
 /*************************************************************************/
 void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-/*
   nvm_getVar(buffer, RES_NAME, LEN_NAME);
   buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
   set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_NAME, REST_MAX_CHUNK_SIZE - 1));
-*/
-  // printf("Preferred Size: %u\n", preferred_size);
 
+/*
   int i;
   for (i = 0; i < preferred_size; i+=2) sprintf(buffer + i, "%02X", *offset);
   REST.set_response_payload(response, buffer, preferred_size);
   *offset += preferred_size;
   if (*offset > 250) *offset = -1;
+*/
 }
 
 /*************************************************************************/
