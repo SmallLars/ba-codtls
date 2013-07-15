@@ -78,8 +78,20 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           memcpy(ci.session, "IJKLMNOP", 8);
           ci.epoch = 1;
           ci.pending = 1;
-          // TODO private key
+          do {
+            random_x((uint8_t *) ci.private_key, 32);
+          } while (!ecc_is_valid_key(ci.private_key));
           insertClient(&ci);
+
+          uint32_t result_x[8];
+          uint32_t result_y[8];
+          uint32_t base_x[8];
+          uint32_t base_y[8];
+          nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
+          nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
+          printf("ECC - START\n");
+          ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
+          printf("ECC - ENDE\n");
 
           set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
         }

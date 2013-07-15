@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <uuid/uuid.h>
@@ -28,11 +29,15 @@
 #define LEN_UUID         0x10
 #define RES_PIN          0x1E018
 #define LEN_PIN          0x08
-#define RES_NAME         0x1E020
+#define RES_ECC_BASE_X   0x1E020
+#define LEN_ECC_BASE_X   0x20
+#define RES_ECC_BASE_Y   0x1E040
+#define LEN_ECC_BASE_Y   0x20
+#define RES_NAME         0x1E060
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E040
+#define RES_MODEL        0x1E080
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E060
+#define RES_FLASHTIME    0x1E0A0
 #define LEN_FLASHTIME    0x04
 
 #define RES_B_ERR_05     0x1C000
@@ -78,6 +83,11 @@ int main(int nArgs, char **argv) {
 
     for (; i < 0x1F000; i++) output[i] = 0;
 
+// Mac setzen
+    unsigned char mac[8] = {0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, (unsigned char) m};
+    for (i = 0; i < 8; i++) output[RES_MAC + i] = mac[i];
+    fprintf(stderr, "MAC-Adresse: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+
 // UUID setzen
     unsigned char uuid_bin[16];
     uuid_generate(uuid_bin);
@@ -109,6 +119,27 @@ int main(int nArgs, char **argv) {
     }
     fprintf(stderr, "PIN: %c%c%c%c%c%c%c%c\n", pin[0], pin[1], pin[2], pin[3], pin[4], pin[5], pin[6], pin[7]);
 
+// ECC Base Points setzen
+    uint32_t *base_x = (uint32_t *) (output + RES_ECC_BASE_X);
+    base_x[0] = 0xd898c296;
+    base_x[1] = 0xf4a13945;
+    base_x[2] = 0x2deb33a0;
+    base_x[3] = 0x77037d81;
+    base_x[4] = 0x63a440f2;
+    base_x[5] = 0xf8bce6e5;
+    base_x[6] = 0xe12c4247;
+    base_x[7] = 0x6b17d1f2;
+
+    uint32_t *base_y = (uint32_t *) (output + RES_ECC_BASE_Y);
+    base_y[0] = 0x37bf51f5;
+    base_y[1] = 0xcbb64068;
+    base_y[2] = 0x6b315ece;
+    base_y[3] = 0x2bce3357;
+    base_y[4] = 0x7c0f9e16;
+    base_y[5] = 0x8ee7eb4a;
+    base_y[6] = 0xfe1a7f9b;
+    base_y[7] = 0x4fe342e2;
+
 // Name setzen
     char *name = "DTLS-Testserver";
     memcpy(output + RES_NAME, name, LEN_NAME);
@@ -131,11 +162,6 @@ int main(int nArgs, char **argv) {
 // Blöcke für Random Zugriff initialisieren
     output[RES_BLOCK_11] = 1;
     output[RES_BLOCK_21] = 1;
-
-// Mac setzen
-    unsigned char mac[8] = {0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, (unsigned char) m};
-    for (i = 0; i < 8; i++) output[RES_MAC + i] = mac[i];
-    fprintf(stderr, "MAC-Adresse: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
 
 // Fehlermeldungen setzen
     char *buffer;

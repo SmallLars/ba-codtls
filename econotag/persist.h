@@ -27,12 +27,17 @@
 #define LEN_UUID         0x10
 #define RES_PIN          0x1E018
 #define LEN_PIN          0x08
-#define RES_NAME         0x1E020
+#define RES_ECC_BASE_X   0x1E020
+#define LEN_ECC_BASE_X   0x20
+#define RES_ECC_BASE_Y   0x1E040
+#define LEN_ECC_BASE_Y   0x20
+#define RES_NAME         0x1E060
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E040
+#define RES_MODEL        0x1E080
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E060
+#define RES_FLASHTIME    0x1E0A0
 #define LEN_FLASHTIME    0x04
+
 
 #define RES_B_ERR_05     0x1C000
 #define LEN_B_ERR_05     73
