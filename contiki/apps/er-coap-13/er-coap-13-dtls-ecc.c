@@ -474,18 +474,15 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
 	ecc_setZero(Qx, 8);
 	ecc_setZero(Qy, 8);
 
-	uint32_t tempx[8];
-	uint32_t tempy[8];
-
 	int i;
 	for (i = 256;i--;){
-		ecc_ec_double(Qx, Qy, tempx, tempy);
-		copy(tempx, Qx,arrayLength);
-		copy(tempy, Qy,arrayLength);
+		ecc_ec_double(Qx, Qy, resultx, resulty);
+		copy(resultx, Qx,arrayLength);
+		copy(resulty, Qy,arrayLength);
 		if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
-			ecc_ec_add(Qx, Qy, px, py, tempx, tempy); //eccAdd
-			copy(tempx, Qx,arrayLength);
-			copy(tempy, Qy,arrayLength);
+			ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
+			copy(resultx, Qx,arrayLength);
+			copy(resulty, Qy,arrayLength);
 		}
 	}
 	copy(Qx, resultx,arrayLength);
