@@ -93,7 +93,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
           nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
           printf("ECC - START\n");
-          ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
+          //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
           printf("ECC - ENDE\n");
 
           set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 2);

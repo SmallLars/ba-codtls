@@ -13,19 +13,18 @@
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
 
 uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len) {
-  Handshake_t *handshake = (Handshake_t *) target;
+  Content_t *content = (Content_t *) target;
 
-  handshake->msg_type = client_hello;
-  handshake->length[0] = 0;
-  handshake->length[1] = 0;
-  handshake->length[2] = 0;
+  content->type = client_hello;
+  content->len = length_8_bit;
+  content->payload[0] = 0;
 
-  ClientHello_t *clientHello = (ClientHello_t *) handshake->payload;
+  ClientHello_t *clientHello = (ClientHello_t *) (content->payload + content->len);
   clientHello->client_version.major = 3;
   clientHello->client_version.minor = 3;
   clientHello->random.gmt_unix_time = htonl(time);
   memcpy(clientHello->random.random_bytes, random, 28);
-  handshake->length[2] += sizeof(ClientHello_t);
+  content->payload[0] += sizeof(ClientHello_t);
 
   uint32_t data_index = 0;
 
@@ -67,9 +66,9 @@ uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *
   clientHello->data[data_index++] = 0x02;        // Länge der Supported Point Formats Extension Daten
   clientHello->data[data_index++] = 0x01;        // Länge des Point Formats Arrays
   clientHello->data[data_index++] = 0x00;        // Uncompressed Point = 0
-  handshake->length[2] += data_index;
+  content->payload[0] += data_index;
 
-  return sizeof(Handshake_t) + handshake->length[2];
+  return sizeof(Content_t) + content->len + content->payload[0];
 }
 
 void dtls_handshake(struct in6_addr *ip) {
@@ -88,8 +87,8 @@ void dtls_handshake(struct in6_addr *ip) {
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Step 1 done.\n");
 
-  Handshake_t *handshake = (Handshake_t *) buffer;
-  HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) handshake->payload;
+  Content_t *content = (Content_t *) buffer;
+  HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (content->payload + content->len);
   len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
 
   memset(buffer, 0, 128);

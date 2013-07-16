@@ -37,7 +37,7 @@ typedef enum {
   length_0 = 0,
   length_8_bit = 1,
   length_16_bit = 2,
-  length_implicit = 3 // last record in the datagram
+  length_48_bit = 3
 } Length;
 
 typedef struct {
