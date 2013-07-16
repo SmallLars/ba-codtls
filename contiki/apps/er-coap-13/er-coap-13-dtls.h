@@ -35,7 +35,7 @@ typedef enum {
   length_0 = 0,
   length_8_bit = 1,
   length_16_bit = 2,
-  length_implicit = 3 // last record in the datagram
+  length_48_bit = 3
 } Length;
 
 typedef struct {
@@ -50,21 +50,6 @@ typedef struct {
 /* ------------------------------------------------------------------------- */
 
 typedef enum {
-  change_cipher_spec = 20,
-  alert = 21,
-  handshake = 22,
-  application_data = 23
-  // max = 255
-} __attribute__ ((packed)) ContentType;
-
-typedef struct {
-  ContentType type;
-  uint8_t payload[0];
-} __attribute__ ((packed)) Content;
-
-/* Handshake Datenstrukturen ----------------------------------------------- */
-
-typedef enum {
   hello_request = 0,
   client_hello = 1,
   server_hello = 2,
@@ -75,15 +60,21 @@ typedef enum {
   server_hello_done = 14,
   certificate_verify = 15,
   client_key_exchange = 16,
-  finished = 20
-  // max = 255
-} __attribute__ ((packed)) HandshakeType;
+  finished = 20,
+  change_cipher_spec = 32,
+  alert = 33,
+  handshake = 34
+  // max = 63
+} __attribute__ ((packed)) ContentType;
 
 typedef struct {
-  HandshakeType msg_type;
-  uint8_t length[3];
+  ContentType type:6;
+  Length len:2;
+  uint8_t length;
   uint8_t payload[0];
-} __attribute__ ((packed)) Handshake_t;
+} __attribute__ ((packed)) Content_t;
+
+/* Handshake Datenstrukturen ----------------------------------------------- */
 
 typedef struct {
   uint8_t major;

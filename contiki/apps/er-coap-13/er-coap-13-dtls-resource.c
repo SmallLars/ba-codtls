@@ -18,6 +18,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
     size_t session_len = 0;
     const char *session = NULL;
     if ((session_len = REST.get_query_variable(request, "s", &session))) {
+      // ClientKeyExchange
       PRINTF("Session: %.*s\n", session_len, session);
 
       ClientKey_t ck;
@@ -26,7 +27,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
       memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
       insertKey(&ck);
 
-      buffer[0] = 20;
+      Content_t *c = (Content_t *) buffer;
+      c->type = change_cipher_spec;
+      c->len = length_0;
       set_response(response, CHANGED_2_04, APPLICATION_OCTET_STREAM, buffer, 1);
     } else {
       Handshake_t *handshake = (Handshake_t *) payload;
@@ -38,6 +41,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         uint8_t cookie_len = clienthello->data[session_len + 1];
 
         if (cookie_len == 0) {
+          // ClientHello 1 ohne Cookie
           Handshake_t *handshake = (Handshake_t *) buffer;
 
           handshake->msg_type = hello_verify_request;
@@ -52,6 +56,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
           set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 15);
         } else {
+          // ClientHello 2 mit Cookie
           uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
           Handshake_t *handshake = (Handshake_t *) buffer;
