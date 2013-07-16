@@ -34,9 +34,6 @@ PROCESS_THREAD(server_firmware, ev, data)
   rest_init_engine();
 
   rest_activate_resource(&resource_device_name);
-//  rest_set_pre_handler(&resource_device_name, &device_name_pre_handler);
-//  rest_set_post_handler(&resource_device_name, &device_name_post_handler);
-
   rest_activate_resource(&resource_device_model);
   rest_activate_resource(&resource_device_uuid);
   rest_activate_resource(&resource_device_time);
