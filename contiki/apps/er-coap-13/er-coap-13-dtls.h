@@ -62,15 +62,13 @@ typedef enum {
   client_key_exchange = 16,
   finished = 20,
   change_cipher_spec = 32,
-  alert = 33,
-  handshake = 34
+  alert = 33
   // max = 63
 } __attribute__ ((packed)) ContentType;
 
 typedef struct {
   ContentType type:6;
   Length len:2;
-  uint8_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) Content_t;
 

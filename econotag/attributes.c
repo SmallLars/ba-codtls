@@ -27,9 +27,10 @@ void ecc_wait_14() {
     random_x((uint8_t *) private_key, 32);
   } while (!ecc_is_valid_key(private_key));
 
+  uint32_t time = *MACA_CLK;
   printf("ECC - START\n");
   ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
-  printf("ECC - ENDE\n");
+  printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 25000);
 }
 
 void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {

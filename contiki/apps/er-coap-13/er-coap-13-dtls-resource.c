@@ -18,7 +18,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
     size_t session_len = 0;
     const char *session = NULL;
     if ((session_len = REST.get_query_variable(request, "s", &session))) {
-      // ClientKeyExchange
+      // ClientKeyExchange + ChangeCypherSpac trifft ein -> Antwort generieren:
       PRINTF("Session: %.*s\n", session_len, session);
 
       ClientKey_t ck;
@@ -32,41 +32,39 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
       c->len = length_0;
       set_response(response, CHANGED_2_04, APPLICATION_OCTET_STREAM, buffer, 1);
     } else {
-      Handshake_t *handshake = (Handshake_t *) payload;
+      Content_t *content = (Content_t *) payload;
 
-      if (handshake->msg_type == client_hello) {
-        ClientHello_t *clienthello = (ClientHello_t *) handshake->payload;
+      if (content->type == client_hello) {
+        ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
 
         uint8_t session_len = clienthello->data[0];
         uint8_t cookie_len = clienthello->data[session_len + 1];
 
         if (cookie_len == 0) {
           // ClientHello 1 ohne Cookie
-          Handshake_t *handshake = (Handshake_t *) buffer;
+          Content_t *content = (Content_t *) buffer;
 
-          handshake->msg_type = hello_verify_request;
-          handshake->length[0] = 0;
-          handshake->length[1] = 0;
-          handshake->length[2] = 11;
+          content->type = hello_verify_request;
+          content->len = length_8_bit;
+          content->payload[0] = 11;
 
-          HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) handshake->payload;
+          HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) (content->payload + 1);
           answer->server_version.major = 3;
           answer->server_version.minor = 3;
           answer->cookie_len = 8;
           memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
-          set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 15);
+          set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 13);
         } else {
           // ClientHello 2 mit Cookie
           uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
-          Handshake_t *handshake = (Handshake_t *) buffer;
+          Content_t *content = (Content_t *) buffer;
 
-          handshake->msg_type = server_hello;
-          handshake->length[0] = 0;
-          handshake->length[1] = 0;
-          handshake->length[2] = sizeof(ServerHello_t);
+          content->type = server_hello;
+          content->len = length_8_bit;
+          content->payload[0] = sizeof(ServerHello_t);
 
-          ServerHello_t *answer = (ServerHello_t *) handshake->payload;
+          ServerHello_t *answer = (ServerHello_t *) (content->payload + content->len);
           answer->server_version.major = 3;
           answer->server_version.minor = 3;
           answer->random.gmt_unix_time = uip_htonl(getTime());
@@ -98,7 +96,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
           printf("ECC - ENDE\n");
 
-          set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 4);
+          set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 2);
         }
       }
     }

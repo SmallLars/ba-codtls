@@ -41,7 +41,7 @@ typedef enum {
 } Length;
 
 typedef struct {
-  Protocol protocol:1;    
+  Protocol protocol:1;
   Version version:2;
   Epoch epoch:3;
   Length len:2;
@@ -72,7 +72,6 @@ typedef enum {
 typedef struct {
   ContentType type:6;
   Length len:2;
-  uint8_t length;
   uint8_t payload[0];
 } __attribute__ ((packed)) Content_t;
 
