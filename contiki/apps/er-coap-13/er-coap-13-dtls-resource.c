@@ -1,12 +1,20 @@
 #include <string.h>
 
-#include "persist.h"
 #include "erbium.h"
 #include "er-coap-13.h"
 #include "er-coap-13-dtls.h"
 #include "er-coap-13-dtls-data.h"
 #include "er-coap-13-dtls-random.h"
-#include "../../../econotag/tools.h"
+#include "flash-store.h"
+
+#define DEBUG 0
+
+#if DEBUG
+  #include <stdio.h>
+  #define PRINTF(...) printf(__VA_ARGS__)
+#else
+  #define PRINTF(...)
+#endif
 
 /*************************************************************************/
 /*  HANDSHAKE                                                            */
@@ -30,7 +38,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
       Content_t *c = (Content_t *) buffer;
       c->type = change_cipher_spec;
       c->len = length_0;
-      set_response(response, CHANGED_2_04, APPLICATION_OCTET_STREAM, buffer, 1);
+
+      REST.set_response_status(response, CHANGED_2_04);
+      REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+      REST.set_response_payload(response, buffer, 1);
     } else {
       Content_t *content = (Content_t *) payload;
 
@@ -53,7 +64,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           answer->server_version.minor = 3;
           answer->cookie_len = 8;
           memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
-          set_response(response, VERIFY_1_02, APPLICATION_OCTET_STREAM, buffer, 13);
+
+          REST.set_response_status(response, VERIFY_1_02);
+          REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+          REST.set_response_payload(response, buffer, 13);
         } else {
           // ClientHello 2 mit Cookie
           uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
@@ -96,7 +110,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
           printf("ECC - ENDE\n");
 
-          set_response(response, CREATED_2_01, APPLICATION_OCTET_STREAM, buffer, sizeof(ServerHello_t) + 2);
+          REST.set_response_status(response, CREATED_2_01);
+          REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+          REST.set_response_payload(response, buffer, sizeof(ServerHello_t) + 2);
         }
       }
     }

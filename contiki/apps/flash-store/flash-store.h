@@ -1,6 +1,5 @@
-/* __PERSIST_H__ */
-#ifndef __PERSIST_H__
-#define __PERSIST_H__
+#ifndef FLASH_STORE_H_
+#define FLASH_STORE_H_
 
 #include <nvm.h>
 
@@ -11,7 +10,7 @@
 // 0x1B000 - 0x1BFFF Random Zugriff Block 2.2
 // 0x1C000 - 0x1CFFF Fehlermeldungen
 // 0x1D000 - 0x1DFFF Fehlermeldungen
-// 0x1E000 - 0x1EFFF MAC, UUID, PIN
+// 0x1E000 - 0x1EFFF MAC, UUID, PIN, ECC_BASE_XY, NAME, MODEL, TIME
 // 0x1F000 - 0x1FFFF Systemreserviert
 
 #define RES_BLOCK_11     0x18000
@@ -20,7 +19,19 @@
 #define RES_BLOCK_22     0x1B000
 #define LEN_BLOCK_XX     0x1000
 
-//Read Only Vars
+//Read Only Fehlermeldungen
+#define RES_B_ERR_05     0x1C000
+#define LEN_B_ERR_05     73
+#define RES_B_ERR_04     0x1C080
+#define LEN_B_ERR_04     51
+#define RES_B_ERR_03     0x1C100
+#define LEN_B_ERR_03     52
+#define RES_B_ERR_02     0x1C180
+#define LEN_B_ERR_02     31
+#define RES_B_ERR_01     0x1C200
+#define LEN_B_ERR_01     61
+
+//Read Only Variablen
 #define RES_MAC          0x1E000
 #define LEN_MAC          0x08
 #define RES_UUID         0x1E008
@@ -38,18 +49,6 @@
 #define RES_FLASHTIME    0x1E0A0
 #define LEN_FLASHTIME    0x04
 
-
-#define RES_B_ERR_05     0x1C000
-#define LEN_B_ERR_05     73
-#define RES_B_ERR_04     0x1C080
-#define LEN_B_ERR_04     51
-#define RES_B_ERR_03     0x1C100
-#define LEN_B_ERR_03     52
-#define RES_B_ERR_02     0x1C180
-#define LEN_B_ERR_02     31
-#define RES_B_ERR_01     0x1C200
-#define LEN_B_ERR_01     61
-
 //Random Access Vars - Byte 0 bis 8192
 #define RES_BLK_1_ACTIVE       0
 #define RES_BLK_2_ACTIVE    4096
@@ -66,8 +65,6 @@
 
 #define RES_CLIENT_KEYS      583
 #define LEN_CLIENT_KEYS      360
-
-
 
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes);
 
@@ -91,4 +88,4 @@ typedef enum
 } nvmErr_t;
 */
 
-#endif /* __PERSIST_H__ */
+#endif /* FLASH_STORE_H_ */

@@ -1,4 +1,4 @@
-#include "persist.h"
+#include "flash-store.h"
 
 #include <string.h>
 

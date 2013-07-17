@@ -1,30 +1,17 @@
-#include "tools.h"
-#include "persist.h"
+#include <string.h>
 
 #include <erbium.h>
 #include <er-coap-13.h>
 #include <er-coap-13-separate.h>
 #include <er-coap-13-transactions.h>
-#include <string.h>
 
 #include "mc1322x.h"
+#include "flash-store.h"
 
 /*
 static uint8_t separate_active = 0;
 
 void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-/*
-  nvm_getVar(buffer, RES_NAME, LEN_NAME);
-  buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-  set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_NAME, REST_MAX_CHUNK_SIZE - 1));
-*/
-/*
-  int i;
-  for (i = 0; i < preferred_size; i+=2) sprintf(buffer + i, "%02X", *offset);
-  REST.set_response_payload(response, buffer, preferred_size);
-  *offset += preferred_size;
-  if (*offset > 250) *offset = -1;
-*/
 /*
   if (separate_active) {
       coap_separate_reject();
@@ -81,7 +68,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
     if (query[0] == 'n') {
       nvm_getVar(buffer, RES_NAME, LEN_NAME);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-      set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_NAME, REST_MAX_CHUNK_SIZE - 1));
+      REST.set_response_status(response, CONTENT_2_05);
+      REST.set_header_content_type(response, TEXT_PLAIN);
+      REST.set_response_payload(response, buffer, LEN_NAME);
       /*
       int i;
       for (i = 0; i < preferred_size; i+=2) sprintf(buffer + i, "%02X", *offset);
@@ -97,7 +86,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
     if (query[0] == 'm') {
       nvm_getVar(buffer, RES_MODEL, LEN_MODEL);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-      set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_MODEL, REST_MAX_CHUNK_SIZE - 1));
+      REST.set_response_status(response, CONTENT_2_05);
+      REST.set_header_content_type(response, TEXT_PLAIN);
+      REST.set_response_payload(response, buffer, LEN_MODEL);
       return;
     }
 
@@ -107,7 +98,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
     if (query[0] == 'u') {
       nvm_getVar(buffer, RES_UUID, LEN_UUID);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-      set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, min(LEN_UUID, REST_MAX_CHUNK_SIZE - 1));
+      REST.set_response_status(response, CONTENT_2_05);
+      REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+      REST.set_response_payload(response, buffer, LEN_UUID);
     }
 
     /*************************************************************************/
@@ -116,7 +109,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
     if (query[0] == 't') {
       uint32_t time = uip_htonl(getTime());
       memcpy(buffer, &time, 4);
-      set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, 4);
+      REST.set_response_status(response, CONTENT_2_05);
+      REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+      REST.set_response_payload(response, buffer, 4);
     }
 
     /*************************************************************************/
@@ -142,6 +137,8 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
     }
   } else {
     memcpy(buffer, "?i= name | model | uuid | time | ecc", 36);
-    set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, 36);
+    REST.set_response_status(response, CONTENT_2_05);
+    REST.set_header_content_type(response, TEXT_PLAIN);
+    REST.set_response_payload(response, buffer, 36);
   }
 }

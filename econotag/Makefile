@@ -19,10 +19,12 @@ LDFLAGS += "-Wl,-gc-sections"
 # zusätzliche Bibliotheken aus $(CONTIKI)/apps
 APPS += er-coap-13
 APPS += erbium
+APPS += flash-store
 APPS += ecc
+APPS += time
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
-PROJECT_SOURCEFILES = tools.c persist.c attributes.c
+PROJECT_SOURCEFILES = attributes.c
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag erase

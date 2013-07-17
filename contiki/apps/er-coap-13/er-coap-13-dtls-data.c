@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "../../../econotag/persist.h"
+#include "flash-store.h"
 
 /*---------------------------------------------------------------------------*/
 
