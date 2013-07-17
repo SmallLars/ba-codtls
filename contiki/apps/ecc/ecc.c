@@ -36,7 +36,7 @@
  * for ECDH and ECDSA.
  */
 
-#include "er-coap-13-dtls-ecc.h"
+#include "ecc.h"
 
 //simple Functions for addition and substraction of big numbers
 uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);

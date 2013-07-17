@@ -9,29 +9,8 @@
 
 #include "mc1322x.h"
 
-/*************************************************************************/
-/*  DEVICE NAME                                                          */
-/*************************************************************************/
+/*
 static uint8_t separate_active = 0;
-
-void ecc_wait_14() {
-  uint32_t result_x[8];
-  uint32_t result_y[8];
-  uint32_t base_x[8];
-  uint32_t base_y[8];
-  nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
-  nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
-
-  uint32_t private_key[8];
-  do {
-    random_x((uint8_t *) private_key, 32);
-  } while (!ecc_is_valid_key(private_key));
-
-  uint32_t time = *MACA_CLK;
-  printf("ECC - START\n");
-  ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
-  printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
-}
 
 void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
 /*
@@ -46,6 +25,7 @@ void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_
   *offset += preferred_size;
   if (*offset > 250) *offset = -1;
 */
+/*
   if (separate_active) {
       coap_separate_reject();
   } else {
@@ -88,30 +68,80 @@ void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_
     }
   }
 }
+*/
 
-/*************************************************************************/
-/*  DEVICE MODEL                                                         */
-/*************************************************************************/
-void device_model_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-  nvm_getVar(buffer, RES_MODEL, LEN_MODEL);
-  buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-  set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_MODEL, REST_MAX_CHUNK_SIZE - 1));
-}
+void device_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+  size_t query_len = 0;
+  const char *query = NULL;
+  if ((query_len = REST.get_query_variable(request, "i", &query))) {
 
-/*************************************************************************/
-/*  DEVICE IDENTIFIER                                                    */
-/*************************************************************************/
-void device_uuid_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-  nvm_getVar(buffer, RES_UUID, LEN_UUID);
-  buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
-  set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, min(LEN_UUID, REST_MAX_CHUNK_SIZE - 1));
-}
+    /*************************************************************************/
+    /*  DEVICE NAME                                                          */
+    /*************************************************************************/
+    if (query[0] == 'n') {
+      nvm_getVar(buffer, RES_NAME, LEN_NAME);
+      buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
+      set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_NAME, REST_MAX_CHUNK_SIZE - 1));
+      /*
+      int i;
+      for (i = 0; i < preferred_size; i+=2) sprintf(buffer + i, "%02X", *offset);
+      REST.set_response_payload(response, buffer, preferred_size);
+      *offset += preferred_size;
+      if (*offset > 250) *offset = -1;
+      */
+    }
 
-/*************************************************************************/
-/*  DEVICE TIME                                                          */
-/*************************************************************************/
-void device_time_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-  uint32_t time = uip_htonl(getTime());
-  memcpy(buffer, &time, 4);
-  set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, 4);
+    /*************************************************************************/
+    /*  DEVICE MODEL                                                         */
+    /*************************************************************************/
+    if (query[0] == 'm') {
+      nvm_getVar(buffer, RES_MODEL, LEN_MODEL);
+      buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
+      set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, min(LEN_MODEL, REST_MAX_CHUNK_SIZE - 1));
+      return;
+    }
+
+    /*************************************************************************/
+    /*  DEVICE IDENTIFIER                                                    */
+    /*************************************************************************/
+    if (query[0] == 'u') {
+      nvm_getVar(buffer, RES_UUID, LEN_UUID);
+      buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
+      set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, min(LEN_UUID, REST_MAX_CHUNK_SIZE - 1));
+    }
+
+    /*************************************************************************/
+    /*  DEVICE TIME                                                          */
+    /*************************************************************************/
+    if (query[0] == 't') {
+      uint32_t time = uip_htonl(getTime());
+      memcpy(buffer, &time, 4);
+      set_response(response, CONTENT_2_05, APPLICATION_OCTET_STREAM, buffer, 4);
+    }
+
+    /*************************************************************************/
+    /*  DEVICE ECC                                                           */
+    /*************************************************************************/
+    if (query[0] == 'e') {
+      uint32_t result_x[8];
+      uint32_t result_y[8];
+      uint32_t base_x[8];
+      uint32_t base_y[8];
+      nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
+      nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
+
+      uint32_t private_key[8];
+      do {
+        random_x((uint8_t *) private_key, 32);
+      } while (!ecc_is_valid_key(private_key));
+
+      uint32_t time = *MACA_CLK;
+      printf("ECC - START\n");
+      ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
+      printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
+    }
+  } else {
+    memcpy(buffer, "?i= name | model | uuid | time | ecc", 36);
+    set_response(response, CONTENT_2_05, TEXT_PLAIN, buffer, 36);
+  }
 }

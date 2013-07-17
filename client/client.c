@@ -43,6 +43,14 @@ int main(int argc, char *argv[]) {
                     unknown = 0;
                 }
                 break;
+            case 5:
+                if (!memcmp("ecc", cbuffer, 3)) {
+                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 4));
+                    node_eccTest(ip);
+                    printf("Anfrage gesendet.\n");
+                    unknown = 0;
+                }
+                break;
             case 6:
                 if (!memcmp("name", cbuffer, 4)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));

@@ -1125,13 +1125,16 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
     }
   }
 
-  memcpy(target, answer.s, answer.length);
+  if (target != NULL) {
+    memcpy(target, answer.s, answer.length);
+  }
 
   coap_free_context( ctx );
 
   ready = 0;
   payload.s = NULL;
   payload.length = 0;
+  msgtype = COAP_MESSAGE_CON;
   coap_delete_list(optlist);
   optlist = NULL;
 
@@ -1141,4 +1144,8 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
 void coap_setPayload(uint8_t *data, size_t len) {
   payload.s = data;
   payload.length = len;
+}
+
+void coap_setNoneConfirmable() {
+  msgtype = COAP_MESSAGE_NON;
 }

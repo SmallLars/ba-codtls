@@ -4,9 +4,6 @@
 
 #include "erbium.h"
 
-RESOURCE(device_name, METHOD_GET, "d/name","rt=\"gobi.dev.n\";if=\"core.rp\"");
-RESOURCE(device_model, METHOD_GET, "d/model","rt=\"gobi.dev.mdl\";if=\"core.rp\"");
-RESOURCE(device_uuid, METHOD_GET, "d/uuid","rt=\"gobi.dev.id\";if=\"core.rp\"");
-RESOURCE(device_time, METHOD_GET, "d/time","rt=\"gobi.dev.id\";if=\"core.rp\"");
+RESOURCE(device, METHOD_GET, "d","rt=\"device information\";if=\"core.rp\";ct=42");
 
 #endif /* __ATTRIBUTES_H__ */

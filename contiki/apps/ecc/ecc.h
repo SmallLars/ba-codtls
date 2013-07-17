@@ -36,9 +36,8 @@
  * for ECDH and ECDSA.
  */
 
-/* __ER_COAP_13_DTLS_ECC_H__ */
-#ifndef __ER_COAP_13_DTLS_ECC_H__
-#define __ER_COAP_13_DTLS_ECC_H__
+#ifndef ECC_H_
+#define ECC_H_
 
 #include <inttypes.h>
 
@@ -54,4 +53,4 @@ static inline void ecc_ecdh(const uint32_t *px, const uint32_t *py, const uint32
 	ecc_ec_mult(px, py, secret, resultx, resulty);
 }
 
-#endif /* __ER_COAP_13_DTLS_ECC_H__ */
+#endif /* ECC_H_ */

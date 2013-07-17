@@ -19,6 +19,7 @@ LDFLAGS += "-Wl,-gc-sections"
 # zusätzliche Bibliotheken aus $(CONTIKI)/apps
 APPS += er-coap-13
 APPS += erbium
+APPS += ecc
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
 PROJECT_SOURCEFILES = tools.c persist.c attributes.c
