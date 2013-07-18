@@ -1,107 +1,16 @@
 #include "coap_dtls.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <time.h>
+// #include <stdlib.h>
+// #include <stdio.h>
+// #include <string.h>
+// #include <netinet/in.h>
+// #include <time.h>
 
+#include "random.h"
 #include "coap_ccm.h"
-#include "coap_random.h"
 #include "coap_client.h"
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
-
-uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len) {
-  Content_t *content = (Content_t *) target;
-
-  content->type = client_hello;
-  content->len = length_8_bit;
-  content->payload[0] = 0;
-
-  ClientHello_t *clientHello = (ClientHello_t *) (content->payload + content->len);
-  clientHello->client_version.major = 3;
-  clientHello->client_version.minor = 3;
-  clientHello->random.gmt_unix_time = htonl(time);
-  memcpy(clientHello->random.random_bytes, random, 28);
-  content->payload[0] += sizeof(ClientHello_t);
-
-  uint32_t data_index = 0;
-
-  if (sessionID && session_len) {
-    clientHello->data[data_index++] = session_len;
-    memcpy(clientHello->data + data_index, sessionID, session_len);
-    data_index += session_len;
-  } else {
-    clientHello->data[data_index++] = 0;
-  }
-
-  if (cookie && cookie_len) {
-    clientHello->data[data_index++] = cookie_len;
-    memcpy(clientHello->data + data_index, cookie, cookie_len);
-    data_index += cookie_len;
-  } else {
-    clientHello->data[data_index++] = 0;
-  }
-
-  clientHello->data[data_index++] = 0x00;        // Länge der Cyphersuits
-  clientHello->data[data_index++] = 0x02;        // Länge der Cyphersuits
-  clientHello->data[data_index++] = 0xff;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
-  clientHello->data[data_index++] = 0x03;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
-  clientHello->data[data_index++] = 0x01;        // Länge der Compression Methods
-  clientHello->data[data_index++] = 0x00;        // Keine Compression
-  clientHello->data[data_index++] = 0x00;        // Länge der Extensions
-  clientHello->data[data_index++] = 0x0e;        // Länge der Extensions
-  clientHello->data[data_index++] = 0x00;        // Supported Elliptic Curves Extension
-  clientHello->data[data_index++] = 0x0a;        // Supported Elliptic Curves Extension
-  clientHello->data[data_index++] = 0x00;        // Länge der Supported Elliptic Curves Extension Daten
-  clientHello->data[data_index++] = 0x04;        // Länge der Supported Elliptic Curves Extension Daten
-  clientHello->data[data_index++] = 0x00;        // Länge des Elliptic Curves Arrays
-  clientHello->data[data_index++] = 0x02;        // Länge des Elliptic Curves Arrays
-  clientHello->data[data_index++] = 0x00;        // Elliptic Curve secp256r1 = 23
-  clientHello->data[data_index++] = 0x17;        // Elliptic Curve secp256r1 = 23
-  clientHello->data[data_index++] = 0x00;        // Supported Point Formats Extension
-  clientHello->data[data_index++] = 0x0b;        // Supported Point Formats Extension
-  clientHello->data[data_index++] = 0x00;        // Länge der Supported Point Formats Extension Daten
-  clientHello->data[data_index++] = 0x02;        // Länge der Supported Point Formats Extension Daten
-  clientHello->data[data_index++] = 0x01;        // Länge des Point Formats Arrays
-  clientHello->data[data_index++] = 0x00;        // Uncompressed Point = 0
-  content->payload[0] += data_index;
-
-  return sizeof(Content_t) + content->len + content->payload[0];
-}
-
-void dtls_handshake(struct in6_addr *ip) {
-  uint8_t len;
-  uint8_t message[128];
-
-  time_t my_time = time(NULL);
-  uint8_t random[28];
-  random_x(random, 28);
-
-  len = makeClientHello(message, my_time, random, NULL, 0, NULL, 0);
-
-  char buffer[128];
-  memset(buffer, 0, 128);
-  coap_setPayload(message, len);
-  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
-  printf("Step 1 done.\n");
-
-  Content_t *content = (Content_t *) buffer;
-  HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (content->payload + content->len);
-  len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
-
-  memset(buffer, 0, 128);
-  coap_setPayload(message, len);
-  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
-  printf("Step 2 done.\n");
-
-  memset(buffer, 0, 128);
-  message[0] = 20;
-  coap_setPayload(message, 1);
-  coap_request(ip, COAP_REQUEST_POST, "dtls?s=IJKLMNOP", buffer);
-  printf("Step 3 done.\n");
-}
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln
@@ -110,11 +19,9 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
     memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
-    record->protocol = 1;
-    record->version= 2;
+    record->protocol = application_data;
+    record->version= dtls_1_2;
     record->epoch = 0;
-    record->len = 1;
-    record->length = payload_length;
 
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
@@ -132,11 +39,9 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
   } else {
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + len);
     memset(record, 0, sizeof(DTLSRecord_t) + len);
-    record->protocol = 1;
-    record->version= 2;
+    record->protocol = application_data;
+    record->version= dtls_1_2;
     record->epoch = 0;
-    record->len = 1;
-    record->length = len;
 
     memcpy(record->payload, buf, len);
 
@@ -165,20 +70,20 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
     CCMData_t *ccmdata = (CCMData_t*) record->payload;
 
     uint8_t oldCode[MAC_LEN];
-    memcpy(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+    memcpy(oldCode, getMAC(ccmdata, size - sizeof(DTLSRecord_t)), MAC_LEN);
 
-    decrypt(ccmdata, KEY, record->length);
+    decrypt(ccmdata, KEY, size - sizeof(DTLSRecord_t));
 
-    uint32_t check = memcmp(oldCode, getMAC(ccmdata, record->length), MAC_LEN);
+    uint32_t check = memcmp(oldCode, getMAC(ccmdata, size - sizeof(DTLSRecord_t)), MAC_LEN);
     if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-    db_len = (check == 0 ? record->length - sizeof(CCMData_t) - MAC_LEN : 0);
+    db_len = (check == 0 ? size - sizeof(DTLSRecord_t) - sizeof(CCMData_t) - MAC_LEN : 0);
     memcpy(buf, ccmdata->ccm_ciphered, db_len);
   } else {
-    memcpy(buf, record->payload, record->length);
-    db_len = record->length;
+    memcpy(buf, record->payload, size - sizeof(DTLSRecord_t));
+    db_len = size - sizeof(DTLSRecord_t);
   }
 
-  if (record->protocol == 0) {
+  if (record->protocol == alert) {
     printf("Alert erhalten.\n");
     // TODO Alert-Auswertung
     db_len = 0;

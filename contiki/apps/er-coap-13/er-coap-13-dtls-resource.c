@@ -1,3 +1,5 @@
+#include "er-coap-13-dtls-resource.h"
+
 #include <string.h>
 
 #include "erbium.h"

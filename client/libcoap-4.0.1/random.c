@@ -1,4 +1,4 @@
-#include "coap_random.h"
+#include "random.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
