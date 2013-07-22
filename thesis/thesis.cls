@@ -80,24 +80,24 @@
 ]{MinionPro-Regular.otf}
 \def\textsuperscript#1{$^{\text{#1}}$}
 
-%\setsansfont[
-%  Scale=1.04,
-%  Mapping=tex-text,
-%  ExternalLocation=./fonts/,
-%  BoldFont={HelveticaNeue-Condensed.otf},
-%  ItalicFont={HelveticaNeue-ThinItalic.otf},
-%  BoldItalicFont={HelveticaNeue-CondensedObl.otf}
-%]{HelveticaNeue-Thin.otf}
+\setsansfont[
+  Scale=1.04,
+  Mapping=tex-text,
+  ExternalLocation=./fonts/,
+  BoldFont={HelveticaNeue-Condensed.otf},
+  ItalicFont={HelveticaNeue-ThinItalic.otf},
+  BoldItalicFont={HelveticaNeue-CondensedObl.otf}
+]{HelveticaNeue-Thin.otf}
 
-%\setmonofont[
-%  Scale=0.72,
-%  Mapping=tex-text,
-%  ExternalLocation=./fonts/,
-%  BoldFont={DejaVuSansMono-Bold.ttf},
-%  ItalicFont={DejaVuSansMono-Oblique.ttf},
-%  BoldItalicFont={DejaVuSansMono-BoldOblique.ttf},
-%  HyphenChar={-}
-%]{DejaVuSansMono.ttf}
+\setmonofont[
+  Scale=0.72,
+  Mapping=tex-text,
+  ExternalLocation=./fonts/,
+  BoldFont={DejaVuSansMono-Bold.ttf},
+  ItalicFont={DejaVuSansMono-Oblique.ttf},
+  BoldItalicFont={DejaVuSansMono-BoldOblique.ttf},
+  HyphenChar={-}
+]{DejaVuSansMono.ttf}
 
 % renew title command, create subtitle and authoremail command
 \long\def\title{\@dblarg\thesis@title}
