@@ -4,6 +4,8 @@
 
 #include "erbium.h"
 #include "er-coap-13.h"
+#include "er-coap-13-separate.h"
+#include "er-coap-13-transactions.h"
 #include "er-coap-13-dtls.h"
 #include "er-coap-13-dtls-data.h"
 #include "er-coap-13-dtls-random.h"
@@ -18,17 +20,37 @@
   #define PRINTF(...)
 #endif
 
+void generateHello();
+int8_t readHello(void *target, uint8_t offset, uint8_t size);
+
+static uint8_t separate_active = 0;
+
 /*************************************************************************/
-/*  HANDSHAKE                                                            */
+/*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+  if (*offset != 0) {
+    int8_t read = readHello(buffer, *offset, preferred_size);
+    PRINTF("Read: %.*s\n", read, buffer);
+
+    REST.set_response_payload(response, buffer, read == 0 ? preferred_size : read);
+
+    if (read == 0) {
+      *offset += preferred_size;
+    } else {
+      *offset = -1;
+    }
+
+    return;
+  }
+
   const uint8_t *payload = 0;
   size_t pay_len = REST.get_request_payload(request, &payload);
   if (pay_len && payload) {
     size_t session_len = 0;
     const char *session = NULL;
     if ((session_len = REST.get_query_variable(request, "s", &session))) {
-      // ClientKeyExchange + ChangeCypherSpac trifft ein -> Antwort generieren:
+      // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
       PRINTF("Session: %.*s\n", session_len, session);
 
       ClientKey_t ck;
@@ -54,7 +76,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         uint8_t cookie_len = clienthello->data[session_len + 1];
 
         if (cookie_len == 0) {
-          // ClientHello 1 ohne Cookie
+          // ClientHello 1 ohne Cookie beantworten
           Content_t *content = (Content_t *) buffer;
 
           content->type = hello_verify_request;
@@ -71,54 +93,103 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
           REST.set_response_payload(response, buffer, 13);
         } else {
-          // ClientHello 2 mit Cookie
+          // ClientHello 2 mit Cookie beantworten
           uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
-          Content_t *content = (Content_t *) buffer;
+          coap_separate_t request_metadata[1];
 
-          content->type = server_hello;
-          content->len = length_8_bit;
-          content->payload[0] = sizeof(ServerHello_t);
+          separate_active = 1;
+          coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-          ServerHello_t *answer = (ServerHello_t *) (content->payload + content->len);
-          answer->server_version.major = 3;
-          answer->server_version.minor = 3;
-          answer->random.gmt_unix_time = uip_htonl(getTime());
-          random_x(answer->random.random_bytes, 28);
-          answer->session_id.len = 8;
-          memcpy (answer->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
-          answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
-          answer->compression_method = null;
-          // TODO answer->extensions;
+          generateHello(); // Das dauert nun
 
-          ClientInfo_t ci;
-          memset(&ci, 0, 60);
-          memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
-          memcpy(ci.session, "IJKLMNOP", 8);
-          ci.epoch = 1;
-          ci.pending = 1;
-          do {
-            random_x((uint8_t *) ci.private_key, 32);
-          } while (!ecc_is_valid_key(ci.private_key));
-          insertClient(&ci);
+          // Erstes Paket senden - START
+          coap_transaction_t *transaction = NULL;
+          if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
+            coap_packet_t response[1];
 
-          uint32_t result_x[8];
-          uint32_t result_y[8];
-          uint32_t base_x[8];
-          uint32_t base_y[8];
-          nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
-          nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
-          printf("ECC - START\n");
-          //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
-          printf("ECC - ENDE\n");
+            // Anfrageinformationen wiederherstellen
+            coap_separate_resume(response, request_metadata, REST.status.CREATED);
+            coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
 
-          REST.set_response_status(response, CREATED_2_01);
-          REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-          REST.set_response_payload(response, buffer, sizeof(ServerHello_t) + 2);
+            // Payload generieren
+            int8_t read = readHello(buffer, 0, preferred_size);
+            coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
+
+            // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
+            coap_set_header_block2(response, 0, 1, preferred_size); // Block 0, Es folgen weitere, Blockgröße 64 = preferred_size
+
+            // TODO Warning: No check for serialization error.
+            transaction->packet_len = coap_serialize_message(response, transaction->packet);
+            coap_send_transaction(transaction);
+          }
+          // Erstes Paket senden - ENDE
         }
       }
     }
   }
 }
 
+/* ------------------------------------------------------------------------- */
 
+void generateHello() {
+    uint8_t buf[65];
+    buf[0] = sizeof(ServerHello_t) + 2 + 64;
+    uint8_t *buffer = buf + 1;
+
+    Content_t *content = (Content_t *) buffer;
+
+    content->type = server_hello;
+    content->len = length_8_bit;
+    content->payload[0] = sizeof(ServerHello_t);
+
+    ServerHello_t *answer = (ServerHello_t *) (content->payload + content->len);
+    answer->server_version.major = 3;
+    answer->server_version.minor = 3;
+    answer->random.gmt_unix_time = uip_htonl(getTime());
+    random_x(answer->random.random_bytes, 28);
+    answer->session_id.len = 8;
+    memcpy (answer->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
+    answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
+    answer->compression_method = null;
+    // TODO answer->extensions;
+
+    ClientInfo_t ci;
+    memset(&ci, 0, 60);
+    memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+    memcpy(ci.session, "IJKLMNOP", 8);
+    ci.epoch = 1;
+    ci.pending = 1;
+    do {
+      random_x((uint8_t *) ci.private_key, 32);
+    } while (!ecc_is_valid_key(ci.private_key));
+    insertClient(&ci);
+
+    uint32_t result_x[8];
+    uint32_t result_y[8];
+    uint32_t base_x[8];
+    uint32_t base_y[8];
+    nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
+    nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
+    printf("ECC - START\n");
+    //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
+    printf("ECC - ENDE\n");
+
+    // Kleiner Hack damit Länge und Daten zugleich geschrieben werden
+    nvm_setVar(buf, RES_FLASHSWAP_LEN, sizeof(ServerHello_t) + 3);
+    memset(buf, 'A', 64);
+    nvm_setVar(buf, RES_FLASHSWAP_LEN + sizeof(ServerHello_t) + 3, 64);
+}
+
+int8_t readHello(void *target, uint8_t offset, uint8_t size) {
+  uint8_t length;
+  nvm_getVar(&length, RES_FLASHSWAP_LEN, 1);
+
+  if (offset >= length) return -1;
+
+  uint8_t readsize = (length - offset);
+  if (size < readsize) readsize = size;
+  nvm_getVar(target, RES_FLASHSWAP + offset, readsize);
+
+  return (offset + readsize) >= length ? readsize : 0;
+}

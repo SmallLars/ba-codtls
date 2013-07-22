@@ -66,6 +66,12 @@
 #define RES_CLIENT_KEYS      583
 #define LEN_CLIENT_KEYS      360
 
+#define RES_FLASHSWAP_LEN    943
+#define LEN_FLASHSWAP_LEN      1
+
+#define RES_FLASHSWAP        944
+#define LEN_FLASHSWAP        256
+
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes);
 
 nvmErr_t nvm_setVar(void *src, uint32_t address, uint32_t numBytes);

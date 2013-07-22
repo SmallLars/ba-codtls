@@ -11,8 +11,7 @@
 /*
 static uint8_t separate_active = 0;
 
-void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-/*
+void device_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
   if (separate_active) {
       coap_separate_reject();
   } else {
@@ -22,7 +21,7 @@ void device_name_handler(void* request, void* response, uint8_t *buffer, uint16_
       separate_active = 1;
       coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-      ecc_wait_14(); // Testzeug das dauert
+      // Hier wäre möglich: Zeug das dauert
 
       // Erstes Paket senden - START
       coap_transaction_t *transaction = NULL;
@@ -62,9 +61,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
   const char *query = NULL;
   if ((query_len = REST.get_query_variable(request, "i", &query))) {
 
-    /*************************************************************************/
-    /*  DEVICE NAME                                                          */
-    /*************************************************************************/
+    //*************************************************************************
+    //*  DEVICE NAME                                                          *
+    //*************************************************************************
     if (query[0] == 'n') {
       nvm_getVar(buffer, RES_NAME, LEN_NAME);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
@@ -74,15 +73,17 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
       /*
       int i;
       for (i = 0; i < preferred_size; i+=2) sprintf(buffer + i, "%02X", *offset);
+      REST.set_response_status(response, CONTENT_2_05);
+      REST.set_header_content_type(response, TEXT_PLAIN);
       REST.set_response_payload(response, buffer, preferred_size);
       *offset += preferred_size;
       if (*offset > 250) *offset = -1;
       */
     }
 
-    /*************************************************************************/
-    /*  DEVICE MODEL                                                         */
-    /*************************************************************************/
+    //*************************************************************************
+    //*  DEVICE MODEL                                                         *
+    //*************************************************************************
     if (query[0] == 'm') {
       nvm_getVar(buffer, RES_MODEL, LEN_MODEL);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
@@ -92,9 +93,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
       return;
     }
 
-    /*************************************************************************/
-    /*  DEVICE IDENTIFIER                                                    */
-    /*************************************************************************/
+    //*************************************************************************
+    //*  DEVICE IDENTIFIER                                                    *
+    //*************************************************************************
     if (query[0] == 'u') {
       nvm_getVar(buffer, RES_UUID, LEN_UUID);
       buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
@@ -103,9 +104,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
       REST.set_response_payload(response, buffer, LEN_UUID);
     }
 
-    /*************************************************************************/
-    /*  DEVICE TIME                                                          */
-    /*************************************************************************/
+    //*************************************************************************
+    //*  DEVICE TIME                                                          *
+    //*************************************************************************
     if (query[0] == 't') {
       uint32_t time = uip_htonl(getTime());
       memcpy(buffer, &time, 4);
@@ -114,9 +115,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
       REST.set_response_payload(response, buffer, 4);
     }
 
-    /*************************************************************************/
-    /*  DEVICE ECC                                                           */
-    /*************************************************************************/
+    //*************************************************************************
+    //*  DEVICE ECC                                                           *
+    //*************************************************************************
     if (query[0] == 'e') {
       uint32_t result_x[8];
       uint32_t result_y[8];
