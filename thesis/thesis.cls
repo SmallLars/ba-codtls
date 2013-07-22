@@ -69,16 +69,16 @@
 \tikzset{every node/.style={anchor=center,font=\footnotesize\sffamily}}
 
 % XeTeX font config
-%\setromanfont[
-%  Scale=0.98,
-%  ExternalLocation=./fonts/,
-%  BoldFont={MinionPro-Bold.otf},
-%  ItalicFont={MinionPro-It.otf},
-%  BoldItalicFont={MinionPro-BoldIt.otf},
-%  Numbers=OldStyle,
-%  Mapping=tex-text
-%]{MinionPro-Regular.otf}
-%\def\textsuperscript#1{$^{\text{#1}}$}
+\setromanfont[
+  Scale=0.98,
+  ExternalLocation=./fonts/,
+  BoldFont={MinionPro-Bold.otf},
+  ItalicFont={MinionPro-It.otf},
+  BoldItalicFont={MinionPro-BoldIt.otf},
+  Numbers=OldStyle,
+  Mapping=tex-text
+]{MinionPro-Regular.otf}
+\def\textsuperscript#1{$^{\text{#1}}$}
 
 %\setsansfont[
 %  Scale=1.04,
