@@ -1,3 +1,40 @@
 \chapter{TLS / DTLS}
 
-lala \TODO{Test1} soso
+Das Sicherheitsprotokoll \acr{tls} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
+Wurde durch \acr{tcp} eine Verbindung hergestellt, können Daten von beliebieger Größer in jede Richtung
+übertragen werden. \acr{tcp} wird dafür sorgen, dass der eingegebene Bytestrom vollständig und in der
+richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls} bezogenen Daten nun
+zu kennzeichnen und voneinander abzugrenzen existiert der "`Record Layer"' wie in Abbildung \ref{fig:recordlayer}
+dargestellt. \TODO{Quellenangabe zu rfc ?} Dort ist neben der Art des Inhalts und der Protokollversion auch
+die Länge enthalten, so dass aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können.
+
+Da bei \acr{dtls} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
+Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei dem
+\glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
+so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
+Zusätzlich sind bei \acr{dtls} nun die Datenfelder für die Epoche und die Sequenznummer hinzugekommen.
+Wärend diese beiden Werte bei \acr{tls} durch die gewährleistete Reihenfolge der Daten durch \acr{tcp}
+implizit bekannt sind, müssen diese bei \acr{dtls} explizit angegben werden, da \acr{udp} weder die
+Reihenfolge noch den Transport der Daten garantiert. Die Epoche wird bei einem erfolgreichen \glos{handshake}
+erhöht und ordnet so die dazugehörenden Daten den im \glos{handshake} ausgehandelten Sicherheitsparametern zu,
+während die Sequenznummer in jeder Epoche bei 0 beginnt und bei jedem Paketversand erhöht wird.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+    struct {
+      ContentType type;
+      ProtocolVersion version;
+      uint16 epoch;                           // Nur bei DTLS
+      uint48 sequence_number;                 // Nur bei DTLS
+      uint16 length;
+      opaque fragment[DTLS_Record.length];
+    } DTLS_Record;
+  \end{lstlisting}
+  \caption{Record Layer von TLS / DTLS}
+  \label{fig:recordlayer}
+\end{figure}
+
+
+
+

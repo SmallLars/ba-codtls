@@ -2,15 +2,16 @@
 
 \subsection{Datagram Transport Layer Security in Constrained Environments}
 Im Internet-Entwurf "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} haben K. Hartke und O. Bergmann
-bereits einige Probleme aufgezeigt, die der Einsatz von DTLS in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
+bereits einige Probleme aufgezeigt, die der Einsatz von \acr{dtls} in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
 
-Eines der Hauptprobleme ist hier die geringe Paketgröße in 6LoWPAN-Netzen, die auf 127 Byte Nutzdaten beschränkt ist. Insbesondere beim Aufbau der
-sicheren Verbindung (Handshake) müssen viele Daten ausgetauscht werden, was bei der Verwendung von DTLS die Paketgröße überschreiten würde. Lösen
-würde das Problem bspw. eine Nutzung der IP-Fragmentierung, was aber bei Verlust einzelner Pakete zu einem neuen Versand aller IP-Fragmente führen
-würde und somit hohen Traffic erzeugt, der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin, die Menge der Daten sowohl
-beim Verbindungsaufbau als auch bei der Datenübertragung durch Komprimierung der Headerdaten zu verringern wofür es unterschiedliche Vorschläge gibt.
-Bei Nutzung von CoAP wäre es auch möglich, den Verbindungsaufbau über CoAP zu realisieren. Dadurch ist die Transportsicherung gegeben und große Pakete
-könnten mit einer blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden müssten.
+Eines der Hauptprobleme ist hier die geringe Paketgröße in Netzen die \acr{6lowpan} verwenden, da hier die Nutzdaten auf eine Länge von 127 Byte beschränkt sind.
+Insbesondere beim Aufbau der sicheren Verbindung (\glos{handshake}) müssen viele Daten ausgetauscht werden, was bei der Verwendung von \acr{dtls} die Paketgröße
+überschreiten würde. Lösen würde das Problem bspw. eine Nutzung der IP-\glos{fragmentierung}, was aber bei Verlust einzelner Pakete zu einem neuen Versand aller
+IP-\glospl{fragment} führen würde und somit umfangreichen DAtenverkehr erzeugt, der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin,
+die Menge der Daten sowohl beim Verbindungsaufbau als auch bei der Datenübertragung durch Komprimierung der Headerdaten zu verringern wofür es unterschiedliche
+Vorschläge gibt. Bei Nutzung von \acr{coap} wäre es auch möglich, den Verbindungsaufbau über \acr{coap} zu realisieren. Dadurch ist die Transportsicherung gegeben
+und große Pakete könnten mit einer blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden
+müssten.
 
 Beachtet werden müssen auch die Zeiten, nach denen ein Paket als verloren angesehen und erneut gesendet wird. Gerade beim Verbindungsaufbau
 kann es durch aufwendige Berechnungen, wie sie bspw. im Elliptic Curve Diffie-Hellman Schlüsselaustausch benötigt werden, zu einer erhöhten
@@ -25,8 +26,8 @@ automatisch geschlossen werden um neue Verbindungen zu ermöglichen.
 
 \subsection{A Hitchhiker's Guide to the (Datagram) Transport Layer Security Protocol}
 Im Internet-Entwurf "`A Hitchhiker's Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} haben H. Tschofenig, S.S. Kumar
-und S. Keoh zunächst die Unterschiede von TLS 1.0, 1.1 und 1.2 erläutert und klargestellt, dass die Details beim Handshake von der Wahl des Ciphersuites
-abhängen. Anhand einiger Beispiele erläutern sie, dass es wichtig ist, sich der Position eines Gerätes in einer Verbindung bewusst zu sein.
+und S. Keoh zunächst die Unterschiede von \acr{tls} 1.0, 1.1 und 1.2 erläutert und klargestellt, dass die Details beim \glos{handshake} von der Wahl des
+\glos{ciphersuit}{s} abhängen. Anhand einiger Beispiele erläutern sie, dass es wichtig ist, sich der Position eines Gerätes in einer Verbindung bewusst zu sein.
 So kann ein Sensor mit beschränkten Ressourcen sowohl als Server als auch als Client realisiert werden wobei es auch auf die Anzahl der möglichen
 Verbindungen ankommt. Ein Sensor der als Client agiert wird mit großer Wahrscheinlichkeit immer nur einen Server kontaktieren um dort neue Sensordaten
 zu hinterlegen, während ein als Server realisierter Sensor durchaus auch Anfragen von mehreren Clienten erhalten kann. Je klarer die Position und die
@@ -34,14 +35,14 @@ Umgebung des Sensors ist, desto weniger flexibel kann dieser Implementiert werde
 
 Im weiteren Verlauf gehen sie auf wichtige Design-Entscheidungen ein und Erläutern deren Bedeutung und mögliche Auswirkungen.
 
-Kernstück des Entwurfs ist die Auswertung des Speicherverbrauchs, sowohl im ROM als auch im RAM, und die Menge der Übertragenen Daten bei einem Handshake.
-Anhand eines modifizierten Prototypens zeigen sie dort auf, welche grundlegenden Teile von DTLS, ohne Berücksichtigung der Ciphersuit spezifischen Funktionen,
-wieviel Speicher verbrauchen und werten die Menge der übertragenen Daten in einem kompletten Handshake für die unterschiedlichen Protokollschichten aus.
-Des weiteren haben sie die Codegrößen von bspw. Hash-Funktionen und anderen für TLS notwendigen Berechnungen ausgewertet, wie sie in unterschiedlichen
-Cyphersuits verwendet werden.
+Kernstück des Entwurfs ist die Auswertung des Speicherverbrauchs, sowohl im \acr{rom} als auch im \acr{ram}, und die Menge der Übertragenen Daten bei einem \glos{handshake}.
+Anhand eines modifizierten Prototypens zeigen sie dort auf, welche grundlegenden Teile von \acr{dtls}, ohne Berücksichtigung der \glos{ciphersuit} spezifischen Funktionen,
+wieviel Speicher verbrauchen und werten die Menge der übertragenen Daten in einem kompletten \glos{handshake} für die unterschiedlichen Protokollschichten aus.
+Des weiteren haben sie die Codegrößen von bspw. Hash-Funktionen und anderen für \acr{tls} notwendigen Berechnungen ausgewertet, wie sie in unterschiedlichen
+\glos{ciphersuit}{s} verwendet werden.
 
-Abschließend stellen sie fest, dass sie TLS/DTLS durchaus auf eingeschränkte Umgebungen zuscheiden lässt, wobei mehr Flexibilität aber zu einem größeren Programmcode führt.
-
+Abschließend stellen sie fest, dass sie \acr{tls}/\acr{dtls} durchaus auf eingeschränkte Umgebungen zuscheiden lässt, wobei mehr Flexibilität aber zu einem
+größeren Programmcode führt.
 
 % \subsection{Generic Header Compression}
 % todo
