@@ -37,7 +37,7 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     coapdata->data_len = len - sizeof(DTLSRecord_t);
   }
 
-  if (record->protocol == alert) {
+  if (record->type == alert) {
     printf("Alert erhalten.\n");
     // TODO Alert-Auswertung
     coapdata->valid = 0;
@@ -53,7 +53,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
     uint8_t packet[sizeof(DTLSRecord_t) + payload_length];
     DTLSRecord_t *record = (DTLSRecord_t *) packet;
-    record->protocol = application_data;
+    record->type = application_data;
     record->version= dtls_1_2;
     record->epoch = 1;
 
@@ -68,7 +68,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
   } else {
     uint8_t packet[sizeof(DTLSRecord_t) + len];
     DTLSRecord_t *record = (DTLSRecord_t *) packet;
-    record->protocol = application_data;
+    record->type = application_data;
     record->version= dtls_1_2;
     record->epoch = 0;
 

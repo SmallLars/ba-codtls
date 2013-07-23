@@ -17,7 +17,7 @@ uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *
   Content_t *content = (Content_t *) target;
 
   content->type = client_hello;
-  content->len = length_8_bit;
+  content->len = con_length_8_bit;
   content->payload[0] = 0;
 
   ClientHello_t *clientHello = (ClientHello_t *) (content->payload + content->len);

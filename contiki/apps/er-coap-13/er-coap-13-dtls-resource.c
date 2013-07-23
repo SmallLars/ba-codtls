@@ -61,7 +61,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
       Content_t *c = (Content_t *) buffer;
       c->type = change_cipher_spec;
-      c->len = length_0;
+      c->len = con_length_0;
 
       REST.set_response_status(response, CHANGED_2_04);
       REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
@@ -80,7 +80,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           Content_t *content = (Content_t *) buffer;
 
           content->type = hello_verify_request;
-          content->len = length_8_bit;
+          content->len = con_length_8_bit;
           content->payload[0] = 11;
 
           HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) (content->payload + 1);
@@ -140,7 +140,7 @@ void generateHello() {
     Content_t *content = (Content_t *) buffer;
 
     content->type = server_hello;
-    content->len = length_8_bit;
+    content->len = con_length_8_bit;
     content->payload[0] = sizeof(ServerHello_t);
 
     ServerHello_t *answer = (ServerHello_t *) (content->payload + content->len);

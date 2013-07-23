@@ -23,15 +23,15 @@ typedef enum {
 } __attribute__ ((packed)) ContentType;
 
 typedef enum {
-  length_0 = 0,
-  length_8_bit = 1,
-  length_16_bit = 2,
-  length_48_bit = 3
-} Length;
+  con_length_0 = 0,
+  con_length_8_bit = 1,
+  con_length_16_bit = 2,
+  con_length_48_bit = 3
+} ContentLength;
 
 typedef struct {
   ContentType type:6;
-  Length len:2;
+  ContentLength len:2;
   uint8_t payload[0];
 } __attribute__ ((packed)) Content_t;
 

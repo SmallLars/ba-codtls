@@ -1,0 +1,26 @@
+\chapter{Vorgehensweise}
+
+Im Vordergrund soll die Implementierung eines Sicherheitsprotokolls stehen, das sich an den Prinzipien von DTLS orientiert
+und einige der Vorschläge aus dem Internet-Entwurf von K. Hartke und O. Bergmann, und/oder eigene Ideen, realisiert.
+Dabei liegt ein besonderes Interesse darauf den Handshake über CoAP zu realisieren und somit einige in DTLS eingefügte Konzepte überflüssig zu machen.
+Die Implementierung wird im Anschluss durch einen Vergleich mit DTLS evaluiert, wobei folgende Punkte eine Rolle spielen sollen:
+Volumen des generierten Traffics, Größe/Komplexität des Quellcodes und die vom Protokoll benötigte Speichermenge.
+
+Die Implementierung besteht aus dem Clienten auf einem gängigen PC/Laptop, bei dem es keine speziellen Einschränkungen an Energie,
+Speicher oder Effizienz gibt, und aus dem Server der für einen Redbee Econotag \cite{econotag} mit dem MC1322X
+Mikrocontroller \cite{mc1322x} optimiert werden soll. Da der genannte Mikrocontroller die AES-Verschlüsselung im CTR- und CBC-Mode
+in Hardware unterstützt und die Rechenleistung sowie der Speicher beschränkt ist, soll nur ein Cipher Suite "`TLS\_ECDH\_anon\_WITH\_AES\_128\_CCM\_8"',
+in Anlehnung an einen Internet-Entwurf \cite{draftaesecc}, realisiert werden. Dieses gibt einen Schlüsselaustausch mit Hilfe elliptischer
+Kurven vor, die mit kleineren Zahlen genau so sicher sind wie ein standard Diffie-Hellman-Schlüsselaustausch und sich somit effizient berechnen
+lassen. Die Verschlüsselung der Anwendungsdaten erfolgt dann im "`Authenticated Encryption with Associated Data (AEAD)"' Modus \cite{rfc5116}
+wobei sich hier "`Counter with CBC-MAC (CCM)"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht
+aus einer Verschlüsselung der Daten durch AES im CTR-Modus während die dazugehörende MAC durch AES im CBC-Modus berechnet wird.
+Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
+Die dafür notwendigen verbindungsspezifischen Daten wie bspw. der Master-Schlüssel sollen dabei im Flash-Speicher des Redbee Econotags
+abgelegt werden, so dass nur die für das aktuelle Paket benötigten Daten im RAM-Speicher befinden. Auf diese Weise lässt sich
+die Anzahl der möglichen sicheren Verbindungen trotz Beschränkung maximieren.
+
+Bei der Evaluation soll die Datenmenge der Header-Daten sowohl beim Verbindungsaufbau als auch bei der Übertragung von Anwendungsdaten
+mit einer reinen DTLS-Implementierung verglichen werden. Dabei werden nicht nur fehlerfreie Verbindungen betrachtet sondern auch Paketverluste
+mit einbezogen. Verglichen wird auch der notwendige Speicherbedarf bei Verbindungsaufbau und Übertragung der Anwendungsdaten.
+Ebenso soll die Größe/Komplexität des zugrunde liegenden Quellcodes bewertet werden.

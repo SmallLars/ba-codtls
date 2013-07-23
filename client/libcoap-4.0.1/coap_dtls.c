@@ -1,10 +1,6 @@
 #include "coap_dtls.h"
 
-// #include <stdlib.h>
-// #include <stdio.h>
-// #include <string.h>
-// #include <netinet/in.h>
-// #include <time.h>
+#include <stdio.h>
 
 #include "random.h"
 #include "coap_ccm.h"
@@ -19,7 +15,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + payload_length);
     memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
-    record->protocol = application_data;
+    record->type = application_data;
     record->version= dtls_1_2;
     record->epoch = 0;
 
@@ -39,7 +35,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
   } else {
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + len);
     memset(record, 0, sizeof(DTLSRecord_t) + len);
-    record->protocol = application_data;
+    record->type = application_data;
     record->version= dtls_1_2;
     record->epoch = 0;
 
@@ -83,7 +79,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct socka
     db_len = size - sizeof(DTLSRecord_t);
   }
 
-  if (record->protocol == alert) {
+  if (record->type == alert) {
     printf("Alert erhalten.\n");
     // TODO Alert-Auswertung
     db_len = 0;

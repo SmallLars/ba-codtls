@@ -1,0 +1,24 @@
+\section{Motivation}
+Während es im Internet schon seit Mitte der 90er Jahre das  "`Transport Layer Security (TLS) Protocol"' \cite{rfc5246} (früher SSL) gibt,
+um den Datenverkehr über das "`Transmission Control Protocol (TCP)"' abzusichern, kam es erst 2004 zu einem ersten Versuch den Datenverkehr
+über das "`User Datagram Protocol (UDP)"' zu sichern. Dieser Versuch führte 2006 schließlich zu der Standardisierung des "`Datagram Transport
+Layer Security (DTLS) Protocol"' \cite{rfc6347}. Dieses ist TLS sehr ähnlich, wurde jedoch um Mechanismen ergänzt, die in UDP im Gegensatz
+zu TCP fehlen. Dazu gehört insbesondere die Zuverlässigkeit der Datenübertragung die beim Verbindungsaufbau und somit der Aushandlung der
+Sicherheitsmechanismen notwendig ist. TLS und DTLS haben sich im Internet bewährt, sind jedoch zu einer Zeit entstanden, als Sensornetze und das
+"`Web of Things"' noch nicht vertreten waren. Die dort verwendeten Geräte haben nur sehr wenig Ressourcen zur Verfügung.
+Dies betrifft neben wenig Rechenleistung und Speicher auch den Energievorrat. Etabliert hat sich dort das "`Constrained
+Application Protocol (CoAP)"' \cite{draftcoap} über das UDP-Protokoll aufgrund seines schlanken Designs. Passend zu UDP ist
+das umfangreiche DTLS-Protokoll, das sich jedoch nicht so einfach auf "`kleinen"' Endgeräten realisieren lässt.
+Genau hier soll diese Arbeit ansetzen und DTLS als Lösung bestätigen oder Alternativen aufzeigen und realisieren.
+
+%  Ich wuerde DTLS nicht rundweg als »ersten Versuch den Datenverkehr u ̈ber das ”User Datagram Protocol (UDP)“ zu sichern.« bezeichnen.
+
+%  Hm, worauf stuetzt sich die Aussage mit dem "ersten Versuch"? Ich
+%  wuerde fast Geld darauf wetten, dass es frueher bereits Versuche 
+%  dazu gab. SRTP ist z.B. auch aelter als DTLS; und das SNMP-Volk hat
+%  sich auch viele kranke Dinge ausgedacht, bevor DTLS in ihr Universum 
+%  aufgenommen wurde.
+
+%  "Sind jedoch zu einer Zeit enstanden, als..." -- das trifft auf das
+%  Web of Things wohl zu, auf Sensornetze sicher nicht. Die sind schon
+%  ziemlich lange da (und als Begriff ein bisschen olivgruen).
