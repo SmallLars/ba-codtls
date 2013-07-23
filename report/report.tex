@@ -1,6 +1,6 @@
 %!TEX TS-program = xelatex
 %!TEX encoding = UTF-8 Unicode
-\documentclass[ngerman]{thesis}
+\documentclass[ngerman]{report}
 
 \usepackage{blindtext}
 
@@ -27,7 +27,7 @@
 \makeatletter
   \textbf{\@author}\par
   \@title\par
-  \ifthesis@hassubtitle\@subtitleshort\fi
+  \ifreport@hassubtitle\@subtitleshort\fi
 
   \diplomaname, \@department\par
   \@institute, \monthyear

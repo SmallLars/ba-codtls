@@ -35,7 +35,7 @@ contribute!)*
   * SVG-Dateien werden automatisch in PDF-Bilder umgewandelt und
     eingebunden (benötigt Inkscape)
   * Der Pfad zu den Bildern ist (in **allen** eingebundenen Dateien)
-    relativ zur `thesis.tex`. D.h. auch in `chapter/c42/foo.tex` wird
+    relativ zur `report.tex`. D.h. auch in `chapter/c42/foo.tex` wird
     das Bild `images/foo.png` mit `\includegraphics[...]{images/foo.png}`
     eingebunden.
 * **BibTeX**: in dieser Vorlage wird BibLaTeX verwendet. Dies ist eine
@@ -47,12 +47,12 @@ contribute!)*
 
 In der Konsole startet ein `rake` den Kompilierprozess.
 
-Ein manuelles, ggf. mehrfaches `xelatex thesis.tex`, bzw. `bibtex thesis.aux`
+Ein manuelles, ggf. mehrfaches `xelatex report.tex`, bzw. `bibtex report.aux`
 ist nicht notwendig, da genau dafür der `rake`-Befehl existiert. Anhand der
 Log-Ausgaben entscheidet der Befehl, ob und ggf. welche Programme gestartet
 werden müssen (eben `bibtex` nach Änderungen an den Literaturverweisen, oder
 `xelatex` um ggf. Seitenzahlen und Querverweise herzustellen). Wenn nichts
-zu tun ist (genau dann, wenn die erzeugte `thesis.pdf` neuer als alle `tex`-
+zu tun ist (genau dann, wenn die erzeugte `report.pdf` neuer als alle `tex`-
 und Bilddateien ist), passiert nichts.
 
 ## Tipps und Tricks

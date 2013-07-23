@@ -34,7 +34,7 @@ template for theses)
   * SVG files are automatically converted converted to PDF images and included
     (requires Inkscape)
   * The path to all images is (in **all** included files) relative to
-    `thesis.tex`. Therefore, even in `chapter/c42/foo.tex` the image 
+    `report.tex`. Therefore, even in `chapter/c42/foo.tex` the image 
     `images/foo.png` is included with `\includegraphics[...]{images/foo.png}`.
 * **BibTeX** is used in this template. This is a BibLaTeX implementation *in
   LaTeX*, therefore the output formating can be precisely adjusted and in the
@@ -44,11 +44,11 @@ template for theses)
 
 The `rake` command in the console starts the compile process.
 
-Manual execution of the `xelatex thesis.tex` or the `bibtex thesis.aux`
+Manual execution of the `xelatex report.tex` or the `bibtex report.aux`
 commands are not required, since the `rake` command takes care of those tasks.
 Depending on the log outputs, the command decides if and which programs have to be launched. For example, after a change in the bibliography woudl cause
 `bibtex` to be launched and `xelatex` would be used to update the page numbers and cross-references. If there is nothing to do (only when the created
-`thesis.pdf` is newer than all `tex` and image files), nothing is done.
+`report.pdf` is newer than all `tex` and image files), nothing is done.
 
 ## Tips and Tricks
 

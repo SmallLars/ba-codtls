@@ -24,7 +24,7 @@ $KCODE = 'u' if RUBY_VERSION < '1.9'
 =end
 
 # defining main files. should be easily detectable by algorithms.
-MAIN_TEX = 'thesis.tex'
+MAIN_TEX = 'report.tex'
 MAIN_PDF = MAIN_TEX.gsub /tex$/, 'pdf'
 MAIN_AUX = MAIN_TEX.gsub /tex$/, 'aux'
 MAIN_LOG = MAIN_TEX.gsub /tex$/, 'log'

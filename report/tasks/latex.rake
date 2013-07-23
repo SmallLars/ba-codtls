@@ -39,8 +39,8 @@ task :labels => FileList['**/*.tex', '**/*.latex'] do |t|
 end
 
 desc "Printout required packages."
-task :required => "thesis.cls" do
-  f = File.readlines "thesis.cls"
+task :required => "report.cls" do
+  f = File.readlines "report.cls"
   pkgs = []
   f.each do |line|
     /^\\RequirePackage(\[.*\])?\{(.*?)\}/.match(line) do |m|

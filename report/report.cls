@@ -1,14 +1,14 @@
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{thesis}[2011/12/20 v1.0 UHB CS Thesis]
+\ProvidesClass{report}[2011/12/20 v1.0 UHB CS Thesis]
 
-\def\englishthesis{english}
-\def\ngermanthesis{ngerman}
-\def\thesislang{}
-\DeclareOption{english}{\global\let\thesislang\englishthesis}
-\DeclareOption{ngerman}{\global\let\thesislang\ngermanthesis}
+\def\englishreport{english}
+\def\ngermanreport{ngerman}
+\def\reportlang{}
+\DeclareOption{english}{\global\let\reportlang\englishreport}
+\DeclareOption{ngerman}{\global\let\reportlang\ngermanreport}
 
 % no options given
-\DeclareOption*{\PackageWarning{thesis}{Unknown `\CurrentOption`}}
+\DeclareOption*{\PackageWarning{report}{Unknown `\CurrentOption`}}
 \ProcessOptions\relax
 
 \LoadClass[10pt]{book}
@@ -21,7 +21,7 @@
 \RequirePackage{xunicode}
 \RequirePackage{xltxtra}
 
-\RequirePackage[\thesislang]{babel}
+\RequirePackage[\reportlang]{babel}
 
 \RequirePackage[german=guillemets]{csquotes}
 \RequirePackage{amsmath}
@@ -40,7 +40,7 @@
 \RequirePackage{xspace}
 \xspaceaddexceptions{"}
 
-% thesis color scheme
+% report color scheme
 \RequirePackage[table]{xcolor}
 \xdefinecolor{Strong Blue}{RGB}{6,64,194}
 \xdefinecolor{Dark Blue}{RGB}{6,46,139}
@@ -100,28 +100,28 @@
 ]{DejaVuSansMono.ttf}
 
 % renew title command, create subtitle and authoremail command
-\long\def\title{\@dblarg\thesis@title}
-\long\def\thesis@title[#1]#2{
+\long\def\title{\@dblarg\report@title}
+\long\def\report@title[#1]#2{
   \gdef\@titleshort{#1}
   \gdef\@title{#2}
   \ifx\@titleshort\@empty
     \gdef\@titleshort{#2}
   \fi
 }
-\newif\ifthesis@hassubtitle
-\long\def\subtitle{\@dblarg\thesis@subtitle}
-\long\def\thesis@subtitle[#1]#2{
+\newif\ifreport@hassubtitle
+\long\def\subtitle{\@dblarg\report@subtitle}
+\long\def\report@subtitle[#1]#2{
   \gdef\@subtitleshort{#1}
   \gdef\@subtitle{#2}
   \ifx\@subtitle\@empty
     \gdef\@subtitleshort{~}
     \gdef\@subtitle{~}
-    \thesis@hassubtitlefalse
+    \report@hassubtitlefalse
   \else
     \ifx\@subtitleshort\@empty
       \gdef\@subtitleshort{#2}
     \fi
-    \thesis@hassubtitletrue
+    \report@hassubtitletrue
   \fi
 }
 \def\@subtitle{~}
@@ -314,12 +314,12 @@
       \caption{#2\label{#3}}
     \endlastfoot
   }
-  \let\thesis@tempa\@empty%
-  \@for\thesis@tempb:=#1\do{%
-    \edef\thesis@tempa{\thesis@tempa p{\thesis@tempb\linewidth-2\tabcolsep}}%
+  \let\report@tempa\@empty%
+  \@for\report@tempb:=#1\do{%
+    \edef\report@tempa{\report@tempa p{\report@tempb\linewidth-2\tabcolsep}}%
   }
-  \edef\thesis@tempa{\noexpand\begin{longtable}{\thesis@tempa}}
-  \thesis@tempa
+  \edef\report@tempa{\noexpand\begin{longtable}{\report@tempa}}
+  \report@tempa
     \rowcolor{Beige}
 }{
     \end{longtable}%
@@ -384,7 +384,7 @@
 \tikzset{notestyle/.style={notestyleraw,rounded corners=0.5pt,inner sep=2pt}}
 \let\@rigt@d@\todo
 \def\todo{%
-  \ClassWarning{thesis}{%
+  \ClassWarning{report}{%
     \string\todo\space is deprecated. use \string\TODO, %
     \string\FIXME\space or \string\XXX\space instead
   }\TODO%
@@ -434,10 +434,10 @@
   \expandafter\def\csname #1\endcsname{#2\xspace}%
 }
 
-\ifx\thesislang\ngermanthesis
+\ifx\reportlang\ngermanreport
   \input{abbreviations.de.tex}
 \fi
-\ifx\thesislang\englishthesis
+\ifx\reportlang\englishreport
   \input{abbreviations.en.tex}
 \fi
 
@@ -468,7 +468,7 @@
 \DeclareMathOperator{\sgn}{\text{sgn}}
 
 % acronyms style
-\newglossarystyle{thesisacr}{%
+\newglossarystyle{reportacr}{%
   \renewenvironment{theglossary}%
     {\begin{description}[style=sameline]}
     {\end{description}}
@@ -481,7 +481,7 @@
 }
 
 % glossary style
-\newglossarystyle{thesis}{%
+\newglossarystyle{report}{%
   \renewenvironment{theglossary}%
     {\begin{description}}
     {\end{description}}
@@ -505,27 +505,27 @@
 %\renewcommand{\sectionmark}[1]{\markboth{#1}{#1}}
 
 \fancyhf{}% clear all fields
-\fancyhead[RO]{\thesis@head@oddpage}% ungerade, rechts
-\def\thesis@head@oddpage{%
+\fancyhead[RO]{\report@head@oddpage}% ungerade, rechts
+\def\report@head@oddpage{%
   \small\slshape%
   \diplomaname\hfill\@titleshort\par
   \if@mainmatter\strut\hfill\leftmark\fi%
 }
 
-\fancyhead[LE]{\thesis@head@evenpage}% gerade, links
-\def\thesis@head@evenpage{%
+\fancyhead[LE]{\report@head@evenpage}% gerade, links
+\def\report@head@evenpage{%
   \small\slshape%
   \diplomaname\hfill\@titleshort\par
   \if@mainmatter\rightmark\hfill\strut\fi%
 }
 
-\fancyfoot[RO,LE]{\thesis@foot}
-\def\thesis@foot{\small\thepage}
+\fancyfoot[RO,LE]{\report@foot}
+\def\report@foot{\small\thepage}
 \renewcommand{\headrulewidth}{0.5pt}
 
 \fancypagestyle{plain}{%
   \fancyhf{}%
-  \fancyfoot[RO,LE]{\thesis@foot}
+  \fancyfoot[RO,LE]{\report@foot}
   \renewcommand{\headrulewidth}{0pt}
 }
 
