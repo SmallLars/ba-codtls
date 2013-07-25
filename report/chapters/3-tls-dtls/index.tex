@@ -9,7 +9,7 @@ dargestellt. \TODO{Quellenangabe zu rfc ?} Dort ist neben der Art des Inhalts un
 die Länge enthalten, so dass aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können.
 
 Da bei \acr{dtls} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
-Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei dem
+Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei einem
 \glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
 so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
 Zusätzlich sind bei \acr{dtls} nun die Datenfelder für die Epoche und die Sequenznummer hinzugekommen.
@@ -35,6 +35,8 @@ während die Sequenznummer in jeder Epoche bei 0 beginnt und bei jedem Paketvers
   \label{fig:recordlayer}
 \end{figure}
 
+\section{Handshake}
 
+lala
 
 
