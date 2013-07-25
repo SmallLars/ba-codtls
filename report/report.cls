@@ -22,6 +22,8 @@
 \RequirePackage{xltxtra}
 
 \RequirePackage[\reportlang]{babel}
+\DeclareUTFcharacter[\UTFencname]{x201C}{\grqq}
+\DeclareUTFcharacter[\UTFencname]{x201E}{\glqq}
 
 \RequirePackage[german=guillemets]{csquotes}
 \RequirePackage{amsmath}
@@ -256,7 +258,7 @@
   breaklinks=true,
   pdffitwindow=true,
   pdfcreator={XeTeX \the\XeTeXversion\XeTeXrevision},
-  pdfproducer={XeTeX with hyperref, TikZ and many more packages},
+%  pdfproducer={XeTeX with hyperref, TikZ and many more packages},
   pdfencoding=auto
 }
 \def\UrlFont{\itshape}
