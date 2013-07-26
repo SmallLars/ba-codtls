@@ -128,7 +128,9 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
 
       uint32_t private_key[8];
       do {
-        random_x((uint8_t *) private_key, 32);
+        uint32_t i;
+        for (i = 0; i < 32; i++)
+          ((uint8_t *) private_key)[i] = (*MACA_RANDOM) & 0x000000FF;
       } while (!ecc_is_valid_key(private_key));
 
       uint32_t time = *MACA_CLK;

@@ -43,7 +43,6 @@
 #include "contiki-net.h"
 
 #include "er-coap-13-engine.h"
-#include "er-coap-13-dtls.h"
 
 #define DEBUG 0
 #if DEBUG
@@ -96,10 +95,14 @@ coap_receive(void)
     PRINTBITS(uip_appdata, uip_datalen());
     PRINTF("\n");
 
-    CoapData_t coapdata = {0, NULL, 0};
-    dtls_parse_message((uint8_t *) &UIP_IP_BUF->srcipaddr, uip_appdata, uip_datalen(), &coapdata);
-    if (!coapdata.valid) return NO_ERROR;
-    coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
+    #ifdef WITH_DTLS
+      CoapData_t coapdata = {0, NULL, 0};
+      dtls_parse_message((uint8_t *) &UIP_IP_BUF->srcipaddr, uip_appdata, uip_datalen(), &coapdata);
+      if (!coapdata.valid) return NO_ERROR;
+      coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
+    #else
+      coap_error_code = coap_parse_message(message, uip_appdata, uip_datalen());
+    #endif
 
     if (coap_error_code==NO_ERROR)
     {
@@ -483,23 +486,29 @@ well_known_core_handler(void* request, void* response, uint8_t *buffer, uint16_t
       *offset += preferred_size;
     }
 }
-
-/* The dtls-handshake resource is automatically included for CoAP
-   and definied in er-coap-13-dtls.resource.c. */
-RESOURCE(dtls, METHOD_POST, "dtls", "rt=\"handshake\";if=\"core.lb\";ct=42");
-
 /*----------------------------------------------------------------------------*/
 
+/* The dtls-handshake resource is automatically included for CoAP
+   and definied in er-13-dtls/er-dtls-13-resource.c. */
+#ifdef WITH_DTLS
+  RESOURCE(dtls, METHOD_POST, "dtls", "rt=\"handshake\";if=\"core.lb\";ct=42");
+#endif
+
+/*----------------------------------------------------------------------------*/
 PROCESS_THREAD(coap_receiver, ev, data)
 {
   PROCESS_BEGIN();
 
-  aes_init();
+  #ifdef WITH_DTLS
+    aes_init();
+  #endif
 
   PRINTF("Starting CoAP-13 receiver...\n");
 
   rest_activate_resource(&resource_well_known_core);
-  rest_activate_resource(&resource_dtls);
+  #ifdef WITH_DTLS
+    rest_activate_resource(&resource_dtls);
+  #endif
 
   coap_register_as_transaction_handler();
   coap_init_connection(SERVER_LISTEN_PORT);
