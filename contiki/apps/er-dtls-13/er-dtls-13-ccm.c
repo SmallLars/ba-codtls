@@ -1,4 +1,4 @@
-#include "er-coap-13-dtls-ccm.h"
+#include "er-dtls-13-ccm.h"
 
 #include "mc1322x.h"
 #include "../../core/net/uip.h"

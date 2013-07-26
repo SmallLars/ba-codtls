@@ -1,10 +1,10 @@
-#include "er-coap-13-dtls.h"
+#include "er-dtls-13.h"
 
 #include <string.h>
 
-#include "er-coap-13-dtls-data.h"
-#include "er-coap-13-dtls-ccm.h"
-#include "er-coap-13-dtls-random.h"
+#include "er-dtls-13-data.h"
+#include "er-dtls-13-ccm.h"
+#include "er-dtls-13-random.h"
 
 /* Private Funktionsprototypen --------------------------------------------- */
 

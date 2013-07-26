@@ -1,4 +1,4 @@
-#include "er-coap-13-dtls-resource.h"
+#include "er-dtls-13-resource.h"
 
 #include <string.h>
 
@@ -6,9 +6,9 @@
 #include "er-coap-13.h"
 #include "er-coap-13-separate.h"
 #include "er-coap-13-transactions.h"
-#include "er-coap-13-dtls.h"
-#include "er-coap-13-dtls-data.h"
-#include "er-coap-13-dtls-random.h"
+#include "er-dtls-13.h"
+#include "er-dtls-13-data.h"
+#include "er-dtls-13-random.h"
 #include "flash-store.h"
 
 #define DEBUG 0

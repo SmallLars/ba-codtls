@@ -43,6 +43,10 @@
 #include "contiki-net.h"
 
 #include "er-coap-13-engine.h"
+#ifdef WITH_DTLS
+  #include "er-dtls-13.h"
+#endif
+
 
 #define DEBUG 0
 #if DEBUG
