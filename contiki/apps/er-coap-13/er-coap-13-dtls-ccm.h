@@ -55,6 +55,6 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
   */
 uint8_t *getMAC(CCMData_t *data, size_t len);
 
-void CBC_MAC(uint8_t *mac, size_t mac_len, uint8_t *data, size_t data_len);
+void CBC_MAC(uint8_t *mac, size_t mac_len, uint8_t *key, uint8_t *data, size_t data_len);
 
 #endif /* __ER_COAP_13_DTLS_CCM_H__ */

@@ -12,7 +12,7 @@
 // 0x1B000 - 0x1BFFF Random Zugriff Block 2.2
 // 0x1C000 - 0x1CFFF Fehlermeldungen
 // 0x1D000 - 0x1DFFF Fehlermeldungen
-// 0x1E000 - 0x1EFFF MAC, UUID, PIN, Name, Model
+// 0x1E000 - 0x1EFFF MAC, UUID, PSK, Name, Model
 // 0x1F000 - 0x1FFFF Systemreserviert
 
 #define RES_BLOCK_11     0x18000
@@ -27,17 +27,17 @@
 #define LEN_MAC          0x08
 #define RES_UUID         0x1E008
 #define LEN_UUID         0x10
-#define RES_PIN          0x1E018
-#define LEN_PIN          0x08
-#define RES_ECC_BASE_X   0x1E020
+#define RES_PSK          0x1E018
+#define LEN_PSK          0x10
+#define RES_ECC_BASE_X   0x1E028
 #define LEN_ECC_BASE_X   0x20
-#define RES_ECC_BASE_Y   0x1E040
+#define RES_ECC_BASE_Y   0x1E048
 #define LEN_ECC_BASE_Y   0x20
-#define RES_NAME         0x1E060
+#define RES_NAME         0x1E068
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E080
+#define RES_MODEL        0x1E088
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E0A0
+#define RES_FLASHTIME    0x1E0A8
 #define LEN_FLASHTIME    0x04
 
 #define RES_B_ERR_05     0x1C000
@@ -53,7 +53,7 @@
 
 int main(int nArgs, char **argv) {
     if (nArgs < 2 || nArgs > 3) {
-        fprintf(stderr, "Parameter erforderlich: ./blaster <MAC-Endnummer> [-t]\nBei -t wird Standard-PIN 11111111 gesetzt.\n");
+        fprintf(stderr, "Parameter erforderlich: ./blaster <MAC-Endnummer> [-t]\nBei -t wird Standard-PSK 1111111111111111 gesetzt.\n");
         return -1;
     }
 
@@ -97,8 +97,8 @@ int main(int nArgs, char **argv) {
     uuid_unparse(uuid_bin, uuid);
     fprintf(stderr, "UUID: %s\n", uuid);
 
-// Pin setzen
-    unsigned char pin[8] = "11111111";
+// PSK setzen
+    unsigned char psk[16] = "1111111111111111";
     if (nArgs == 2) {
         FILE *fd = fopen("/dev/urandom","r");
         if (fd == NULL) {
@@ -106,18 +106,17 @@ int main(int nArgs, char **argv) {
             return -1;
         }
         char *letter = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
-        for (i = 0; i < 8; i++) {
+        for (i = 0; i < 16; i++) {
             int c;
             while ((c = fgetc(fd)) == EOF);
-            pin[i] = letter[((unsigned char) c) % 64];
+            psk[i] = letter[((unsigned char) c) % 64];
         }
         if (fclose(fd) == -1) printf("Fehler beim Schließen von /dev/urandom\n");
-        pin[8] = 0;
     }
-    for (i = 0; i < 8; i++) {
-        output[RES_PIN + i] = pin[i];
+    for (i = 0; i < 16; i++) {
+        output[RES_PSK + i] = psk[i];
     }
-    fprintf(stderr, "PIN: %c%c%c%c%c%c%c%c\n", pin[0], pin[1], pin[2], pin[3], pin[4], pin[5], pin[6], pin[7]);
+    fprintf(stderr, "PSK: %.*s\n", 16, psk);
 
 // ECC Base Points setzen
     uint32_t *base_x = (uint32_t *) (output + RES_ECC_BASE_X);
@@ -165,13 +164,13 @@ int main(int nArgs, char **argv) {
 
 // Fehlermeldungen setzen
     char *buffer;
-    buffer = "Ohne eine korrekte PIN-Uebertragung kann der PIN nicht ausgelesen werden.";
+    buffer = "Ohne eine korrekte PSK-Uebertragung kann der PSK nicht ausgelesen werden.";
     memcpy(output + RES_B_ERR_05, buffer, LEN_B_ERR_05);
-    buffer = "Der PIN wurde schon uebertragen. Eingabe ignoriert.";
+    buffer = "Der PSK wurde schon uebertragen. Eingabe ignoriert.";
     memcpy(output + RES_B_ERR_04, buffer, LEN_B_ERR_04);
     buffer = "Ohne gedrückten Knopf wird der Pin nicht angenommen.";
     memcpy(output + RES_B_ERR_03, buffer, LEN_B_ERR_03);
-    buffer = "Der PIN passt nicht zum Geraet.";
+    buffer = "Der PSK passt nicht zum Geraet.";
     memcpy(output + RES_B_ERR_02, buffer, LEN_B_ERR_02);
     buffer = "Der erste Teil des Handshakes wurde noch nicht durchgefuehrt.";
     memcpy(output + RES_B_ERR_01, buffer, LEN_B_ERR_01);

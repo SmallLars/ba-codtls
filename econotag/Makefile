@@ -38,7 +38,7 @@ upload:
 	-f ../libmc1322x/tests/flasher_redbee-econotag.bin \
 	-s $(CONTIKI_PROJECT)_e_redbee-econotag.bin \
 	-c 'sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset' \
-	-t /dev/ttyUSB1 -e -v \
+	-t /dev/ttyUSB1 -e \
 	
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
