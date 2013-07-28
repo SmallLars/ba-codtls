@@ -1,56 +1,74 @@
 #include "flash-store.h"
 
-#include <string.h>
+#define RES_BLOCK_11     0x18000
+#define RES_BLOCK_12     0x19000
+#define RES_BLOCK_21     0x1A000
+#define RES_BLOCK_22     0x1B000
+#define LEN_BLOCK_XX     0x1000
+#define LEN_BLOCK        0x01
 
-nvmErr_t nvm_getVar(void *dest, uint32_t address, uint32_t numBytes) {
-    if (address < 8192) {
-        uint32_t block = (address / LEN_BLOCK_XX == 0 ? RES_BLOCK_11 : RES_BLOCK_21);
-        uint8_t blockcheck = (nvm_cmp("\001", block, LEN_BLK_X_ACTIVE) == 0 ? 0 : 1);
-        address = block + (blockcheck * LEN_BLOCK_XX) + (address % LEN_BLOCK_XX);
-    }
+#define STACK_NUM        (RES_STACK / LEN_STACK)
+
+#define DEBUG 0
+
+#if DEBUG
+    #include <stdio.h>
+    #define PRINTF(...) printf(__VA_ARGS__)
+#else
+    #define PRINTF(...)
+#endif
+
+uint16_t stackPointer;
+
+/* Private Funktionsprototypen --------------------------------------------- */
+
+uint32_t getAddr(uint32_t address);
+
+/* Öffentliche Funktionen -------------------------------------------------- */
+
+nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes) {
+    address = getAddr(address);
 
     if (address >= 0x18000 && address <= 0x1FFFF) {
-        //printf("Lesen von Adresse: %p\n", address);
+        PRINTF("Lesen von Adresse: %p\n", address);
         nvmErr_t err = nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, dest, address, numBytes);
         if (err) {
-            //printf("Lesefehler, nmv_error: %u\n", err);
+            PRINTF("Lesefehler, nmv_error: %u\n", err);
             return err;
         }
         return gNvmErrNoError_c;
     }
 
-    //printf("Lesefehler - Ungültiger Bereich.\n"); // TODO
+    PRINTF("Lesefehler - Ungültiger Bereich.\n");
     return gNvmErrInvalidPointer_c;
 }
 
-nvmErr_t nvm_setVar(void *src, uint32_t address, uint32_t numBytes) {
+nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
     if (address >= 8192) {
-        //printf("Schreibfehler - Ungültiger Bereich.\n"); // TODO
+        PRINTF("Schreibfehler - Ungültiger Bereich.\n");
         return gNvmErrInvalidPointer_c;
     }
 
-    uint32_t block = (address / LEN_BLOCK_XX == 0 ? RES_BLOCK_11 : RES_BLOCK_21);
-    uint8_t blockcheck = (nvm_cmp("\001", block, LEN_BLK_X_ACTIVE) == 0 ? 0 : 1);
-    address = block + (blockcheck * LEN_BLOCK_XX) + (address % LEN_BLOCK_XX);
+    address = getAddr(address);
 
-    uint32_t src_block = block + (blockcheck * LEN_BLOCK_XX);
-    uint32_t dest_block = block + LEN_BLOCK_XX - (blockcheck * LEN_BLOCK_XX);
-    address = address % LEN_BLOCK_XX;
+    uint32_t src_block = address & 0xFF000;
+    uint32_t dst_block = src_block ^ 0x01000;
+    address = address & 0x00FFF;
 
-    nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (dest_block / LEN_BLOCK_XX));
+    nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (dst_block / LEN_BLOCK_XX));
 
     int i;
     for (i = 0; i < address; i++) {
         uint8_t buf;
         nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, &buf, src_block + i, 1);
-        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, &buf, dest_block + i, 1);
+        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, &buf, dst_block + i, 1);
     }
-    //printf("Schreiben auf Adresse: %p\n", dest_block + i);
-    nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, src, dest_block + i, numBytes);
+    PRINTF("Schreiben auf Adresse: %p\n", dst_block + i);
+    nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, src, dst_block + i, numBytes);
     for (i += numBytes; i < LEN_BLOCK_XX; i++) {
         uint8_t buf;
         nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, &buf, src_block + i, 1);
-        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, &buf, dest_block + i, 1);
+        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, &buf, dst_block + i, 1);
     }
 
     nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (src_block / LEN_BLOCK_XX));
@@ -58,12 +76,32 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint32_t numBytes) {
     return gNvmErrNoError_c;
 }
 
-nvmErr_t nvm_cmp(void *src, uint32_t address, uint32_t numBytes) {
-    if (address < 8192) {
-        uint32_t block = (address / LEN_BLOCK_XX == 0 ? RES_BLOCK_11 : RES_BLOCK_21);
-        uint8_t blockcheck = (nvm_cmp("\001", block, LEN_BLK_X_ACTIVE) == 0 ? 0 : 1);
-        address = block + (blockcheck * LEN_BLOCK_XX) + (address % LEN_BLOCK_XX);
-    }
+nvmErr_t nvm_cmp(void *src, uint32_t address, uint16_t numBytes) {
+    address = getAddr(address);
 
     return nvm_verify(gNvmInternalInterface_c, gNvmType_SST_c, src, address, numBytes);
+}
+
+void stack_init() {
+    stackPointer = 0;
+    nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << STACK_NUM);
+}
+
+void stack_push(uint8_t *src, uint16_t numBytes) {
+    nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, src, RES_STACK + stackPointer, numBytes);
+    stackPointer += numBytes;
+}
+
+uint16_t stack_size() {
+    return stackPointer;
+}
+
+/* Private Funktionen ------------------------------------------------------ */
+
+uint32_t getAddr(uint32_t address) {
+    if (address >= 0x02000) return address;
+
+    uint32_t block = (address & 0x01000 ? RES_BLOCK_21 : RES_BLOCK_11);
+    uint8_t blockcheck = (nvm_cmp("\001", block, LEN_BLK_X_ACTIVE) == 0 ? 0 : 1);
+    return block + (blockcheck << 12) + (address & 0x00FFF);
 }
