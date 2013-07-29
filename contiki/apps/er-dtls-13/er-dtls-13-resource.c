@@ -108,7 +108,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     separate_active = 1;
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-                    generateServerHello(); // Das dauert nun
+                    generateServerHello(buffer); // Das dauert nun
 
                     // Erstes Paket senden - START
                     coap_transaction_t *transaction = NULL;
@@ -139,10 +139,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
 /* ------------------------------------------------------------------------- */
 
-void generateServerHello() {
+void generateServerHello(uint8_t *buf) {
+    #if DEBUG
+        if (REST_MAX_CHUNK_SIZE < 64) PRINTF("ACHTUNG - Buffer zu klein!\n");
+    #endif
+
     serverHello_offset = stack_size();
-    
-    uint8_t buf[64];
 
     Content_t *content = (Content_t *) buf;
 
@@ -160,17 +162,18 @@ void generateServerHello() {
     answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
     answer->compression_method = null;
     // TODO answer->extensions;
+    stack_push(buf, sizeof(Content_t) + 1 + sizeof(ServerHello_t));
 
-    ClientInfo_t ci;
-    memset(&ci, 0, 60);
-    memcpy(ci.ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
-    memcpy(ci.session, "IJKLMNOP", 8);
-    ci.epoch = 1;
-    ci.pending = 1;
+    ClientInfo_t *ci = (ClientInfo_t *) buf;
+    memset(ci, 0, sizeof(ClientInfo_t));
+    memcpy(ci->ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+    memcpy(ci->session, "IJKLMNOP", 8);
+    ci->epoch = 1;
+    ci->pending = 1;
     do {
-        random_x((uint8_t *) ci.private_key, 32);
-    } while (!ecc_is_valid_key(ci.private_key));
-    insertClient(&ci);
+        random_x((uint8_t *) ci->private_key, 32);
+    } while (!ecc_is_valid_key(ci->private_key));
+    insertClient(ci);
 
     uint32_t result_x[8];
     uint32_t result_y[8];
@@ -182,8 +185,6 @@ void generateServerHello() {
     //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
     printf("ECC - ENDE\n");
 
-    // Kleiner Hack damit Länge und Daten zugleich geschrieben werden
-    stack_push(buf, sizeof(Content_t) + 1 + sizeof(ServerHello_t));
     memset(buf, 'A', 64);
     stack_push(buf, 64);
 }
