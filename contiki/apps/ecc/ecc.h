@@ -50,7 +50,7 @@ int ecc_is_valid_key(const uint32_t * priv_key);
 
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty);
 static inline void ecc_ecdh(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
-	ecc_ec_mult(px, py, secret, resultx, resulty);
+    ecc_ec_mult(px, py, secret, resultx, resulty);
 }
 
 #endif /* ECC_H_ */
