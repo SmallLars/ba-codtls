@@ -6,17 +6,17 @@
 #include <stdint.h>
 
 typedef struct {
-  uint8_t ip[16];
-  uint8_t session[8];
-  uint8_t epoch;
-  uint8_t pending;
-  uint32_t private_key[8];
+    uint8_t ip[16];
+    uint8_t session[8];
+    uint8_t epoch;
+    uint8_t pending;
+    uint32_t private_key[8];
 }  __attribute__ ((packed)) ClientInfo_t;
 
 typedef struct {
-  uint8_t index;
-  uint8_t epoch;
-  uint8_t key[16];
+    uint8_t index;
+    uint8_t epoch;
+    uint8_t key[16];
 }  __attribute__ ((packed)) ClientKey_t;
 
 int8_t insertClient(ClientInfo_t *clientInfo);

@@ -10,8 +10,8 @@
 #define NONCE_LEN (15-LEN_LEN)    // Es Ergibt sich die Länge der Nonce
 
 typedef struct {
-  uint8_t nonce_explicit[NONCE_LEN];
-  uint8_t ccm_ciphered[0];
+    uint8_t nonce_explicit[NONCE_LEN];
+    uint8_t ccm_ciphered[0];
 } __attribute__ ((packed)) CCMData_t;
 
 /**
