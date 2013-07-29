@@ -1,6 +1,8 @@
 #include "attributes.h"
 #include "button-sensor.h"
 
+#include <string.h>
+
 #define DEBUG 0
 
 #if DEBUG

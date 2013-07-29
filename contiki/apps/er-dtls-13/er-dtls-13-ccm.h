@@ -55,6 +55,24 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
   */
 uint8_t *getMAC(CCMData_t *data, size_t len);
 
-void CBC_MAC(uint8_t *mac, size_t mac_len, uint8_t *key, uint8_t *data, size_t data_len);
+/**
+  * \brief    CBC-MAC-Berechnung
+  *
+  *           Berechnet die CBC-MAC der Daten an Position data. Für die
+  *           Berechnung werden data_len Bytes einbezogen. Die CBC-MAC
+  *           wird in 16 Byte Blöcken berechnet. Der letzte Block wird bei
+  *           Bedarf mit 0en aufgefüllt. Das 16 Byte lange Ergebnis wird
+  *           an der Position mac hinterlegt. Zu beginn muss der Speicher an
+  *           Position mac genullt sein, falls ein neuer MAC berechnet werden
+  *           soll. Ansonsten werden die Daten an Position MAC als Initialisierungs-
+  *           vektor genutzt, so dass eine MAC-Berechnung jederzeit fortgesetzt
+  *           werden kann.
+  *
+  * \param    mac        Position an der der IV liegt bzw. die MAC abgelegt wird (16 Byte)
+  * \param    key        Schlüssel der für die CBC-MAC-Berechnung genutzt wird (16 Byte)
+  * \param    data       Position der Daten für die ein MAC berechnet werden soll
+  * \param    data_len   Länge der Daten für die ein MAC berechnet werden soll
+  */
+void CBC_MAC_16(uint8_t *mac, uint8_t *key, uint8_t *data, size_t data_len);
 
 #endif /* __ER_COAP_13_DTLS_CCM_H__ */

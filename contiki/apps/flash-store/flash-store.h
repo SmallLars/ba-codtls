@@ -63,12 +63,6 @@
 #define RES_CLIENT_KEYS      583
 #define LEN_CLIENT_KEYS      360
 
-#define RES_FLASHSWAP_LEN    943
-#define LEN_FLASHSWAP_LEN      1
-
-#define RES_FLASHSWAP        944
-#define LEN_FLASHSWAP        256
-
 /**
   * \brief    Lesen von Daten aus dem Flashspeicher
   *

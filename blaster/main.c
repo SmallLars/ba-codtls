@@ -5,14 +5,14 @@
 #include <uuid/uuid.h>
 #include <time.h>
 
-// Bloecke
+// Blöcke
 // 0x18000 - 0x18FFF Random Zugriff Block 1.1
 // 0x19000 - 0x19FFF Random Zugriff Block 1.2
 // 0x1A000 - 0x1AFFF Random Zugriff Block 2.1
 // 0x1B000 - 0x1BFFF Random Zugriff Block 2.2
-// 0x1C000 - 0x1CFFF Fehlermeldungen
+// 0x1C000 - 0x1CFFF Stack ohne Pop-Funktion
 // 0x1D000 - 0x1DFFF Fehlermeldungen
-// 0x1E000 - 0x1EFFF MAC, UUID, PSK, Name, Model
+// 0x1E000 - 0x1EFFF MAC, UUID, PSK, ECC-Base-Point, Name, Model, Flashzeitpunkt
 // 0x1F000 - 0x1FFFF Systemreserviert
 
 #define RES_BLOCK_11     0x18000
@@ -21,6 +21,18 @@
 #define RES_BLOCK_22     0x1B000
 #define LEN_BLOCK_XX     0x1000
 #define LEN_BLOCK        0x01
+
+//Read Only Fehlermeldungen
+#define RES_B_ERR_05     0x1D000
+#define LEN_B_ERR_05     73
+#define RES_B_ERR_04     0x1D080
+#define LEN_B_ERR_04     51
+#define RES_B_ERR_03     0x1D100
+#define LEN_B_ERR_03     52
+#define RES_B_ERR_02     0x1D180
+#define LEN_B_ERR_02     31
+#define RES_B_ERR_01     0x1D200
+#define LEN_B_ERR_01     61
 
 //Read Only Vars
 #define RES_MAC          0x1E000
@@ -40,20 +52,12 @@
 #define RES_FLASHTIME    0x1E0A8
 #define LEN_FLASHTIME    0x04
 
-#define RES_B_ERR_05     0x1C000
-#define LEN_B_ERR_05     73
-#define RES_B_ERR_04     0x1C080
-#define LEN_B_ERR_04     51
-#define RES_B_ERR_03     0x1C100
-#define LEN_B_ERR_03     52
-#define RES_B_ERR_02     0x1C180
-#define LEN_B_ERR_02     31
-#define RES_B_ERR_01     0x1C200
-#define LEN_B_ERR_01     61
+// ----------------------------------------------------------------------------
 
 int main(int nArgs, char **argv) {
     if (nArgs < 2 || nArgs > 3) {
-        fprintf(stderr, "Parameter erforderlich: ./blaster <MAC-Endnummer> [-t]\nBei -t wird Standard-PSK 1111111111111111 gesetzt.\n");
+        fprintf(stderr, "Parameter erforderlich: ./blaster <MAC-Endnummer> [-t]\n");
+        fprintf(stderr, "Bei -t wird Standard-PSK 1111111111111111 gesetzt.\n");
         return -1;
     }
 
@@ -76,19 +80,38 @@ int main(int nArgs, char **argv) {
         output[i] = (unsigned char) c;
     }
 
-// Ursprüngliche Länge der Firmware setzen im little Endian Encoding
+// Ursprüngliche Länge der Firmware setzen im little Endian Encoding ---------
     unsigned int length = i - 8;
     memcpy(output + 4, (const void *) &length, 4);
-    fprintf(stderr, "Länge: %u = 0x%02x%02x%02x%02x\n", length, output[7], output[6], output[5], output[4]);
+    fprintf(stderr, "Länge: %u = 0x%08x\n", length, length);
 
-    for (; i < 0x1F000; i++) output[i] = 0;
+// Rest zunächst mit 0xFF füllen (gleicher wert wie nach Löschen)
+    for (; i < 0x1F000; i++) output[i] = 0xFF;
 
-// Mac setzen
+// Blöcke für Random Zugriff initialisieren -----------------------------------
+    output[RES_BLOCK_11] = 1;
+    output[RES_BLOCK_21] = 1;
+
+// Fehlermeldungen setzen -----------------------------------------------------
+    char *buffer;
+    buffer = "Ohne eine korrekte PSK-Uebertragung kann der PSK nicht ausgelesen werden.";
+    memcpy(output + RES_B_ERR_05, buffer, LEN_B_ERR_05);
+    buffer = "Der PSK wurde schon uebertragen. Eingabe ignoriert.";
+    memcpy(output + RES_B_ERR_04, buffer, LEN_B_ERR_04);
+    buffer = "Ohne gedrückten Knopf wird der Pin nicht angenommen.";
+    memcpy(output + RES_B_ERR_03, buffer, LEN_B_ERR_03);
+    buffer = "Der PSK passt nicht zum Geraet.";
+    memcpy(output + RES_B_ERR_02, buffer, LEN_B_ERR_02);
+    buffer = "Der erste Teil des Handshakes wurde noch nicht durchgefuehrt.";
+    memcpy(output + RES_B_ERR_01, buffer, LEN_B_ERR_01);
+
+// Mac setzen -----------------------------------------------------------------
     unsigned char mac[8] = {0x62, 0xB1, 0x60, 0xB1, 0x60, 0xB1, 0x00, (unsigned char) m};
     for (i = 0; i < 8; i++) output[RES_MAC + i] = mac[i];
-    fprintf(stderr, "MAC-Adresse: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
+    fprintf(stderr, "MAC-Adresse: %02x-%02x-%02x-%02x-%02x-%02x-%02x-%02x\n",
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], mac[6], mac[7]);
 
-// UUID setzen
+// UUID setzen ----------------------------------------------------------------
     unsigned char uuid_bin[16];
     uuid_generate(uuid_bin);
     for (i = 0; i < 16; i++) output[RES_UUID + i] = uuid_bin[i];
@@ -97,7 +120,7 @@ int main(int nArgs, char **argv) {
     uuid_unparse(uuid_bin, uuid);
     fprintf(stderr, "UUID: %s\n", uuid);
 
-// PSK setzen
+// PSK setzen -----------------------------------------------------------------
     unsigned char psk[16] = "1111111111111111";
     if (nArgs == 2) {
         FILE *fd = fopen("/dev/urandom","r");
@@ -118,7 +141,7 @@ int main(int nArgs, char **argv) {
     }
     fprintf(stderr, "PSK: %.*s\n", 16, psk);
 
-// ECC Base Points setzen
+// ECC Base Points setzen -----------------------------------------------------
     uint32_t *base_x = (uint32_t *) (output + RES_ECC_BASE_X);
     base_x[0] = 0xd898c296;
     base_x[1] = 0xf4a13945;
@@ -139,17 +162,17 @@ int main(int nArgs, char **argv) {
     base_y[6] = 0xfe1a7f9b;
     base_y[7] = 0x4fe342e2;
 
-// Name setzen
+// Name setzen ----------------------------------------------------------------
     char *name = "DTLS-Testserver";
     memcpy(output + RES_NAME, name, LEN_NAME);
     fprintf(stderr, "Name: %s\n", name);
 
-// Model setzen
+// Model setzen ---------------------------------------------------------------
     char *model = "LARS-ABCD-1234";
     memcpy(output + RES_MODEL, model, LEN_MODEL);
     fprintf(stderr, "Model: %s\n", model);
 
-// Zeit setzen
+// Zeit setzen ----------------------------------------------------------------
     time_t my_time = time(NULL) + 34;
     memcpy(output + RES_FLASHTIME, (void *) &my_time, LEN_FLASHTIME);
     struct tm *timeinfo = localtime(&my_time);
@@ -158,24 +181,7 @@ int main(int nArgs, char **argv) {
     strftime(b, 64, "Erzeugt am %d.%m.%Y um %H:%M:%S", timeinfo);
     fprintf(stderr, "%s\n", b);
 
-// Blöcke für Random Zugriff initialisieren
-    output[RES_BLOCK_11] = 1;
-    output[RES_BLOCK_21] = 1;
-
-// Fehlermeldungen setzen
-    char *buffer;
-    buffer = "Ohne eine korrekte PSK-Uebertragung kann der PSK nicht ausgelesen werden.";
-    memcpy(output + RES_B_ERR_05, buffer, LEN_B_ERR_05);
-    buffer = "Der PSK wurde schon uebertragen. Eingabe ignoriert.";
-    memcpy(output + RES_B_ERR_04, buffer, LEN_B_ERR_04);
-    buffer = "Ohne gedrückten Knopf wird der Pin nicht angenommen.";
-    memcpy(output + RES_B_ERR_03, buffer, LEN_B_ERR_03);
-    buffer = "Der PSK passt nicht zum Geraet.";
-    memcpy(output + RES_B_ERR_02, buffer, LEN_B_ERR_02);
-    buffer = "Der erste Teil des Handshakes wurde noch nicht durchgefuehrt.";
-    memcpy(output + RES_B_ERR_01, buffer, LEN_B_ERR_01);
-
-// Ausgeben
+// Ausgeben -------------------------------------------------------------------
     for (i = 4; i < 0x1F000; i++) putchar(output[i]);
 
     return 0;

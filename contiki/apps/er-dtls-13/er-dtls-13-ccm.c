@@ -114,17 +114,20 @@ uint8_t *getMAC(CCMData_t *data, size_t len) {
   return data->ccm_ciphered + len - (sizeof(CCMData_t) + MAC_LEN);
 }
 
-void CBC_MAC(uint8_t *mac, size_t mac_len, uint8_t *key, uint8_t *data, size_t data_len) {
+void CBC_MAC_16(uint8_t *mac, uint8_t *key, uint8_t *data, size_t data_len) {
   uint32_t i;
 
   ASM->CONTROL0bits.CLEAR = 1;
+
+  aes_setData((uint32_t *) &(ASM->MAC0), mac, 16);
+  ASM->CONTROL0bits.LOAD_MAC = 1;
 
   aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
   for (i = 0; i < data_len; i+=16) {
     aes_setData((uint32_t *) &(ASM->DATA0), data + i, min(16, data_len - i));
     aes_round();
   }
-  aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), mac_len);
+  aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), 16);
 }
 
 /* Private Funktionen ------------------------------------------------------ */

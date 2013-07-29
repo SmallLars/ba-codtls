@@ -11,7 +11,7 @@
 #include "er-dtls-13-random.h"
 #include "flash-store.h"
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
   #include <stdio.h>
@@ -20,17 +20,19 @@
   #define PRINTF(...)
 #endif
 
-void generateHello();
-int8_t readHello(void *target, uint8_t offset, uint8_t size);
+void generateServerHello();
+int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
 static uint8_t separate_active = 0;
+
+uint16_t serverHello_offset;
 
 /*************************************************************************/
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
   if (*offset != 0) {
-    int8_t read = readHello(buffer, *offset, preferred_size);
+    int8_t read = readServerHello(buffer, *offset, preferred_size);
     PRINTF("Read: %.*s\n", read, buffer);
 
     REST.set_response_payload(response, buffer, read == 0 ? preferred_size : read);
@@ -94,6 +96,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           REST.set_response_payload(response, buffer, 13);
         } else {
           // ClientHello 2 mit Cookie beantworten
+
+          // Abspeichern für Finished-Hash
+          stack_init();
+          stack_push((uint8_t *) payload, pay_len);
+
           uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
           coap_separate_t request_metadata[1];
@@ -101,7 +108,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
           separate_active = 1;
           coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-          generateHello(); // Das dauert nun
+          generateServerHello(); // Das dauert nun
 
           // Erstes Paket senden - START
           coap_transaction_t *transaction = NULL;
@@ -113,7 +120,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
 
             // Payload generieren
-            int8_t read = readHello(buffer, 0, preferred_size);
+            int8_t read = readServerHello(buffer, 0, preferred_size);
             coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
 
             // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
@@ -132,12 +139,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
 /* ------------------------------------------------------------------------- */
 
-void generateHello() {
-    uint8_t buf[65];
-    buf[0] = sizeof(ServerHello_t) + 2 + 64;
-    uint8_t *buffer = buf + 1;
+void generateServerHello() {
+    serverHello_offset = stack_size();
+    
+    uint8_t buf[64];
 
-    Content_t *content = (Content_t *) buffer;
+    Content_t *content = (Content_t *) buf;
 
     content->type = server_hello;
     content->len = con_length_8_bit;
@@ -176,20 +183,20 @@ void generateHello() {
     printf("ECC - ENDE\n");
 
     // Kleiner Hack damit Länge und Daten zugleich geschrieben werden
-    nvm_setVar(buf, RES_FLASHSWAP_LEN, sizeof(ServerHello_t) + 3);
+    stack_push(buf, sizeof(Content_t) + 1 + sizeof(ServerHello_t));
     memset(buf, 'A', 64);
-    nvm_setVar(buf, RES_FLASHSWAP_LEN + sizeof(ServerHello_t) + 3, 64);
+    stack_push(buf, 64);
 }
 
-int8_t readHello(void *target, uint8_t offset, uint8_t size) {
-  uint8_t length;
-  nvm_getVar(&length, RES_FLASHSWAP_LEN, 1);
+int8_t readServerHello(void *target, uint8_t offset, uint8_t size) {
+  uint8_t length = stack_size() - serverHello_offset;
 
   if (offset >= length) return -1;
 
   uint8_t readsize = (length - offset);
   if (size < readsize) readsize = size;
-  nvm_getVar(target, RES_FLASHSWAP + offset, readsize);
+
+  nvm_getVar(target, RES_STACK + serverHello_offset + offset, readsize);
 
   return (offset + readsize) >= length ? readsize : 0;
 }
