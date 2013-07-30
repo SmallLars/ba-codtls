@@ -57,7 +57,7 @@
 int main(int nArgs, char **argv) {
     if (nArgs < 2 || nArgs > 3) {
         fprintf(stderr, "Parameter erforderlich: ./blaster <MAC-Endnummer> [-t]\n");
-        fprintf(stderr, "Bei -t wird Standard-PSK 1111111111111111 gesetzt.\n");
+        fprintf(stderr, "Bei -t wird Standard-PSK ABCDEFGHIJKLMNOP gesetzt.\n");
         return -1;
     }
 
@@ -121,7 +121,7 @@ int main(int nArgs, char **argv) {
     fprintf(stderr, "UUID: %s\n", uuid);
 
 // PSK setzen -----------------------------------------------------------------
-    unsigned char psk[16] = "1111111111111111";
+    unsigned char psk[16] = "ABCDEFGHIJKLMNOP";
     if (nArgs == 2) {
         FILE *fd = fopen("/dev/urandom","r");
         if (fd == NULL) {

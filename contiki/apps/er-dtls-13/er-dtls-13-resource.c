@@ -129,6 +129,17 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         // TODO Warning: No check for serialization error.
                         transaction->packet_len = coap_serialize_message(response, transaction->packet);
                         coap_send_transaction(transaction);
+
+                        // Payload generieren
+                        read = readServerHello(buffer, 64, preferred_size);
+                        coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
+
+                        // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
+                        coap_set_header_block2(response, 1, 0, preferred_size); // Block 0, Es folgen weitere, Blockgröße 64 = preferred_size
+
+                        // TODO Warning: No check for serialization error.
+                        transaction->packet_len = coap_serialize_message(response, transaction->packet);
+                        coap_send_transaction(transaction);
                     }
                     // Erstes Paket senden - ENDE
                 }

@@ -306,7 +306,7 @@ message_handler(struct coap_context_t  *ctx,
 	      COAP_OPT_BLOCK_SZX(block_opt), COAP_OPT_BLOCK_NUM(block_opt));
 
 	/* create pdu with request for next block */
-	pdu = coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
+	pdu = NULL; //coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
 	if ( pdu ) {
 	  /* add URI components from optlist */
 	  for (option = optlist; option; option = option->next ) {
