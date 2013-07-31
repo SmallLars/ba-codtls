@@ -1,9 +1,14 @@
 \chapter{Definition des Ciphersuits}
 
-TLS\_PSK\_WITH\_AES\_128\_CCM\_8
+Vorhanden \cite{rfc6655}:\\
+CipherSuite TLS\_PSK\_WITH\_AES\_128\_CCM\_8     = {0xC0,0xA8}\\
+CipherSuite TLS\_PSK\_WITH\_AES\_256\_CCM\_8     = {0xC0,0xA9)\\
+CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAA}\\
+CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAB}
 
-TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
+Neu:\\
+CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAC}\\
+CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAD}
 
+Generell:\\
 CBC-MAC anstatt HMAC mit SHA256
-
-lala \TODO{Test1} soso

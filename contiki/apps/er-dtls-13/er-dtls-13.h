@@ -48,15 +48,15 @@ typedef enum {
     rec_length_0 = 0,
     rec_length_8_bit = 1,
     rec_length_16_bit = 2,
-    rec_length_implicit = 3 // datagram size - sizeof(DTLSRecord_t)
+    rec_length_implicit = 3 // datagram size - sizeof(DTLSRecord_t) or last datagram in record
 } RecordLength;
 
 typedef struct {
-    uint8_t empty1:1;
+    uint8_t :1;
     RecordType type:2;
     Version version:2;
     Epoch epoch:3;
-    uint8_t empty2:3;
+    uint8_t :3;
     SequenceNumber snr:3;
     RecordLength length:2;
     uint8_t payload[0];
