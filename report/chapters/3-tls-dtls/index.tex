@@ -1,18 +1,18 @@
 \chapter{TLS / DTLS}
 
-Das Sicherheitsprotokoll \acr{tls} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
+Das Sicherheitsprotokoll \acr{tls} \cite{rfc5246} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
 Wurde durch \acr{tcp} eine Verbindung hergestellt, können Daten von beliebieger Größer in jede Richtung
 übertragen werden. \acr{tcp} wird dafür sorgen, dass der eingegebene Bytestrom vollständig und in der
 richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls} bezogenen Daten nun
-zu kennzeichnen und voneinander abzugrenzen existiert der "`Record Layer"' wie in Abbildung \ref{fig:recordlayer}
-dargestellt. Dort ist neben der Art des Inhalts und der Protokollversion auch die Länge enthalten, so dass
-aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können. Als Inhalt kommen 4 Protokolle
+zu kennzeichnen und voneinander abzugrenzen existiert das "`Record Layer Protkoll"' dessen Header in Abbildung \ref{fig:recordlayer}
+dargestellt ist. Dort ist neben der Art des Inhalts und der Protokollversion auch die Länge enthalten, so dass
+aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können. Als Inhalt kommen 4 Sub-Protokolle
 in Frage. Währen das Application-Data-Protokoll für den Transport der Anwendungsdaten genutzt wird, kommt
 das Handshake-Protokoll für die Aushandlung der Sicherheitsparameter zum Einsatz. Über das Change-Cipher-Spec-Protokoll
 werden die zuletzt ausgehandelten Sicherheitsparameter aktiviert. Sollte es beim Handshake oder der Übertragung
 von Anwendungsdaten zu Fehlern kommen, werden diese mit Hilfe des Altert-Protokolls übertragen.
 
-Da bei \acr{dtls} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
+Da bei \acr{dtls} \cite{rfc6347} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
 Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei einem
 \glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
 so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
@@ -35,18 +35,18 @@ während die Sequenznummer in jeder Epoche bei 0 beginnt und bei jedem Paketvers
     uint8  fragment[DTLS_Record.length];
   } DTLS_Record;
   \end{lstlisting}
-  \caption{Record Layer von TLS / DTLS}
+  \caption{Header des Record Layer Protokolls von TLS / DTLS}
   \label{fig:recordlayer}
 \end{figure}
 
 \section{Handshake}
 
 Damit es überhaupt zu einer sicheren Verbindung kommen kann, müssen zunächst einige Sicherheitsparameter mit Hilfe des Handshake-Protokolls ausgehandelt werden.
-Ein Handshake Paket setzt sich gemäß Abbildung \ref{fig:handshakelayer} zusammen. Während es bei TLS ausreichend ist, den Typ, die Länge und die Daten selbst
+Der Header eines Handshake-Pakets setzt sich gemäß Abbildung \ref{fig:handshakelayer} zusammen. Während es bei TLS ausreichend ist, den Typ, die Länge und die Daten selbst
 zu senden, wurden bei DTLS weitere Datenfelder ergänzt. Das message\_seq dient zur Durchnummerierung der Handshake-Nachrichten um Paketverluste von UDP zu erkennen
 und eine mögliche falsche Reihenfolge der Pakete auszugleichen. Da UDP eine begrenzte Paketgröße hat und eine Fragmentierung der UDP-Pakete auf IP-Ebene
 vermieden werden soll, müssen Handshake-Nachrichten eventuell auf mehrere UDP-Pakete verteilt werden. Um dies zu ermöglichen wurden fragment\_offset und fragment\_length
-ergänzt. So können die Daten in mehrere Teile geteilt werden während die Länge und die Position im Paket hinterlegt werden. length enthält nach wie vor die
+ergänzt. So können die Daten in mehrere Teile geteilt werden, während die Länge und die Position im Paket hinterlegt werden. length enthält nach wie vor die
 Gesamtlänge, so dass eine Fragmentierung jederzeit erkannt werden kann.
 
 \begin{figure}[ht]
@@ -61,7 +61,7 @@ Gesamtlänge, so dass eine Fragmentierung jederzeit erkannt werden kann.
     uint8  fragment[Handshake.length];
   } Handshake;
   \end{lstlisting}
-  \caption{Handshake Protokoll von TLS / DTLS}
+  \caption{Header des Handshake Protokolls von TLS / DTLS}
   \label{fig:handshakelayer}
 \end{figure}
 
@@ -120,6 +120,7 @@ notwendig sind.
 
 Während die bisher genannten Handshake-Nachrichten mit den Sicherheitspramatern der aktuell gültigen Epoche versendet werden, folgt nun der Versand eines
 ChangeCipherSpec. Dieses Paket gehört formell nicht zum Handshake-Protkoll sondern bildet ein eigenes Protokoll, da hier die Epoche verändert wird.
+Ein ChangeCipherSpec Paket besteht ausschließlich aus einem 1 Byte langen Header mit dem Wert 1 und enthält keine weiteren Daten.
 Nach dem Versand des Pakets werden alle folgenden Pakete mit den Sicherheitsparametern der neuen Epoche versendet während erst der Empfang solch eines
 Pakets dazu führt, dass alle folgenden eingehenden Pakete mit Hilfe der neuen Sicherheitsparameter gelesen werden.
 
@@ -128,4 +129,21 @@ und wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. So wird 
 
 \section{Alert}
 
-\TODO{Alert beschreiben}
+Wenn es während des Handshakes oder der Übertragung von Anwendungsdaten zu fehlern kommt, werden diese mit Hilfe des Altert Protokolls übertragen.
+Der Header (siehe Abbildung \ref{fig:alertlayer}) enthält neben dem AlertLevel, welches \text it{warning} (1) oder \textit{fatal} (2) sein kann,
+die Beschreibung des Fehlers. Während Fehler des Levels \textit{fatal} zu einem unmittelbaren Verbindungsabbruch führen, sind Fehler des Levels
+\textit{warning} zur Information der Gegenseite über mögliche Probleme gedacht. Das Altert-Protokoll unterscheidet sich bei \acr{tls} und \acr{dtls}
+nicht voneinander, da eine zuverlässige Übertragung nicht notwendig ist. Sollte aufgrund eines verloren gegangenen Altert-Pakets eine Anfrage
+wiederholt werden, wird erneut ein Alert-Paket generiert.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+  struct {
+    AlertLevel level;
+    AlertDescription description;
+  } Alert;
+  \end{lstlisting}
+  \caption{Header des Altert Protokolls von TLS / DTLS}
+  \label{fig:alertlayer}
+\end{figure}
