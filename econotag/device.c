@@ -1,6 +1,9 @@
 #include "attributes.h"
 #include "button-sensor.h"
 
+#include "mc1322x.h"
+#include "flash-store.h"
+
 #include <string.h>
 
 #define DEBUG 0
@@ -12,39 +15,78 @@
     #define PRINTF(...)
 #endif
 
+/*
 uint8_t ecc_add_n(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
-    uint32_t index;
     uint32_t total;
     uint32_t toAdd;
 
     asm volatile(
-            "mov  %[t], #0 \n\t"
-            "mov  %[i], #0 \n\t"
-        ".loop: \n\t"
-            "ldrh %[s], [%[x],%[i]] \n\t"
-            "add  %[t], %[t], %[s] \n\t"
-            "ldrh %[s], [%[y],%[i]] \n\t"
-            "add  %[t], %[t], %[s] \n\t"
-            "strh %[t], [%[r],%[i]] \n\t"
-            "asr  %[t], #16 \n\t"
-            "add  %[i], %[i], #2 \n\t"
-            "cmp  %[i], %[l] \n\t"
-            "bne .loop \n\t"
-    : /* out */
-        [i] "+r" (index),
+            "mov %[t], #0 \n\t"
+            "mov %[s], #0 \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+
+            "ldr %[t], [%[x],#8] \n\t"
+            "ldr %[s], [%[y],#8] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#8] \n\t"
+
+            "ldr %[t], [%[x],#12] \n\t"
+            "ldr %[s], [%[y],#12] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#12] \n\t"
+
+            "ldr %[t], [%[x],#16] \n\t"
+            "ldr %[s], [%[y],#16] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#16] \n\t"
+
+            "ldr %[t], [%[x],#20] \n\t"
+            "ldr %[s], [%[y],#20] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#20] \n\t"
+
+            "ldr %[t], [%[x],#24] \n\t"
+            "ldr %[s], [%[y],#24] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#24] \n\t"
+
+            "ldr %[t], [%[x],#28] \n\t"
+            "ldr %[s], [%[y],#28] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#28] \n\t"
+
+            "bcc .nocarry \n\t"
+            "mov %[t], #1 \n\t"
+            "b .end \n\t"
+
+        ".nocarry: \n\t"
+            "mov %[t], #0 \n\t"
+        ".end: \n\t"
+    : /* out *
         [t] "+r" (total),
         [s] "+r" (toAdd)
-    : /* in */
+    : /* in *
         [x] "r" (x),
         [y] "r" (y),
         [r] "r" (result),
         [l] "r" (length)
-    : /* clobber list */
+    : /* clobber list *
         "memory"
     );
 
     return total;
 }
+*/
 
 // Start Process
 PROCESS(server_firmware, "Server Firmware");
@@ -55,7 +97,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
 
     PRINTF("Firmware gestartet.\n");
 
-/*
+
             uint32_t result_x[8];
             uint32_t result_y[8];
             uint32_t base_x[8];
@@ -74,7 +116,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
             printf("ECC - START\n");
             ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
             printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
-*/
+/*
     uint32_t a[8] = {0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0, 0xFFFFFFFF, 0xFFFFFFFF};
     uint32_t b[8] = {1, 1, 1, 1, 1, 1, 1, 4};
     uint32_t c[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -82,7 +124,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
     int i;
     for (i = 0; i < 8; i++) printf("%u + %u = %u\n", a[i], b[i], c[i]);
     printf("Carry: %u\n", carry);
-
+*/
     rest_init_engine();
 
     rest_activate_resource(&resource_device);
