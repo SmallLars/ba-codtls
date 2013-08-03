@@ -61,80 +61,108 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
+/*
+    uint8_t d = 0; //carry
+    uint8_t v = 0;
+    for(;v<length;v++){
+        result[v] = x[v] + y[v];
+        if(result[v]<x[v] || result[v]<y[v]) {
+            result[v] += d;
+            d = 1;
+        } else {
+            if (d==1 && result[v]==0xffffffff){
+                // d = 1; //omitted, because d is already 1
+                result[v] = 0x0;
+            } else {
+                result[v] += d;
+                d = 0;
+            }
+        }
+    }
+    
+    return d;
+*/
     uint32_t total;
     uint32_t toAdd;
 
     asm volatile(
-            "mov %[t], #0 \n\t"
-            "mov %[s], #0 \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-
+            "cmp %[l], #2 \n\t"
+            "beq .add2 \n\t"
+            "bhi .add4or8 \n\t"
+        ".add1: \n\t"
             "ldr %[t], [%[x],#0] \n\t"
             "ldr %[s], [%[y],#0] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
+            "add %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#0] \n\t"
-
-            "cmp %[l], #1 \n\t"
-            "beq .foot \n\t"
-
+            "b .foot \n\t"
+        ".add2: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
             "ldr %[t], [%[x],#4] \n\t"
             "ldr %[s], [%[y],#4] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#4] \n\t"
-
-            "cmp %[l], #2 \n\t"
-            "beq .foot \n\t"
-
+            "b .foot \n\t"
+        ".add4or8: \n\t"
+            "cmp %[l], #8 \n\t"
+            "beq .add8 \n\t"
+        ".add4: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
             "ldr %[t], [%[x],#8] \n\t"
             "ldr %[s], [%[y],#8] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#8] \n\t"
-
-            "cmp %[l], #3 \n\t"
-            "beq .foot \n\t"
-
             "ldr %[t], [%[x],#12] \n\t"
             "ldr %[s], [%[y],#12] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#12] \n\t"
-
-            "cmp %[l], #4 \n\t"
-            "beq .foot \n\t"
-
+            "b .foot \n\t"
+        ".add8: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+            "ldr %[t], [%[x],#8] \n\t"
+            "ldr %[s], [%[y],#8] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#8] \n\t"
+            "ldr %[t], [%[x],#12] \n\t"
+            "ldr %[s], [%[y],#12] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#12] \n\t"
             "ldr %[t], [%[x],#16] \n\t"
             "ldr %[s], [%[y],#16] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#16] \n\t"
-
-            "cmp %[l], #5 \n\t"
-            "beq .foot \n\t"
-
             "ldr %[t], [%[x],#20] \n\t"
             "ldr %[s], [%[y],#20] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#20] \n\t"
-
-            "cmp %[l], #6 \n\t"
-            "beq .foot \n\t"
-
             "ldr %[t], [%[x],#24] \n\t"
             "ldr %[s], [%[y],#24] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#24] \n\t"
-
-            "cmp %[l], #7 \n\t"
-            "beq .foot \n\t"
-
             "ldr %[t], [%[x],#28] \n\t"
             "ldr %[s], [%[y],#28] \n\t"
             "adc %[t], %[t], %[s] \n\t"
             "str %[t], [%[r],#28] \n\t"
-
         ".foot: \n\t"
             "bcc .nocarry \n\t"
             "mov %[t], #1 \n\t"
             "b .end \n\t"
-
         ".nocarry: \n\t"
             "mov %[t], #0 \n\t"
         ".end: \n\t"
