@@ -61,7 +61,6 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-/*
     uint8_t d = 0; //carry
     uint8_t v = 0;
     for(;v<length;v++){
@@ -81,104 +80,6 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
     }
     
     return d;
-*/
-    uint32_t total;
-    uint32_t toAdd;
-
-    asm volatile(
-            "cmp %[l], #2 \n\t"
-            "beq .add2 \n\t"
-            "bhi .add4or8 \n\t"
-        ".add1: \n\t"
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "add %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "b .foot \n\t"
-        ".add2: \n\t"
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "add %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "ldr %[t], [%[x],#4] \n\t"
-            "ldr %[s], [%[y],#4] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#4] \n\t"
-            "b .foot \n\t"
-        ".add4or8: \n\t"
-            "cmp %[l], #8 \n\t"
-            "beq .add8 \n\t"
-        ".add4: \n\t"
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "add %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "ldr %[t], [%[x],#4] \n\t"
-            "ldr %[s], [%[y],#4] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#4] \n\t"
-            "ldr %[t], [%[x],#8] \n\t"
-            "ldr %[s], [%[y],#8] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#8] \n\t"
-            "ldr %[t], [%[x],#12] \n\t"
-            "ldr %[s], [%[y],#12] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#12] \n\t"
-            "b .foot \n\t"
-        ".add8: \n\t"
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "add %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "ldr %[t], [%[x],#4] \n\t"
-            "ldr %[s], [%[y],#4] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#4] \n\t"
-            "ldr %[t], [%[x],#8] \n\t"
-            "ldr %[s], [%[y],#8] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#8] \n\t"
-            "ldr %[t], [%[x],#12] \n\t"
-            "ldr %[s], [%[y],#12] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#12] \n\t"
-            "ldr %[t], [%[x],#16] \n\t"
-            "ldr %[s], [%[y],#16] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#16] \n\t"
-            "ldr %[t], [%[x],#20] \n\t"
-            "ldr %[s], [%[y],#20] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#20] \n\t"
-            "ldr %[t], [%[x],#24] \n\t"
-            "ldr %[s], [%[y],#24] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#24] \n\t"
-            "ldr %[t], [%[x],#28] \n\t"
-            "ldr %[s], [%[y],#28] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#28] \n\t"
-        ".foot: \n\t"
-            "bcc .nocarry \n\t"
-            "mov %[t], #1 \n\t"
-            "b .end \n\t"
-        ".nocarry: \n\t"
-            "mov %[t], #0 \n\t"
-        ".end: \n\t"
-    : /* out */
-        [t] "+r" (total),
-        [s] "+r" (toAdd)
-    : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
-    : /* clobber list */
-        "memory"
-    );
-
-    return total;
 }
 
 uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
