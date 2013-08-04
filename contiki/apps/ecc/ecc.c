@@ -37,9 +37,8 @@
  */
 
 #include "ecc.h"
-
-uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);
-uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);
+#include "ecc_add.h"
+#include "ecc_sub.h"
 
 //field functions for big numbers
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
@@ -59,49 +58,6 @@ int ecc_isOne(const uint32_t* A);
 void ecc_rshift(uint32_t* A);
 int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
-
-uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-    uint8_t d = 0; //carry
-    uint8_t v = 0;
-    for(;v<length;v++){
-        result[v] = x[v] + y[v];
-        if(result[v]<x[v] || result[v]<y[v]) {
-            result[v] += d;
-            d = 1;
-        } else {
-            if (d==1 && result[v]==0xffffffff){
-                // d = 1; //omitted, because d is already 1
-                result[v] = 0x0;
-            } else {
-                result[v] += d;
-                d = 0;
-            }
-        }
-    }
-    
-    return d;
-}
-
-uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-    uint8_t d = 0;
-    int v = 0;
-    for(;v<length;v++){
-        result[v] = x[v] - y[v];
-        if(result[v]>x[v]){
-            result[v] -= d;
-            d = 1;
-        } else {
-            if(d==1 && result[v]==0x00000000){
-                //d = 1; /omitted, because d is already 1
-                result[v] = 0xffffffff;
-            } else {
-                result[v] -= d;
-                d = 0;
-            }
-        }
-    }
-    return (uint8_t)d;
-}
 
 //finite field functions
 //FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
