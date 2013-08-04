@@ -39,6 +39,7 @@
 #include "ecc.h"
 #include "ecc_add.h"
 #include "ecc_sub.h"
+#include "ecc_rshift.h"
 
 //field functions for big numbers
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
@@ -55,7 +56,6 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
 //simple functions to work with the big numbers
 void ecc_setZero(uint32_t *A, const int length);
 int ecc_isOne(const uint32_t* A);
-void ecc_rshift(uint32_t* A);
 int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 
@@ -355,21 +355,6 @@ static int ecc_isZero(const uint32_t* A){
         if (A[n] != 0) return 0;
     }
     return 1;
-}
-
-void ecc_rshift(uint32_t* A){
-    int n, i, nOld=0;
-    for (i = 8; i--;)
-    {
-        n = A[i]&0x1;
-        A[i] = nOld<<31 | A[i]>>1;
-        nOld = n;
-    }
-    // uint8_t i;
-    // for(i=0; i<7;i++){
-    //  A[i] = (A[i+1]&0x1)<<31 | A[i]>>1;
-    // }
-    // A[7]=A[7]>>1;
 }
 
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result){

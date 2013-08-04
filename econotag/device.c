@@ -5,6 +5,7 @@
 #include "flash-store.h"
 #include "ecc_add.h"
 #include "ecc_sub.h"
+#include "ecc_rshift.h"
 
 #include <string.h>
 
@@ -25,7 +26,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
     PROCESS_BEGIN();
 
     PRINTF("Firmware gestartet.\n");
-
+/*
             uint32_t result_x[8];
             uint32_t result_y[8];
             uint32_t base_x[8];
@@ -44,7 +45,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
             printf("ECC - START\n");
             ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
             printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
-
+*/
 /*
     uint32_t a[8] = {2, 3, 4, 5, 6, 7, 8, 9};
     uint32_t b[8] = {1, 3, 5, 2, 1, 1, 1, 10};
@@ -53,6 +54,26 @@ PROCESS_THREAD(server_firmware, ev, data) {
     int i;
     for (i = 0; i < 8; i++) printf("%u - %u = %u\n", a[i], b[i], c[i]);
     printf("Carry: %u\n", carry);
+*/
+/*
+    uint32_t a[8] = {0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567};
+    int i;
+    for (i = 7; i >= 0; i--) {
+        printf("%08x ", a[i]);
+    }
+    printf("\n");
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    ecc_rshift(a);
+    for (i = 7; i >= 0; i--) {
+        printf("%08x ", a[i]);
+    }
+    printf("\n");
 */
 
     rest_init_engine();
