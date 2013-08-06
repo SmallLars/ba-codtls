@@ -1,19 +1,21 @@
 #include "attributes.h"
 #include "button-sensor.h"
 
-#include "mc1322x.h"
-#include "flash-store.h"
-#include "ecc_add.h"
-#include "ecc_sub.h"
-#include "ecc_rshift.h"
-
-#include <string.h>
-
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
     #include <stdio.h>
     #define PRINTF(...) printf(__VA_ARGS__)
+    extern uint32_t _start, _edata;
+    extern uint32_t __stack_start__;
+    extern uint32_t __irq_stack_top__, IRQ_STACK_SIZE;
+    extern uint32_t __fiq_stack_top__, FIQ_STACK_SIZE;
+    extern uint32_t __svc_stack_top__, SVC_STACK_SIZE;
+    extern uint32_t __abt_stack_top__, ABT_STACK_SIZE;
+    extern uint32_t __und_stack_top__, UND_STACK_SIZE;
+    extern uint32_t __sys_stack_top__, SYS_STACK_SIZE;
+    extern uint32_t __bss_start__, __bss_end__;
+    extern uint32_t __heap_start__, __heap_end__, HEAP_SIZE;
 #else
     #define PRINTF(...)
 #endif
@@ -26,55 +28,6 @@ PROCESS_THREAD(server_firmware, ev, data) {
     PROCESS_BEGIN();
 
     PRINTF("Firmware gestartet.\n");
-/*
-            uint32_t result_x[8];
-            uint32_t result_y[8];
-            uint32_t base_x[8];
-            uint32_t base_y[8];
-            nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
-            nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
-
-            uint32_t private_key[8];
-            do {
-                uint32_t i;
-                for (i = 0; i < 32; i++)
-                    ((uint8_t *) private_key)[i] = (*MACA_RANDOM) & 0x000000FF;
-            } while (!ecc_is_valid_key(private_key));
-
-            uint32_t time = *MACA_CLK;
-            printf("ECC - START\n");
-            ecc_ec_mult(base_x, base_y, private_key, result_x, result_y);
-            printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
-*/
-/*
-    uint32_t a[8] = {2, 3, 4, 5, 6, 7, 8, 9};
-    uint32_t b[8] = {1, 3, 5, 2, 1, 1, 1, 10};
-    uint32_t c[8] = {5, 5, 5, 5, 5, 5, 5, 5};
-    uint8_t carry = ecc_sub(a, b, c, 8);
-    int i;
-    for (i = 0; i < 8; i++) printf("%u - %u = %u\n", a[i], b[i], c[i]);
-    printf("Carry: %u\n", carry);
-*/
-/*
-    uint32_t a[8] = {0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567, 0x89ABCDEF, 0x01234567};
-    int i;
-    for (i = 7; i >= 0; i--) {
-        printf("%08x ", a[i]);
-    }
-    printf("\n");
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    ecc_rshift(a);
-    for (i = 7; i >= 0; i--) {
-        printf("%08x ", a[i]);
-    }
-    printf("\n");
-*/
 
     rest_init_engine();
 
@@ -84,7 +37,51 @@ PROCESS_THREAD(server_firmware, ev, data) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == sensors_event && data == &button_sensor) {
-            PRINTF("Button.\n");
+            #if DEBUG
+                PRINTF("\n");
+                PRINTF("Speicheraufteilung (Konfiguration in contiki/cpu/mc1322x/mc1322x.lds)\n");
+                PRINTF("---------------------------------------------------------------------\n");
+                PRINTF("\n");
+                PRINTF("Beschreibung | Start      | Ende       | Größe\n");
+                PRINTF("----------------------------------------------\n");
+                PRINTF("Programm     | 0x%08x | 0x%08x | %5u\n", &_start, &_edata, (uint32_t) &_edata - (uint32_t) &_start);
+                PRINTF("Irq Stack    | 0x%08x | 0x%08x | %5u\n", &__stack_start__, &__irq_stack_top__, &IRQ_STACK_SIZE);
+                PRINTF("Fiq Stack    | 0x%08x | 0x%08x | %5u\n", &__irq_stack_top__, &__fiq_stack_top__, &FIQ_STACK_SIZE);
+                PRINTF("Svc Stack    | 0x%08x | 0x%08x | %5u\n", &__fiq_stack_top__, &__svc_stack_top__, &SVC_STACK_SIZE);
+                PRINTF("Abt Stack    | 0x%08x | 0x%08x | %5u\n", &__svc_stack_top__, &__abt_stack_top__, &ABT_STACK_SIZE);
+                PRINTF("Und Stack    | 0x%08x | 0x%08x | %5u\n", &__abt_stack_top__, &__und_stack_top__, &UND_STACK_SIZE);
+                PRINTF("Sys Stack    | 0x%08x | 0x%08x | %5u\n", &__und_stack_top__, &__sys_stack_top__, &SYS_STACK_SIZE);
+                PRINTF("Datensegment | 0x%08x | 0x%08x | %5u\n", &__bss_start__, &__bss_end__, (uint32_t) &__bss_end__ - (uint32_t) &__bss_start__);
+                PRINTF("Heap         | 0x%08x | 0x%08x | %5u\n", &__heap_start__, &__heap_end__, &HEAP_SIZE);
+                PRINTF("Frei         | 0x%08x | 0x%08x | %5u\n", &__heap_end__, 0x418000, 0x418000 - (uint32_t) &__heap_end__);
+
+                PRINTF("\n");
+
+                // Folgende Ausgaben möglich durch Speicherinitialisierung in
+                // contiki/platform/redbee-econotag/contiki-mc1322x-main.c
+                // durch hinzufügen der Flags STACKMONITOR und HEAPMONITOR
+                uint32_t p;
+                p = (uint32_t) &__und_stack_top__;
+                do {
+                    if (*(uint32_t *)p != 0x42424242) {
+                        PRINTF("Nie benutzer Stack > %d Byte\n", p - (uint32_t) &__und_stack_top__);
+                        break;
+                    }
+                    p += 16;
+                } while (p < (uint32_t) &__sys_stack_top__ - 100);
+                p = (uint32_t) &__heap_end__ - 4;
+                do {
+                    if (*(uint32_t *)p != 0x42424242) {
+                        break;
+                    }
+                    p -= 4;
+                } while (p >= (uint32_t) &__heap_start__);
+                PRINTF("Nie benutzer Heap >= %d Byte\n", (uint32_t) &__heap_end__ - p - 4);
+
+                PRINTF("\n");
+            #else
+                printf("Button!\n");
+            #endif
 		}
 	}
 

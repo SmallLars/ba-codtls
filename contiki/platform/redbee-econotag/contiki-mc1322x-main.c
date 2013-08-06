@@ -70,6 +70,8 @@
 /* Get periodic prints from idle loop, from clock seconds or rtimer interrupts */
 /* Use of rtimer will conflict with other rtimer interrupts such as contikimac radio cycling */
 #define PERIODICPRINTS 0
+#define STACKMONITOR 1 // addet for init without periodical prints
+#define HEAPMONITOR 1  // addet for init without periodical prints
 #if PERIODICPRINTS
 //#define PINGS 64
 #define ROUTES 300
