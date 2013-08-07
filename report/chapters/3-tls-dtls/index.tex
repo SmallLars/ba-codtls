@@ -1,4 +1,5 @@
 \chapter{TLS / DTLS}
+\label{chp:dtls}
 
 Das Sicherheitsprotokoll \acr{tls} \cite{rfc5246} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
 Wurde durch \acr{tcp} eine Verbindung hergestellt, können Daten von beliebieger Größer in jede Richtung
@@ -75,18 +76,18 @@ den \acr{psk} realsiert werden soll und auf die Zertifikate verzichtet wird, um 
                       Client           Server
                       ------           ------
 
-         ClientHello (seq=0) -------->
+        ClientHello  (seq=0) -------->
 
-                             <-------- HelloVerifyRequest  (seq=0)    // Nur bei DTLS
+                             <-------- (seq=0)  HelloVerifyRequest    // Nur bei DTLS
 
-         ClientHello (seq=1) -------->                                // Nur bei DTLS
-         (with cookie)                                                // Nur bei DTLS
+        ClientHello  (seq=1) -------->                                // Nur bei DTLS
+       (mit cookie)                                                   // Nur bei DTLS
 
-                             <--------        ServerHello  (seq=1)
-                             <--------        Certificate* (seq=2)
-                             <--------  ServerKeyExchange  (seq=3)
-                             <-------- CertificateRequest* (seq=4)
-                             <--------    ServerHelloDone  (seq=5)
+                             <-------- (seq=1)  ServerHello
+                             <-------- (seq=2) *Certificate
+                             <-------- (seq=3)  ServerKeyExchange
+                             <-------- (seq=4) *CertificateRequest
+                             <-------- (seq=5)  ServerHelloDone
 
         Certificate* (seq=2) -------->
   ClientKeyExchange  (seq=3) -------->
@@ -94,10 +95,10 @@ den \acr{psk} realsiert werden soll und auf die Zertifikate verzichtet wird, um 
    ChangeCipherSpec          -------->
            Finished  (seq=5) -------->
 
-                             <--------   ChangeCipherSpec
-                             <--------           Finished  (seq=6)
+                             <--------          ChangeCipherSpec
+                             <-------- (seq=6)  Finished  
 
-   Application Data          <------->   Application Data
+   Application Data          <------->          Application Data
   \end{lstlisting}
   \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes}
   \label{fig:handshake}

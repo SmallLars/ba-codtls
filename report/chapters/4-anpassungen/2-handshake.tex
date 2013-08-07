@@ -1,3 +1,49 @@
 \section{Handshake}
 
-todo
+Wie in Kapitel \ref{chp:dtls} beschrieben, wurde der Header des \acr{dtls}-Handshake-Protokolls um eine Sequenz-Nummer
+und 2 Datenfelder für die Fragmentierung ergänzt. Diese sind zunächst notwendig, um die in \acr{dtls} fehlenden Mechanismen
+auszugleichen. Da der Handshake nun über \acr{coap} realisiert wird, können diese Datenfelder jedoch wieder wegfallen.
+\TODO{begründung und weiter schreiben}
+
+% - separat
+% - blockwise
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+                      Client           Server
+                      ------           ------
+
+                  POST /dtls -------->
+             ClientHello
+
+                             <-------- 1.02 Verify
+                                           HelloVerifyRequest
+
+                  POST /dtls -------->
+             ClientHello
+            (mit cookie)
+
+                             <-------- 2.01 Created
+                                           ServerHello (enthält Session X)
+                                          *Certificate
+                                           ServerKeyExchange
+                                          *CertificateRequest
+                                           ServerHelloDone
+
+              POST /dtls?s=X -------->
+             Certificate*
+       ClientKeyExchange
+       CertificateVerify*
+        ChangeCipherSpec
+                Finished
+
+                             <-------- 2.04 Changed
+                                           ChangeCipherSpec
+                                           Finished
+
+            Application Data <-------> Application Data
+  \end{lstlisting}
+  \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
+  \label{fig:newhandshake}
+\end{figure}
