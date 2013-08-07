@@ -27,7 +27,7 @@ typedef enum {
     con_length_0 = 0,
     con_length_8_bit = 1,
     con_length_16_bit = 2,
-    con_length_48_bit = 3
+    con_length_24_bit = 3
 } ContentLength;
 
 typedef struct {

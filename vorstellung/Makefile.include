@@ -1,0 +1,76 @@
+# -*- Makefile -*-
+BIBINPUTS:=$(BIBINPUTS):.:$(TOP)/doc
+TEXINPUTS:=$(TEXINPUTS):.:$(TOP)/doc
+BSTINPUTS:=$(BSTINPUTS):.:$(TOP)/doc
+
+SVGS:=${wildcard $(TOP)/../pic/*.svg} ${wildcard pic/*.svg} ${wildcard $(TOP)/org/*.svg}
+GPLOTS:=${wildcard pic/*.gplot}
+
+FIGURES:=${patsubst %.svg, %.pdf,${SVGS}} ${patsubst %.gplot, %.pdf,${GPLOTS}}
+
+LATEX:=BIBINPUTS=$(BIBINPUTS) TEXINPUTS=$(TEXINPUTS) BSTINPUTS=$(BSTINPUTS) latex
+PDFLATEX:=BIBINPUTS=$(BIBINPUTS) TEXINPUTS=$(TEXINPUTS) BSTINPUTS=$(BSTINPUTS) pdflatex
+BIBTEX:=BIBINPUTS=$(BIBINPUTS) TEXINPUTS=$(TEXINPUTS) BSTINPUTS=$(BSTINPUTS) bibtex
+
+MAIN?=$(shell echo `pwd`|sed -ne 's,^.*/\([^/]\+\),\1,p')
+
+DISTFILES:=$(MAIN).pdf $(MAIN).tex $(MAIN).bib $(FIGURES)
+
+ZIPFILE:=$(MAIN).zip
+
+.PHONY:	.gitignore
+
+all: $(MAIN).pdf
+
+clean:
+	rm -f *.aux *.dvi *.log *~  *.bbl *.blg *.toc
+
+dist:	$(MAIN).pdf
+	rm -rf distdir
+	mkdir distdir
+	cp $(DISTFILES) distdir
+	cd distdir; zip -9 ../$(ZIPFILE) *
+
+$(MAIN).pdf:: $(wildcard *.tex) $(FIGURES)
+
+%.pdf: %.tex
+	rm -f $*.aux
+	-$(PDFLATEX) $<
+	-$(BIBTEX) $*
+	-$(PDFLATEX) $<
+	-$(PDFLATEX) $<
+
+%.dvi: %.tex
+	rm -f $*.aux
+	-$(LATEX) $<
+	-$(BIBTEX) $*
+	-$(LATEX) $<
+	-$(LATEX) $<
+
+%.pdf: %.svg
+	inkscape --export-area-drawing -f $< -A $@
+
+%.svg: %.gplot
+	echo "set term svg enhanced font 'palatino,14' size 600,400" |\
+	cat - $< |gnuplot >$@.new
+	mv $@.new $@
+
+%.ps: %.dvi
+	dvips -f $< >$@
+
+%.eps: %.png
+	pngtopnm $< | pnmtops -noturn -nosetpage >$@
+
+%.txt: %.tex
+	rm -f $*.aux
+	- yes "" | latex $<
+	-$(BIBTEX) $*
+	- yes "" | latex $<
+	- yes "" | latex $<
+	./dvi2tty -o$@ $*.dvi
+
+.gitignore:
+	echo "*.aux\n*.dvi\n*.log\n*~\n*.bbl\n*.blg\n$(ZIPFILE)\n$@" >$@
+
+test:
+	env

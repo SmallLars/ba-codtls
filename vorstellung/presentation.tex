@@ -1,0 +1,121 @@
+\documentclass{beamer}
+%\documentclass[hyperref={pdfpagelabels=false}]{beamer}
+
+\mode<presentation>
+{
+\usetheme{Tzi}
+%\setbeamercovered{transparent}
+}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{multirow}
+\graphicspath{{pic/}{../pic/}}
+
+\title[Smart Objects Security]%Short Title
+{% Long title
+  Security Requirements for Managing Smart Objects in Home Automation
+}
+
+\author[Gerdes, Bergmann]%Short Author
+{
+{Stefanie Gerdes, {\bf Olaf Bergmann}}\\
+\vspace{.2cm}
+{\scriptsize \{gerdes$|$bergmann\}@tzi.org}
+}
+\institute{TZI, Universit\"{a}t Bremen, Germany}
+
+\date[September 2012]%short
+{{Smart Objects Resource Management (SmaRT)\\
+Workshop at the 4th International Conference on\\
+Mobile Networks and Management (MONAMI 2012)\\
+September 26, 2012}}%long
+
+\begin{document}
+
+\setbeamercolor{postit}{fg=black,bg=yellow}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\end{document}
+
+
+% Seite 1
+% 
+% Lars Schmertmann
+% Anpassungen von DTLS zur sicheren Kommunikation in eingeschränkten Umgebungen
+% Betreut von Olaf Bergmann
+% 
+% Seite 2
+% 
+% Motivation:
+%   TLS/DTLS bewährte Standards
+%   DTLS komplexer als TLS
+%   Problematisch in eingeschränkten Umgebungen
+%   5 / 13 Byte Header bei 127 Byte 6lowpan payload
+% 
+% \begin{figure}[ht]
+%   \centering
+%   \begin{lstlisting}[language=c]
+%   struct {
+%     ContentType type;
+%     ProtocolVersion version;
+%     uint16 epoch;                           // Nur bei DTLS
+%     uint48 sequence_number;                 // Nur bei DTLS
+%     uint16 length;
+%     uint8  fragment[DTLS_Record.length];
+%   } DTLS_Record;
+%   \end{lstlisting}
+%   \caption{Header des Record Layer Protokolls von TLS / DTLS}
+%   \label{fig:recordlayer}
+% \end{figure}
+% 
+% Seite 3
+% 
+% Lösungen
+%   Verwendung von Stateless Headercompression [1]
+%   Handshake über CoAP [1]
+% \begin{figure}[ht]
+%   \centering
+%   \begin{lstlisting}[language=c]
+%   struct {
+%     HandshakeType msg_type;
+%     uint24 length;
+%     uint16 message_seq;                     // Nur bei DTLS
+%     uint24 fragment_offset;                 // Nur bei DTLS
+%     uint24 fragment_length;                 // Nur bei DTLS
+%     uint8  fragment[Handshake.length];
+%   } Handshake;
+%   \end{lstlisting}
+%   \caption{Header des Handshake Protokolls von TLS / DTLS}
+%   \label{fig:handshakelayer}
+% \end{figure}
+%     separat Antwort
+%     blockwise
+% 
+% Seite 4
+% 
+% Ciphersuit
+%   TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
+%   Bei Speichermangel: TLS\_PSK\_WITH\_AES\_128\_CCM\_8
+%   Dabei wichtig HMAC -> CBC-MAC knapp 3kB für HMAC sparen [2]
+% 
+% Seite 5
+% 
+% Hardware
+%   Redbee Econotag
+%   AES-Modul nutzen
+% 
+% 
+% 
+% 
+% 
+% [1] http://tools.ietf.org/html/draft-hartke-core-codtls-02
+% [2] http://tools.ietf.org/html/draft-tschofenig-lwig-tls-minimal-03

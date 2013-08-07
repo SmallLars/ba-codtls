@@ -1,0 +1,88 @@
+<?xml version="1.0" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" 
+[
+<!ATTLIST svg  xmlns       CDATA #FIXED "http://www.w3.org/2000/svg"
+               xmlns:xlink CDATA #FIXED "http://www.w3.org/2000/xlink/namespace/">
+
+<!ENTITY tziLogoScale "10">
+<!ENTITY tziLogoFGColor "black">
+<!ENTITY tziLogoIDotColor "rgb(197,38,58)">
+]>
+
+<svg xmlns="http://www.w3.org/2000/svg" 
+     xmlns:xlink="http://www.w3.org/2000/xlink/namespace/" 
+     id="tziLogo" 
+     >
+
+  <desc content="structured text">
+    Official logo of the Center for Computing Technologies (TZI)
+    (c) 2005--2009 Olaf Bergmann
+  </desc>
+
+  <style type="text/css">
+    .tziLogoGfx 
+    { 
+        fill: &tziLogoFGColor;; 
+        clip-rule: nonzero; 
+    }
+    .tziLogoFont
+    { 
+        fill: &tziLogoTextColor;; 
+        font-family: Arial, Helvetica;
+        font-size: 12.5;
+        font-weight: bold;        
+/*        kerning: auto;*/
+/*        letter-spacing: -0.01%; */
+    }
+  </style>
+
+  <defs>
+    <!-- tzi logo -->
+    <symbol id="tziLogoSym" class="tziLogoGfx" > 
+      <circle r="2" cx="6" cy="16" />
+      <rect x="4" y="4" width="4" height="12" />
+      <circle r="2" cx="2" cy="2" />
+      <rect x="2" y="0" width="20" height="4" />
+      <circle r="2" cx="22" cy="2" />
+
+      <circle r="2" cx="12" cy="16" />
+      <rect x="12" y="14" width="16" height="4" />
+      <circle r="2" cx="28" cy="16" />
+      <rect x="26" y="8" width="4" height="8" />
+      <circle r="2" cx="28" cy="8" />
+      <circle r="2" cx="28" cy="2" style="fill:&tziLogoIDotColor;" />
+
+      <rect x="0" y="0" width="4" height="17" 
+	    transform="translate(22,2) translate(-1.627,-1.162) rotate(35.54)" 
+	    />
+    </symbol>
+    
+  </defs>
+  
+  <use xmlns:xlink="http://www.w3.org/1999/xlink" 
+       xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad" 
+       xlink:href="#tziLogoSym" 
+/>
+<!--       transform="scale(&tziLogoScale;)"
+       />
+  -->
+</svg>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: xml
+sgml-omittag:nil
+sgml-shorttag:nil
+sgml-namecase-general:nil
+sgml-general-insert-case:lower
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-exposed-tags:nil
+sgml-local-catalogs:("/usr/share/sgml/CATALOG")
+sgml-local-ecat-files:nil
+End:
+-->
+
+
