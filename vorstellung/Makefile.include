@@ -23,7 +23,7 @@ ZIPFILE:=$(MAIN).zip
 all: $(MAIN).pdf
 
 clean:
-	rm -f *.aux *.dvi *.log *~  *.bbl *.blg *.toc
+	rm -f *.aux *.dvi *.log *~  *.bbl *.blg *.toc *.nav *.out *.snm
 
 dist:	$(MAIN).pdf
 	rm -rf distdir

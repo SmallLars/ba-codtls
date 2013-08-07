@@ -8,33 +8,32 @@
 }
 \setbeamertemplate{navigation symbols}{}
 
-\usepackage[english]{babel}
-\usepackage[latin1]{inputenc}
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
 \usepackage{times}
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
 \usepackage{array}
 \usepackage{multirow}
+\usepackage{color}
 \graphicspath{{pic/}{../pic/}}
 
-\title[Smart Objects Security]%Short Title
+\title[Anpassungen von DTLS]%Short Title
 {% Long title
-  Security Requirements for Managing Smart Objects in Home Automation
+  Vorstellung der Bachelorarbeit: Anpassungen von DTLS zur sicheren Kommunikation in eingeschränkten Umgebungen
 }
 
-\author[Gerdes, Bergmann]%Short Author
+\author[Lars Schmertmann]%Short Author
 {
-{Stefanie Gerdes, {\bf Olaf Bergmann}}\\
+{Lars Schmertmann}\\
 \vspace{.2cm}
-{\scriptsize \{gerdes$|$bergmann\}@tzi.org}
+{\scriptsize lars@tzi.org}
 }
-\institute{TZI, Universit\"{a}t Bremen, Germany}
+\institute{TZI, Universit\"{a}t Bremen, Deutschland}
 
-\date[September 2012]%short
-{{Smart Objects Resource Management (SmaRT)\\
-Workshop at the 4th International Conference on\\
-Mobile Networks and Management (MONAMI 2012)\\
-September 26, 2012}}%long
+\date[08.2013]%short
+{{Kolloquium der AG Rechnernetze\\
+09.08.2013}}%long
 
 \begin{document}
 
@@ -44,78 +43,145 @@ September 26, 2012}}%long
   \titlepage
 \end{frame}
 
+\begin{frame}{Gliederung}
+  \begin{itemize}
+    \item Motivation
+    \begin{itemize}
+     \item Ausgewählte DTLS-Header
+    \end{itemize}
+    \item Mögliche Lösungen
+    \begin{itemize}
+      \item Handshake über CoAP
+      \item Stateless Header Compression
+    \end{itemize}
+    \item Hardware
+    \item Geeignetes Ciphersuit
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item Sicherheit ist auch in eingeschränkten Umgebungen notwendig
+    \item TLS und DTLS sind bewährte Standards
+    \item DTLS komplexer als TLS
+    \item Problematisch in eingeschränkten Umgebungen
+    \item 13 Byte Header bei 127 Byte Payload in 6LoWPAN
+    \item Hoher Aufwand während des Handshakes
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Motivation}{Ausgewählte DTLS-Header}
+  \begin{columns}
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad ContentType type;\\
+      \qquad ProtocolVersion version;\\
+      \qquad \textcolor{blue}{uint16 epoch;}\\
+      \qquad \textcolor{blue}{uint48 sequence\_number;}\\
+      \qquad uint16 length;\\
+      \qquad uint8 ~~fragment[length];\\
+      \} DTLS\_Record;
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad HandshakeType msg\_type;\\
+      \qquad uint24 length;\\
+      \qquad \textcolor{blue}{uint16 message\_seq;}\\
+      \qquad \textcolor{blue}{uint24 fragment\_offset;}\\
+      \qquad \textcolor{blue}{uint24 fragment\_length;}\\
+      \qquad uint8 ~~fragment[length];\\
+      \} Handshake;
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}
+  Vorschlänge im Entwurf von k. Hartge und O. Bergmann:\\
+  http://tools.ietf.org/html/draft-hartke-core-codtls-02\\
+  \begin{itemize}
+    \item Handshake über CoAP
+    \item Stateless Header Compression
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}{Handshake über CoAP - Teil 1}
+  \tt ~~~~~~POST /dtls ---->\\
+  \tt ~ClientHello\\
+  \tt ~~~~~~~~~~~~~~~~~<---- 1.02 Verify\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~HelloVerifyRequest\\
+  \tt ~~~~~~POST /dtls ---->\\
+  \tt ~ClientHello\\
+  \tt (mit cookie)\\
+  \tt ~~~~~~~~~~~~~~~~~<---- 2.01 Created\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~ServerHello (S=X)\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~*Certificate\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~ServerKeyExchange\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~*CertificateRequest\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~ServerHelloDone
+\end{frame}
+\begin{frame}{Mögliche Lösungen}{Handshake über CoAP - Teil 2}
+  \tt ~~~~~~~POST /dtls?s=X ---->\\
+  \tt ~~~~~~Certificate*\\
+  \tt ClientKeyExchange\\
+  \tt CertificateVerify*\\
+  \tt ~ChangeCipherSpec\\
+  \tt ~~~~~~~~~Finished\\
+  ~\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~<---- 2.04 Changed\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ChangeCipherSpec\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Finished\\
+  ~\\
+  \tt ~~~~~Application Data <---> Application Data
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}{Stateless Header Compression}
+  \begin{columns}
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad uint8 ~~:1;\\
+      \qquad RecordType type:2;\\
+      \qquad Version version:2;\\
+      \qquad Epoch epoch:3;\\
+      \qquad uint8 ~~:3;\\
+      \qquad SequenceNumber snr:3;\\
+      \qquad RecordLength length:2;\\
+      \qquad uint8 ~~payload[0];\\
+      \} DTLSRecord\_t;
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad ContentType type:6;\\
+      \qquad ContentLength len:2;\\
+      \qquad uint8 ~~payload[0];\\
+      \} Content\_t;\\
+      ~\\
+      ~\\
+      ~\\
+      ~\\
+      ~
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Hardware}
+Redbee Econotag
+AES-Hardware
+\end{frame}
+
+\begin{frame}{Geeignetes Ciphersuit}
+  \begin{itemize}
+    \item TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
+  \end{itemize}
+  Bei Speichermangel:
+  \begin{itemize}
+    \item TLS\_PSK\_WITH\_AES\_128\_CCM\_8
+  \end{itemize}
+  Für beide gilt:
+  \begin{itemize}
+    \item Verzicht auf HMAC mit SHA-256
+    \item Nutzung von CBC-MAC
+  \end{itemize}
+  Größe des Binärcodes:
+  \begin{itemize}
+    \item Für HMAC und ECC jeweils knapp 3KiB
+  \end{itemize}
+\end{frame}
+
 \end{document}
-
-
-% Seite 1
-% 
-% Lars Schmertmann
-% Anpassungen von DTLS zur sicheren Kommunikation in eingeschränkten Umgebungen
-% Betreut von Olaf Bergmann
-% 
-% Seite 2
-% 
-% Motivation:
-%   TLS/DTLS bewährte Standards
-%   DTLS komplexer als TLS
-%   Problematisch in eingeschränkten Umgebungen
-%   5 / 13 Byte Header bei 127 Byte 6lowpan payload
-% 
-% \begin{figure}[ht]
-%   \centering
-%   \begin{lstlisting}[language=c]
-%   struct {
-%     ContentType type;
-%     ProtocolVersion version;
-%     uint16 epoch;                           // Nur bei DTLS
-%     uint48 sequence_number;                 // Nur bei DTLS
-%     uint16 length;
-%     uint8  fragment[DTLS_Record.length];
-%   } DTLS_Record;
-%   \end{lstlisting}
-%   \caption{Header des Record Layer Protokolls von TLS / DTLS}
-%   \label{fig:recordlayer}
-% \end{figure}
-% 
-% Seite 3
-% 
-% Lösungen
-%   Verwendung von Stateless Headercompression [1]
-%   Handshake über CoAP [1]
-% \begin{figure}[ht]
-%   \centering
-%   \begin{lstlisting}[language=c]
-%   struct {
-%     HandshakeType msg_type;
-%     uint24 length;
-%     uint16 message_seq;                     // Nur bei DTLS
-%     uint24 fragment_offset;                 // Nur bei DTLS
-%     uint24 fragment_length;                 // Nur bei DTLS
-%     uint8  fragment[Handshake.length];
-%   } Handshake;
-%   \end{lstlisting}
-%   \caption{Header des Handshake Protokolls von TLS / DTLS}
-%   \label{fig:handshakelayer}
-% \end{figure}
-%     separat Antwort
-%     blockwise
-% 
-% Seite 4
-% 
-% Ciphersuit
-%   TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
-%   Bei Speichermangel: TLS\_PSK\_WITH\_AES\_128\_CCM\_8
-%   Dabei wichtig HMAC -> CBC-MAC knapp 3kB für HMAC sparen [2]
-% 
-% Seite 5
-% 
-% Hardware
-%   Redbee Econotag
-%   AES-Modul nutzen
-% 
-% 
-% 
-% 
-% 
-% [1] http://tools.ietf.org/html/draft-hartke-core-codtls-02
-% [2] http://tools.ietf.org/html/draft-tschofenig-lwig-tls-minimal-03
