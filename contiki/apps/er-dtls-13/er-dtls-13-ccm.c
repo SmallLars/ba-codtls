@@ -58,9 +58,7 @@ uint32_t aes_init() {
     return 0;
 }
 
-void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t mac_only) {
-    len -= (sizeof(CCMData_t) + MAC_LEN);
-
+void crypt(uint8_t mac[MAC_LEN], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
     uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
     uint32_t i, turn_var;
 
@@ -72,8 +70,8 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t mac_only) {
     // Das Ergebnis fließt nicht direkt mit in den Geheimtext ein.
     memset(abs_0, 0, 16);
     abs_0[0] = (8 * ((MAC_LEN-2)/2)) + (LEN_LEN - 1);     // Flags
-    memcpy(abs_0 + 1, data->nonce_explicit, NONCE_LEN);   // Nonce
-    turn_var = uip_htonl(len);                            // Länge der Nachricht
+    memcpy(abs_0 + 1, nonce, NONCE_LEN);                  // Nonce
+    turn_var = uip_htonl(data_len);                       // Länge der Nachricht
     memcpy(abs_0 + 12, &turn_var, 4);                     // Länge der Nachricht
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
@@ -84,37 +82,33 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t mac_only) {
     abs_0[0] = (LEN_LEN - 1);
 
     // Zentraler Verschlüsselungprozess
-    for (i = 0; i < len; i+=16) {
+    for (i = 0; i < data_len; i+=16) {
         if (!mac_only) {
             turn_var = uip_htonl((i/16)+1);                   // Counter
             memcpy(abs_0 + 12, &turn_var, 4);                 // Counter
             aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
         }
-        aes_setData((uint32_t *) &(ASM->DATA0), data->ccm_ciphered + i, min(16, len - i));
+        aes_setData((uint32_t *) &(ASM->DATA0), data + i, min(16, data_len - i));
         aes_round();
         if (!mac_only) {
-            aes_getData(data->ccm_ciphered + i, (uint32_t *) &(ASM->CTR0_RESULT), min(16, len - i));
+            aes_getData(data + i, (uint32_t *) &(ASM->CTR0_RESULT), min(16, data_len - i));
         }
     }
 
     // CBC-MAC-Ergebnis auslesen
-    aes_getData(data->ccm_ciphered + len, (uint32_t *) &(ASM->CBC0_RESULT), 8);
+    aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
-    // a_0 generieren, zu s_0 verschlüssel und mit CBC-MAC X-Oren
+    // a_0 generieren, zu s_0 verschlüsseln und mit CBC-MAC X-Oren
     memset(abs_0 + 12, 0, 4);
     aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
     memset(abs_0, 0, 16);
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
     aes_getData(abs_0, (uint32_t *) &(ASM->CTR0_RESULT), NONCE_LEN);
-    for (i = 0; i < NONCE_LEN; i++) data->ccm_ciphered[len + i] = data->ccm_ciphered[len + i] ^ abs_0[i];
+    for (i = 0; i < NONCE_LEN; i++) mac[i] ^= abs_0[i];
 }
 
-uint8_t *getMAC(CCMData_t *data, size_t len) {
-    return data->ccm_ciphered + len - (sizeof(CCMData_t) + MAC_LEN);
-}
-
-void CBC_MAC_16(uint8_t *mac, uint8_t *key, uint8_t *data, size_t data_len) {
+void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16]) {
     uint32_t i;
 
     ASM->CONTROL0bits.CLEAR = 1;
