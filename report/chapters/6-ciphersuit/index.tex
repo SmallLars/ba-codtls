@@ -1,14 +1,22 @@
 \chapter{Definition des Ciphersuits}
 
-Vorhanden \cite{rfc6655}:\\
+Vorhanden rfc6655 \cite{rfc6655}:\\
 CipherSuite TLS\_PSK\_WITH\_AES\_128\_CCM\_8     = {0xC0,0xA8}\\
 CipherSuite TLS\_PSK\_WITH\_AES\_256\_CCM\_8     = {0xC0,0xA9)\\
 CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAA}\\
 CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAB}
 
+
 Neu:\\
-CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAC}\\
-CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAD}
+CODTLS\_PSK\_WITH\_AES\_128\_CCM = {0xFF,0x01}\\
+CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM = {0xFF,0x05}\\
+CODTLS\_PSK\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x07}\\
+CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x0C}\\
+ccm gemäß rfc3610 \cite{rfc3610}
+
+Nonce:\\
+Nonce mit Länge 8 Byte = Epoch + message\_seq\\
+Zwar auf beiden Seiten gleich aber irrelevant da unterschiedliche keys.
 
 Generell:\\
 CBC-MAC anstatt HMAC mit SHA256\\
