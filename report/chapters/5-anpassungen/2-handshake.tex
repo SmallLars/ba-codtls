@@ -126,3 +126,7 @@ eine Auswertung der Daten erst nach Erhalt aller Blöcke stattfindet und somit d
 geändert werden können ist bei einem blockweise Versand vorsicht geboten. Die Sicherheitsparameter für den Versand dürfen erst nach erfolgreichem
 Versand des letzten Blocks geändert werden.
 
+Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
+verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im
+Handshake ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt. Je nach Ciphersuit wird dadurch die in
+\acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen wie Nonce und MAC hinzukommen.
