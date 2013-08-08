@@ -11,4 +11,10 @@ CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAC}\\
 CipherSuite TLS\_PSK\_ECDH\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAD}
 
 Generell:\\
-CBC-MAC anstatt HMAC mit SHA256
+CBC-MAC anstatt HMAC mit SHA256\\
+psr = (psk, secret + A(x) + seed)
+
+Finished:\\
+Hash mit CBC-MAC der während dem Handshake ausgetauschten Daten wie sie über die Leitung gingen (nicht entpackt, headerkompression bleibt)\\
+wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt.\\
+28 Byte lang   ->   NONCE (8) + Verschlüsselte 12 Byte vom Hash (12) + (CBC\_MAC) (8)

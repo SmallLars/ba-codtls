@@ -1,9 +1,29 @@
 \section{Handshake}
 
+Auch der Handshake orientiert sich am Entwurf von K. Hartke und O. Bergmann \cite[Kapitel 4]{draftcodtls}.
+
 Wie in Kapitel \ref{chp:dtls} beschrieben, wurde der Header des \acr{dtls}-Handshake-Protokolls um eine Sequenz-Nummer
-und 2 Datenfelder für die Fragmentierung ergänzt. Diese sind zunächst notwendig, um die in \acr{dtls} fehlenden Mechanismen
-auszugleichen. Da der Handshake nun über \acr{coap} realisiert wird, können diese Datenfelder jedoch wieder wegfallen, da die
-in Kapitel \ref{chp:coap} beschrieben Mechanismen ... \TODO{weitermachen}
+und 2 Datenfelder für die Fragmentierung ergänzt. Diese sind zunächst notwendig, um die in \acr{udp} fehlende Zuverlässigkeit
+und begrenzte Paketgröße auszugleichen. Da der Handshake nun über \acr{coap} realisiert wird, können diese Datenfelder jedoch
+wieder wegfallen, da \acr{coap} über geeignete Mechanismen verfügt.
+
+Durch eine Kennzeichnung aller \acr{coap}-Anfragen während des Handshakes als "`confirmable"' stellt \acr{coap} sicher, dass
+alle Daten zuverlässig übertragen werden. Dies wird dadurch realisiert, dass auf jede Anfrage mit mindestens einem \acr{ack}-Paket
+geantwortet wird. Bleibt dies aus, wird die Anfrage nach Ablauf einer Wartezeit wiederholt. Durch diese Zuverlässigkeit und den
+erhalt der Reihenfolge der Daten innerhalb eines \acr{coap}-Pakets ist es somit möglich auf das "`message\_seq"' Datenfeld zu verzichten.
+
+Um IP-Fragmentierung zu vermeiden, wird die Blockweise-Datenübertragung von \acr{coap} verwendet. Problematisch ist die Verwendung
+der IP-Fragmentierung, da bei Verlust eines einzelnen Fragments das ganze IP-Paket verworfen wird. So kommt es zu einer Wiederholung
+der \acr{coap}-Anfrage und die Übertragung aller Fragmente wird wiederholt. Je nach Anzahl der Fragmente und der Paketverluste, kann
+es somit zu einer mehrfachen Übertragung, die sowohl Zeit als auch Energie benötigt. Um dies zu vermeiden werden die Daten schon
+durch \acr{coap} in Fragmente unterteilt, die in einem einzelnen IP-Paket platz finden. Jedes Fragment wird dann durch ein eigenes
+\acr{coap}-Paket übertragen welches als "`confirmable"' gekennzeichnet ist. Geht ein Fragment verloren bleibt das \acr{ack}-Paket aus
+und die Übertragung nur dieses Fragments wird wiederholt. So bleibt die Menge der übertragenen Daten und damit der Energieverbrauch
+minimal und eine Übertragung der Daten ist auch bei einer hohen Rate an Paketverlusten möglich. Durch diesen Mechanismus kann auch
+auf die Datenfelder fragment\_offset und fragment\_length verzichtet werden.
+
+Der vollständige Handshake über \acr{coap} ist in Abbildung \ref{fig:coaphandshake} zu sehen, wobei wieder die mit * markierten Daten
+in dieser Arbeit keine Anwendung finden.
 
 \begin{figure}[ht]
   \centering
@@ -28,7 +48,7 @@ in Kapitel \ref{chp:coap} beschrieben Mechanismen ... \TODO{weitermachen}
                                           *CertificateRequest
                                            ServerHelloDone
 
-              POST /dtls?s=X -------->
+              POST /dtls?s=X ------->
              Certificate*
        ClientKeyExchange
        CertificateVerify*
@@ -42,5 +62,67 @@ in Kapitel \ref{chp:coap} beschrieben Mechanismen ... \TODO{weitermachen}
             Application Data <-------> Application Data
   \end{lstlisting}
   \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
-  \label{fig:newhandshake}
+  \label{fig:coaphandshake}
 \end{figure}
+
+Für die Realisierung des Handshakes über \acr{coap} dient die Ressource "`/dtls"'. Dieser \acr{uri} wurde bewusst kurz gehalten,
+da er im Klartext in der \acr{coap}-Anfrage eingefügt wird und so Daten und Energie spart. Während in einem gewöhnlichen \acr{dtls}-Handshake
+jedes einzelne \acr{dtls}-Paket einen vollständigen \acr{dtls}-Record-Header hat, ist dies hier nicht mehr notwendig, da mehrere
+\acr{dtls}-Pakete innerhalb eines \acr{coap}-Pakets enthalten sind. Der \acr{dtls}-Record-Header erscheint somit einmalig vor jedem
+\acr{coap}- oder Alert-Paket. Um die \acr{dtls}-Pakete innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der
+\acr{dtls}Conten-Header (Abbildung {ref{fig:com\_content\_header}).
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+   0 1 2 3 4 5 6 7
+  +-+-+-+-+-+-+-+-+
+  |     T     | L |
+  +-+-+-+-+-+-+-+-+
+  \end{lstlisting}
+  \caption{Komprimierter Content-Header}
+  \label{fig:com_content_header}
+\end{figure}
+
+Dieser wurde abgeleitet vom Handshake-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
+enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten 6 Bits der in
+\acr{tls}/\acr{dtls} definierte Wert für den Handshake-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
+Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{tls}/\acr{dtls} definierten Handshake-Typen werden die folgenden
+beiden Typen definiert: \textit{change\_cipher\_spec} (32) und \textit{alert} (33).
+
+Obwohl eine zuverlässige Übertragung von Benachrichtigungen gemäß \acr{dtls} nicht notwendig ist, macht es insbesondere bei einem Handshake sinn, diese
+innerhalb eines \acr{coap}-Paketes zu versenden, falls es sich um die Antwort auf eine Anfrage handelt. Ausgehend von einem ClientHello, das
+auf der Server-Seite ein Problem auslöst, erwartet der Client vom Server eine \acr{coap}-Antwort. Wird die Benachrichtigung darüber ohne \acr{coap} versendet,
+muss der Client bei Erhalt der Benachrichtigung dafür sorgen, dass die Anfrage aus der darüber liegenden \acr{coap} Schicht entfernt wird, damit diese
+nicht wiederholt wird. Bei Versand der Benachrichtigung über \acr{coap} erledigt sich dies von selbst, da ja eine Antwort auf die Anfrage erhalten wurde.
+Der \acr{coap}-Response-Code ist in diesem Fall "`2.05 Content"'. Ein Beispiel dafür ist in Abbildung \ref{fig:coaphandshakefail} zu sehen.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+                      Client           Server
+                      ------           ------
+
+                  POST /dtls -------->
+             ClientHello
+
+                             <-------- 2.05 Content
+                                           Alert(handshake_failure)
+  \end{lstlisting}
+  \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
+  \label{fig:coaphandshakefail}
+\end{figure}
+
+Während der Record-Typ bei Anwendungsdaten eindeutig ist, muss dieser nun für einen Handshake und Benachrichtigungen definiert werden.
+Alert wird hier nur verwendet, falls es sich um eine Benachrichtigung direkt über \acr{udp} ohne \acr{coap} handelt.
+Benachrichtigungen innerhalb von \acr{coap} sind eindeutig durch den Content-Header gekennzeichnet und gehören immer zu einem Handshake
+womit hier auch der Record-Type Handshake verwendet wird. Handshake wird generell verwendet, wenn es sich um Handshake-Daten handelt.
+Die Ausnahme bildet hier ein enthaltenes ChangeCipherSpec-Paket. In diesem Fall wird ChangeCipherSpec als Record-Typ angegeben.
+Während bei \acr{dtls} der Versand eines ChangeCipherSpec-Pakets zur anschließenden Änderungen der Sicherheitsparameter des Paketversands führt,
+kommmt es bei Empfang solch eines Pakets zur Änderungen der Sicherheitsparameter des Paketempfangs für alle folgenden Pakete.
+Diese Definition muss nun dahingehend angepasst werden, dass es um den Empfang und den Versand eines \acr{coap}-Pakets geht, dass ein
+ChangeCipherSpec-Paket enthält. Zu Beachten ist dabei die blockweise Übertragung durch \acr{coap}. Während bei Empfang des \acr{coap}-Pakets
+eine Auswertung der Daten erst nach Erhalt aller Blöcke stattfindet und somit die Sicherheitsparameter für den Empfang weitere Daten problemlos
+geändert werden können ist bei einem blockweise Versand vorsicht geboten. Die Sicherheitsparameter für den Versand dürfen erst nach erfolgreichem
+Versand des letzten Blocks geändert werden.
+

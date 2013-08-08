@@ -34,7 +34,7 @@ typedef struct {
     ContentType type:6;
     ContentLength len:2;
     uint8_t payload[0];
-} __attribute__ ((packed)) Content_t;
+} __attribute__ ((packed)) DTLSContent_t;
 
 /* Handshake Datenstrukturen ----------------------------------------------- */
 
