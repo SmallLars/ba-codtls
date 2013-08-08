@@ -61,7 +61,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
             insertKey(&ck);
 
-            Content_t *c = (Content_t *) buffer;
+            DTLSContent_t *c = (DTLSContent_t *) buffer;
             c->type = change_cipher_spec;
             c->len = con_length_0;
 
@@ -69,7 +69,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
             REST.set_response_payload(response, buffer, 1);
         } else {
-            Content_t *content = (Content_t *) payload;
+            DTLSContent_t *content = (DTLSContent_t *) payload;
 
             if (content->type == client_hello) {
                 ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
@@ -79,7 +79,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 if (cookie_len == 0) {
                     // ClientHello 1 ohne Cookie beantworten
-                    Content_t *content = (Content_t *) buffer;
+                    DTLSContent_t *content = (DTLSContent_t *) buffer;
 
                     content->type = hello_verify_request;
                     content->len = con_length_8_bit;
@@ -146,7 +146,7 @@ void generateServerHello(uint8_t *buf) {
 
     serverHello_offset = stack_size();
 
-    Content_t *content = (Content_t *) buf;
+    DTLSContent_t *content = (DTLSContent_t *) buf;
 
     content->type = server_hello;
     content->len = con_length_8_bit;
@@ -162,7 +162,7 @@ void generateServerHello(uint8_t *buf) {
     answer->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
     answer->compression_method = null;
     // TODO answer->extensions;
-    stack_push(buf, sizeof(Content_t) + 1 + sizeof(ServerHello_t));
+    stack_push(buf, sizeof(DTLSContent_t) + 1 + sizeof(ServerHello_t));
 
     ClientInfo_t *ci = (ClientInfo_t *) buf;
     memset(ci, 0, sizeof(ClientInfo_t));

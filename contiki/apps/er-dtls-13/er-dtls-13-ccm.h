@@ -21,7 +21,7 @@ typedef struct {
   *           werden um das AES-Modul zu initialisieren.
   *
   * \return   0 falls die Ausführung erfolgreich war
-  *           -1 falls ein FEhler aufgetreten ist
+  *           -1 falls ein Fehler aufgetreten ist
   */
 uint32_t aes_init();
 
@@ -38,10 +38,10 @@ uint32_t aes_init();
   * \param    data       Zeiger auf die CCM-Daten in denen die Nonce und
   *                      Klar- oder Geheimtext hinterlegt sein muss.
   * \param    len        Länge der übergebenen CCMData_t Struktur
-  * \param    nonce_only Falls 1, wird nur die Mac berechnet und an den
+  * \param    mac_only   Falls 1, wird nur die Mac berechnet und an den
   *                      Klar- oder Geheimtext gehangen.
   */
-void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only);
+void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t mac_only);
 
 /**
   * \brief    MAC-Position

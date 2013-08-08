@@ -58,7 +58,7 @@ uint32_t aes_init() {
     return 0;
 }
 
-void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
+void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t mac_only) {
     len -= (sizeof(CCMData_t) + MAC_LEN);
 
     uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
@@ -85,14 +85,14 @@ void crypt(uint8_t *key, CCMData_t *data, size_t len, uint8_t nonce_only) {
 
     // Zentraler Verschlüsselungprozess
     for (i = 0; i < len; i+=16) {
-        if (!nonce_only) {
+        if (!mac_only) {
             turn_var = uip_htonl((i/16)+1);                   // Counter
             memcpy(abs_0 + 12, &turn_var, 4);                 // Counter
             aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
         }
         aes_setData((uint32_t *) &(ASM->DATA0), data->ccm_ciphered + i, min(16, len - i));
         aes_round();
-        if (!nonce_only) {
+        if (!mac_only) {
             aes_getData(data->ccm_ciphered + i, (uint32_t *) &(ASM->CTR0_RESULT), min(16, len - i));
         }
     }
