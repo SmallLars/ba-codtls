@@ -9,9 +9,9 @@
 /* Record Layer Datenstrukturen -------------------------------------------- */
 
 typedef enum {
-    type_8_bit = 0,
-    alert = 1,
-    dtls_data = 2,
+    change_cipher_spec = 0,
+    type_8_bit = 1,
+    handshake = 2,
     application_data = 3
 } RecordType;
 

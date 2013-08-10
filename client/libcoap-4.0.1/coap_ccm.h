@@ -9,49 +9,32 @@
 #define LEN_LEN 7                 // Länge des Längenfeldes             Element von {2, 3, 4, 5, 6, 7, 8}
 #define NONCE_LEN (15-LEN_LEN)    // Es Ergibt sich die Länge der Nonce
 
-typedef struct {
-  uint8_t nonce_explicit[8];
-  uint8_t ccm_ciphered[];
-} __attribute__ ((packed)) CCMData_t;
-
 /**
-  * \brief    MAC Position
+  * \brief  Verschlüsselung
   *
-  *           Liefert den Zeiger auf den in der Struktur hinterlegten MAC.
+  *         Verschlüsselt die in data hinterlegten Daten mit key und nonce.
+  *         Die Daten werden verschlüsselt und ein 8 Byte langer MAC wird
+  *         angehangen. Genug Speicher muss reserviert sein.
   *
-  * \param    c   Zeiger auf die Struktur mit Nonce und Daten
-  * \param    len Länge der CCMData Struktur
-  *
-  * \return   
+  * \param  data        Zeiger auf die Struktur mit Nonce und Klartextdaten
+  * \param  data_len    Länge der Klartextdaten
+  * \param  key         Schlüssel mit dem die Daten verschlüsselt und der MAC erzeugt wird
+  * \param  nonce       Nonce die zur Verschlüsselung der Daten herangezogen wird
   */
-uint8_t *getMAC(CCMData_t *c, size_t len);
-
-/**
-  * \brief    Verschlüsselung
-  *
-  *           Verschlüsselt die in c hinterlegten Daten. Eine Nonce
-  *           muss in c schon hinterlegt sein. Die Daten werden verschlüsselt
-  *           und ein 8 Byte langer MAC wird angehangen. Genug Speicher muss
-  *           reserviert sein.
-  *
-  * \param    c   Zeiger auf die Struktur mit Nonce und Klartextdaten
-  * \param    key Schlüssel mit dem die Daten verschlüsselt und der MAC erzeugt wird
-  * \param    len Länge der CCMData Struktur
-  */
-void encrypt(CCMData_t *c, uint8_t *key, size_t len);
+void encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
 /**
   * \brief    Entschlüsselung
   *
-  *           Entschlüsselt die in c hinterlegten Daten. Eine Nonce
-  *           muss in c schon hinterlegt sein. Die Daten werden entschlüsselt
-  *           und ein 8 Byte langer MAC wird angehangen, wobei der der alte
-  *           MAC überschrieben wird.
+  *           Entschlüsselt die in datahinterlegten Daten mit key und nonce.
+  *           Die Daten werden entschlüsselt und ein 8 Byte langer MAC wird
+  *           angehangen, wobei der der alte MAC überschrieben wird.
   *
-  * \param    c   Zeiger auf die Struktur mit Nonce und Geheimtext
-  * \param    key Schlüssel mit dem die Daten entschlüsselt und der MAC erzeugt wird
-  * \param    len Länge der CCMData Struktur
+  * \param  data        Zeiger auf die Struktur mit Nonce und Klartextdaten
+  * \param  data_len    Länge der Klartextdaten
+  * \param  key         Schlüssel mit dem die Daten entschlüsselt und der MAC erzeugt wird
+  * \param  nonce       Nonce die zur Entschlüsselung der Daten herangezogen wird
   */
-void decrypt(CCMData_t *c, uint8_t *key, size_t len);
+void decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
 #endif /* __COAP_CCM__ */

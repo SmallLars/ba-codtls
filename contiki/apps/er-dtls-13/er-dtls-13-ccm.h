@@ -24,22 +24,21 @@ uint32_t aes_init();
   * \brief  Ent- und Verschlüsselung
   *
   *         Ent- oder Verschlüsselt des unter data hinterlegten Textes der
-  *         Länge data_len. Das Authentication Field wird an Position mac
+  *         Länge data_len. Das Authentication Field wird an Position data + data_len
   *         hinterlegt. Die Nonce muss an Position nonce hinterlegt sein und
   *         der Key an Position key. Bei mac_only == 1 wird ausschließlich
-  *         Authentication Field berechnet und an Position mac hinterlegt.
+  *         Authentication Field berechnet und an Position data + data_len hinterlegt.
   *
-  * \param  mac         Zeiger auf die Position an der der MAC hinterlegt wird
   * \param  data        Zeiger auf die Daten in denen der Klar- oder
   *                     Geheimtext hinterlegt sein muss
-  * \param  data_len    Länge der übergebenen Daten
+  * \param  data_len    Länge der Klartext-Daten
   * \param  key         Zeiger auf den 16 Byte langen Schlüssel
   * \param  nonce       Zeiger auf die Nonce die zur Ent- oder
   *                     Verschlüsselung verwendet wird
   * \param  mac_only    Falls 1, wird nur die Mac berechnet und an
   *                     Position mac hinterlegt ohne die Daten zu verändern
   */
-void crypt(uint8_t mac[MAC_LEN], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only);
+void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only);
 
 /**
   * \brief  CBC-MAC-Berechnung

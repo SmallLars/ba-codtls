@@ -124,7 +124,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
 
                         // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
-                        coap_set_header_block2(response, 0, 1, preferred_size); // Block 0, Es folgen weitere, Blockgröße 64 = preferred_size
+                        coap_set_header_block2(response, 0, 0, preferred_size); // Block 0, Es folgen keine weitern, Blockgröße 64 = preferred_size
 
                         // TODO Warning: No check for serialization error.
                         transaction->packet_len = coap_serialize_message(response, transaction->packet);
@@ -182,7 +182,7 @@ void generateServerHello(uint8_t *buf) {
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     printf("ECC - START\n");
-    //ecc_ec_mult(base_x, base_y, ci.private_key, result_x, result_y);
+    //ecc_ec_mult(base_x, base_y, ci->private_key, result_x, result_y);
     printf("ECC - ENDE\n");
 
     memset(buf, 'A', 64);

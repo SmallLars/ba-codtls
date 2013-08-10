@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
                     memset(buffer, 0, 512);
                     node_getUUID(ip, buffer);
                     char uuid[37];
-                    uuid_unparse(buffer, uuid);
+                    uuid_unparse((unsigned char *) buffer, uuid);
                     printf("UUID: %s\n", uuid);
                     unknown = 0;
                 }

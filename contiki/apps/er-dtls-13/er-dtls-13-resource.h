@@ -18,7 +18,7 @@ typedef enum {
     certificate_verify = 15,
     client_key_exchange = 16,
     finished = 20,
-    change_cipher_spec = 32,
+    c_change_cipher_spec = 32,
     c_alert = 33,
     // max = 63
 } __attribute__ ((packed)) ContentType;

@@ -58,7 +58,7 @@ uint32_t aes_init() {
     return 0;
 }
 
-void crypt(uint8_t mac[MAC_LEN], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
+void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
     uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
     uint32_t i, turn_var;
 
@@ -96,7 +96,7 @@ void crypt(uint8_t mac[MAC_LEN], uint8_t data[], size_t data_len, uint8_t key[16
     }
 
     // CBC-MAC-Ergebnis auslesen
-    aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), 8);
+    aes_getData(&data[data_len], (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
     // a_0 generieren, zu s_0 verschlüsseln und mit CBC-MAC X-Oren
     memset(abs_0 + 12, 0, 4);
@@ -105,7 +105,7 @@ void crypt(uint8_t mac[MAC_LEN], uint8_t data[], size_t data_len, uint8_t key[16
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
     aes_getData(abs_0, (uint32_t *) &(ASM->CTR0_RESULT), NONCE_LEN);
-    for (i = 0; i < NONCE_LEN; i++) mac[i] ^= abs_0[i];
+    for (i = 0; i < NONCE_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
 void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16]) {
