@@ -59,7 +59,7 @@ listen:
 	while true; do cat /dev/ttyUSB1; done
 
 border:
-	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB3 aaaa::1/64
+	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB1 aaaa::1/64
 
 include $(CONTIKI)/Makefile.include
 
