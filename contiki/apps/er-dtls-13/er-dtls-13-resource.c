@@ -97,6 +97,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 } else {
                     // ClientHello 2 mit Cookie beantworten
 
+                    memcpy(buffer, "Hallo Welt!", 11);
+                    REST.set_response_status(response, CREATED_2_01);
+                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                    REST.set_response_payload(response, buffer, 11);
+/*
                     // Abspeichern für Finished-Hash
                     stack_init();
                     stack_push((uint8_t *) payload, pay_len);
@@ -124,13 +129,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
 
                         // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
-                        coap_set_header_block2(response, 0, 0, preferred_size); // Block 0, Es folgen keine weitern, Blockgröße 64 = preferred_size
+                        //coap_set_header_block2(response, 0, 1, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
+                        coap_set_header_block2(response, request_metadata->block2_num, 0, request_metadata->block2_size);
 
                         // TODO Warning: No check for serialization error.
                         transaction->packet_len = coap_serialize_message(response, transaction->packet);
                         coap_send_transaction(transaction);
                     }
                     // Erstes Paket senden - ENDE
+*/
                 }
             }
         }

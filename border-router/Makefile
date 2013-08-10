@@ -40,7 +40,7 @@ ifeq ($(PREFIX),)
 endif
 
 clear:
-	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag erase
+	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 erase
 
 upload:
 	../blaster/blaster 22 < $(CONTIKI_PROJECT)_redbee-econotag.bin > \
@@ -56,10 +56,10 @@ upload:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
 listen:
-	while true; do cat /dev/ttyUSB1; done
+	while true; do cat /dev/ttyUSB3; done
 
 border:
-	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB1 aaaa::1/64
+	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB3 aaaa::1/64
 
 include $(CONTIKI)/Makefile.include
 

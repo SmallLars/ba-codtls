@@ -34,8 +34,8 @@ void dtls_handshake(struct in6_addr *ip) {
   printf("Cookie erhalten: %.*s\n", verify->cookie_len, verify->cookie);
   len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
 
-  //memset(buffer, 0, 128);
-  //coap_setPayload(message, len);
+  memset(buffer, 0, 128);
+  coap_setPayload(message, len);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Step 2 done.\n");
 

@@ -57,12 +57,12 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         uint32_t i;
         PRINTF("Nonce:");
         for (i = 0; i < 8; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\nEpoch: %u\n", *((uint16_t *) nonce));
+        PRINTF("\nEpoch: %u\n", uip_htons(*((uint16_t *) nonce)));
     #endif
 
     // Bei Bedarf entschlüsseln
     uint8_t key[16];
-    if (getKey(key, ip, *((uint16_t *) nonce)) == 0) { // TODO
+    if (getKey(key, ip, uip_htons(*((uint16_t *) nonce))) == 0) { // TODO
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -88,17 +88,19 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
     // Bei Bedarf verschlüsseln
+    printf("Es wird gesendet!\n");
 
     int8_t epoch = getEpoch(conn->ripaddr.u8);
     uint8_t key[16];
     if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
+        printf("Verschlüsselt!\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
         uint8_t headerAdd = 0;
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
         record->type = application_data;
         record->version= dtls_1_2;
-        record->epoch = 4;
+        record->epoch = 1;
         record->snr = snr_8_bit;
         record->payload[0] = 5;
         headerAdd++;
@@ -113,17 +115,19 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len + MAC_LEN);
     } else {
+        printf("Unverschlüsselt!\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 1 + len];
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
         record->type = application_data;
         record->version= dtls_1_2;
-        record->epoch = 4;
+        record->epoch = 0;
         record->snr = snr_8_bit;
         record->payload[0] = 5;
         record->length = rec_length_implicit;
 
         memcpy(record->payload + 1, data, len);
 
+        printf("Größe: %u\n", sizeof(DTLSRecord_t) + 1 + len);
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + 1 + len);
     }
 

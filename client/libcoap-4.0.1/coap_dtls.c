@@ -50,7 +50,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     memset(record, 0, sizeof(DTLSRecord_t) + len);
     record->type = application_data;
     record->version= dtls_1_2;
-    record->epoch = 4;
+    record->epoch = 0;
     record->snr = snr_8_bit;
     record->payload[0] = 5;
     record->length = rec_length_implicit;
