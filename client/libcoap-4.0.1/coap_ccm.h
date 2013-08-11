@@ -37,4 +37,23 @@ void encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NON
   */
 void decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
+/**
+  * \brief  CBC-MAC-Berechnung
+  *
+  *         Berechnet die CBC-MAC der Daten an Position data. Für die
+  *         Berechnung werden data_len Bytes einbezogen. Die CBC-MAC
+  *         wird in 16 Byte Blöcken berechnet. Der letzte Block wird bei
+  *         Bedarf mit 0en aufgefüllt. Das 16 Byte lange Ergebnis wird
+  *         an der Position mac hinterlegt. Zu beginn muss der Speicher an
+  *         Position mac genullt sein, falls ein neuer MAC berechnet werden
+  *         soll. Ansonsten werden die Daten an Position MAC als Initialisierungs-
+  *         vektor genutzt, so dass eine MAC-Berechnung jederzeit fortgesetzt
+  *         werden kann. Als Schlüssel wird der derzeit gültige Pre-shared Key benutzt.
+  *
+  * \param  mac         Position an der der IV liegt bzw. die MAC abgelegt wird (16 Byte)
+  * \param  data        Position der Daten für die ein MAC berechnet werden soll
+  * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
+  */
+void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len);
+
 #endif /* __COAP_CCM__ */

@@ -127,7 +127,12 @@ geändert werden können ist bei einem blockweise Versand vorsicht geboten. Die 
 Versand des letzten Blocks geändert werden. Problematisch ist dies aber nur auf der Client-Seite, da die Antwort des Servers (Nr. 6 gemäß Abbildung
 \ref{fig:coaphandshake}) in jedem Fall klein genug is um in einem \acr{coap}-Paket ohne IP-Fragmentierung übertragen werden zu können.
 
-
+\TODO{Gedanken ausformulieren / obigen Block anpassen}
+\begin{itemize}
+  \item Sicherheitsparameter für Paketempfang ergeben sich durch Header
+  \item Client kann alte Sicherheitsparameter für Empfang und Versand nach 3. coap-Anfrage auf ungültig setzen und neue benutzen. Da Handshake sicher beendet.
+  \item Server setzt alte Sicherheitsparameter bei Empfang der ersten Anwendungsdaten auf ungültig (vernichten)
+\end{itemize}
 
 Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
 verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im
