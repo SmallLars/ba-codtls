@@ -54,6 +54,8 @@ PROCESS_THREAD(server_firmware, ev, data) {
                 PRINTF("Datensegment | 0x%08x | 0x%08x | %5u\n", &__bss_start__, &__bss_end__, (uint32_t) &__bss_end__ - (uint32_t) &__bss_start__);
                 PRINTF("Heap         | 0x%08x | 0x%08x | %5u\n", &__heap_start__, &__heap_end__, &HEAP_SIZE);
                 PRINTF("Frei         | 0x%08x | 0x%08x | %5u\n", &__heap_end__, 0x418000, 0x418000 - (uint32_t) &__heap_end__);
+                PRINTF("----------------------------------------------\n");
+                PRINTF("Frei += 1132 bei der Deaktivierung dieser Auskunft\n");
 
                 PRINTF("\n");
 

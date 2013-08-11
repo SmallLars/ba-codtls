@@ -90,9 +90,13 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     // Bei Bedarf verschlüsseln
     printf("Es wird gesendet!\n");
 
-    int8_t epoch = getEpoch(conn->ripaddr.u8);
+//    int8_t epoch = getEpoch(conn->ripaddr.u8);
+//    uint8_t key[16];
+//    if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
+    int8_t epoch = 1;
     uint8_t key[16];
-    if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
+    memcpy(key, "ABCDEFGHIJKLMNOP", 16);
+    if (1) {
         printf("Verschlüsselt!\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 

@@ -1,6 +1,6 @@
-/* __ER_COAP_13_DTLS_CCM_H__ */
-#ifndef __ER_COAP_13_DTLS_CCM_H__
-#define __ER_COAP_13_DTLS_CCM_H__
+/* __ER_DTLS_13_CCM_H__ */
+#ifndef __ER_DTLS_13_CCM_H__
+#define __ER_DTLS_13_CCM_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -60,4 +60,4 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
   */
 void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16]);
 
-#endif /* __ER_COAP_13_DTLS_CCM_H__ */
+#endif /* __ER_DTLS_13_CCM_H__ */

@@ -1,6 +1,6 @@
-/* __ATTRIBUTES_H__ */
-#ifndef __ATTRIBUTES_H__
-#define __ATTRIBUTES_H__
+/* __ER_DTLS_13_RESOURCE_H__ */
+#ifndef __ER_DTLS_13_RESOURCE_H__
+#define __ER_DTLS_13_RESOURCE_H__
 
 #include <stdint.h>
 
@@ -153,4 +153,4 @@ typedef struct {
 //  Signature       signed_params;  // fehlt wegen ECDH_anon -> SignatureAlgorithm = anonymous = 0
 } __attribute__ ((packed)) ServerKeyExchange;
 
-#endif /* __ATTRIBUTES_H__ */
+#endif /* __ER_DTLS_13_RESOURCE_H__ */

@@ -116,6 +116,17 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
         }
 
         //*************************************************************************
+        //*  DEVICE PSK                                                           *
+        //*************************************************************************
+        if (query[0] == 'p') {
+            getPSK(buffer);
+            buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
+            REST.set_response_status(response, CONTENT_2_05);
+            REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+            REST.set_response_payload(response, buffer, LEN_PSK);
+        }
+
+        //*************************************************************************
         //*  DEVICE ECC                                                           *
         //*************************************************************************
         if (query[0] == 'e') {
@@ -139,7 +150,7 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
             printf("ECC - ENDE - %u\n", (*MACA_CLK - time) / 250);
         }
     } else {
-        memcpy(buffer, "?i= name | model | uuid | time | ecc", 36);
+        memcpy(buffer, "?i= (n)ame | (m)odel | (u)uid | (t)ime | (p)sk | (e)cc", 54);
         REST.set_response_status(response, CONTENT_2_05);
         REST.set_header_content_type(response, TEXT_PLAIN);
         REST.set_response_payload(response, buffer, 36);

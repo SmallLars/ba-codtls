@@ -1,6 +1,7 @@
 #include "coap_dtls.h"
 
 #include <stdio.h>
+#include <arpa/inet.h>
 
 #include "random.h"
 #include "coap_ccm.h"
@@ -107,7 +108,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         uint32_t i;
         PRINTF("Nonce:");
         for (i = 0; i < 8; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\nEpoch: %u\n", *((uint16_t *) nonce));
+        PRINTF("\nEpoch: %u\n", ntohs(*((uint16_t *) nonce)));
     #endif
 
   // Bei Bedarf entschlüsseln

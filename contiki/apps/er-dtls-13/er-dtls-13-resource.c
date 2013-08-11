@@ -97,24 +97,25 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 } else {
                     // ClientHello 2 mit Cookie beantworten
 
-                    memcpy(buffer, "Hallo Welt!", 11);
-                    REST.set_response_status(response, CREATED_2_01);
-                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                    REST.set_response_payload(response, buffer, 11);
-/*
                     // Abspeichern für Finished-Hash
                     stack_init();
                     stack_push((uint8_t *) payload, pay_len);
 
                     uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
+/*
                     coap_separate_t request_metadata[1];
 
                     separate_active = 1;
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
-
+*/
                     generateServerHello(buffer); // Das dauert nun
 
+                    int8_t read = readServerHello(buffer, *offset, preferred_size);
+                    REST.set_response_status(response, CREATED_2_01);
+                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                    REST.set_response_payload(response, buffer, read == 0 ? preferred_size : read);
+/*
                     // Erstes Paket senden - START
                     coap_transaction_t *transaction = NULL;
                     if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {

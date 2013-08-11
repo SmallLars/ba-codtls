@@ -1,6 +1,6 @@
-/* __ER_COAP_13_DTLS_DATA_H__ */
-#ifndef __ER_COAP_13_DTLS_DATA_H__
-#define __ER_COAP_13_DTLS_DATA_H__
+/* __ER_DTLS_13_DATA_H__ */
+#ifndef __ER_DTLS_13_DATA_H__
+#define __ER_DTLS_13_DATA_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -31,4 +31,4 @@ int8_t changeIfPending(uint8_t *ip);
 
 int8_t updateIp(uint8_t *session, uint8_t *ip);
 
-#endif /* __ER_COAP_13_DTLS_DATA_H__ */
+#endif /* __ER_DTLS_13_DATA_H__ */

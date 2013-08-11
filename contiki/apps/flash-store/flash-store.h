@@ -51,16 +51,22 @@
 #define RES_BLK_2_ACTIVE    4096
 #define LEN_BLK_X_ACTIVE       1
 
-#define RES_CLIENT_INFO_LEN    1
+#define RES_PSK_ISNEW          1
+#define LEN_PSK_ISNEW          1
+
+#define RES_NEWPSK             2
+#define LEN_NEWPSK            16
+
+#define RES_CLIENT_INFO_LEN   18
 #define LEN_CLIENT_INFO_LEN    1
 
-#define RES_CLIENT_INFO        2
+#define RES_CLIENT_INFO       19
 #define LEN_CLIENT_INFO      580
 
-#define RES_CLIENT_KEYS_LEN  582
+#define RES_CLIENT_KEYS_LEN  599
 #define LEN_CLIENT_KEYS_LEN    1
 
-#define RES_CLIENT_KEYS      583
+#define RES_CLIENT_KEYS      600
 #define LEN_CLIENT_KEYS      360
 
 /**

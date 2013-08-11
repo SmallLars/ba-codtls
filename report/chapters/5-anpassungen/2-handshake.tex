@@ -31,31 +31,31 @@ in dieser Arbeit keine Anwendung finden.
                       Client           Server
                       ------           ------
 
-                  POST /dtls -------->
+                  POST /dtls ----1--->
              ClientHello
 
-                             <-------- 1.02 Verify
+                             <---2---- 1.02 Verify
                                            HelloVerifyRequest
 
-                  POST /dtls -------->
+                  POST /dtls ----3--->
              ClientHello
             (mit cookie)
 
-                             <-------- 2.01 Created
+                             <---4---- 2.01 Created
                                            ServerHello (enthält Session X)
                                           *Certificate
                                            ServerKeyExchange
                                           *CertificateRequest
                                            ServerHelloDone
 
-              POST /dtls?s=X ------->
+              POST /dtls?s=X ----5--->
              Certificate*
        ClientKeyExchange
        CertificateVerify*
         ChangeCipherSpec
                 Finished
 
-                             <-------- 2.04 Changed
+                             <---6---- 2.04 Changed
                                            ChangeCipherSpec
                                            Finished
 
@@ -124,7 +124,10 @@ Diese Definition muss nun dahingehend angepasst werden, dass es um den Empfang u
 ChangeCipherSpec-Paket enthält. Zu Beachten ist dabei die blockweise Übertragung durch \acr{coap}. Während bei Empfang des \acr{coap}-Pakets
 eine Auswertung der Daten erst nach Erhalt aller Blöcke stattfindet und somit die Sicherheitsparameter für den Empfang weitere Daten problemlos
 geändert werden können ist bei einem blockweise Versand vorsicht geboten. Die Sicherheitsparameter für den Versand dürfen erst nach erfolgreichem
-Versand des letzten Blocks geändert werden.
+Versand des letzten Blocks geändert werden. Problematisch ist dies aber nur auf der Client-Seite, da die Antwort des Servers (Nr. 6 gemäß Abbildung
+\ref{fig:coaphandshake}) in jedem Fall klein genug is um in einem \acr{coap}-Paket ohne IP-Fragmentierung übertragen werden zu können.
+
+
 
 Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
 verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im

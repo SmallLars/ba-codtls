@@ -1,6 +1,6 @@
-/* __ER_COAP_13_DTLS_RANDOM_H__ */
-#ifndef __ER_COAP_13_DTLS_RANDOM_H__
-#define __ER_COAP_13_DTLS_RANDOM_H__
+/* __ER_DTLS_13_RANDOM_H__ */
+#ifndef __ER_DTLS_13_RANDOM_H__
+#define __ER_DTLS_13_RANDOM_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -42,4 +42,4 @@ uint16_t random_16(void);
   */
 uint8_t random_8(void);
 
-#endif /* __ER_COAP_13_DTLS_RANDOM_H__ */
+#endif /* __ER_DTLS_13_RANDOM_H__ */
