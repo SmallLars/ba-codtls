@@ -8,7 +8,7 @@
 //#include <netinet/in.h>
 #include <time.h>
 
-#include "random.h"
+#include "coap_dtls_random.h"
 #include "coap_client.h"
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"

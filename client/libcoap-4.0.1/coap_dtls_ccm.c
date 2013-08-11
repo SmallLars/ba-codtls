@@ -1,4 +1,4 @@
-#include "coap_ccm.h"
+#include "coap_dtls_ccm.h"
 
 #include <string.h>
 #include <arpa/inet.h>

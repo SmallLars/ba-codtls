@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
-#include "random.h"
-#include "coap_ccm.h"
+#include "coap_dtls_random.h"
+#include "coap_dtls_ccm.h"
 #include "coap_client.h"
 
 /*---------------------------------------------------------------------------*/

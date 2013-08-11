@@ -10,14 +10,12 @@
 #include "border_com.h"
 #include "node_com.h"
 
-#include "libcoap-4.0.1/coap_ccm.h"
-
 struct ip_list *liste = NULL;
 uint8_t psk[16];
 
 int main(int argc, char *argv[]) {
     // TODO vor jedem Kompilieren muss derzeit der psk vom econotag gesetzt werden
-    memcpy(psk, "2-AptHFupRDFIEZ3", 16);
+    memcpy(psk, "_PRDWFhnt4ZgMwvk", 16);
 
     char buffer[512];
     char cbuffer[32];
