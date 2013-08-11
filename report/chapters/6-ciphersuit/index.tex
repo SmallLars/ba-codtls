@@ -19,8 +19,28 @@ Nonce mit Länge 8 Byte = Epoch + message\_seq\\
 Zwar auf beiden Seiten gleich aber irrelevant da unterschiedliche keys.
 
 Generell:\\
-CBC-MAC anstatt HMAC mit SHA256\\
-psr = (psk, secret + A(x) + seed)
+CBC-MAC anstatt HMAC mit SHA256
+\begin{lstlisting}[language=c]
+PRF(secret, label, seed) = P_hash(secret + label + seed)
+
+P_hash(seed) = CBC-MAC(A(1) + seed) +
+               CBC-MAC(A(2) + seed) +
+               CBC-MAC(A(3) + seed) + ...
+A(0) = seed
+A(i) = CBC-MAC(A(i-1))
+
+master_secret  = PRF(pre_master_secret, "master secret", ClientHello.random + ServerHello.random)[0..47]; (105 | 153) = (36 | 84) + 13 + 28 + 28
+finished       = PRF(master_secret, finished_label, Hash(handshake_messages))[0..verify_data_length-1];            79 = 48 + 15 + 16
+                 finished_label = "client finished" | "server finished"
+key_block      = PRF(master_secret, "key expansion", server_random + client_random);                              117 = 48 + 13 + 28 + 28
+
+key_block      = client_write_MAC_key[0]
+                 server_write_MAC_key[0]
+                 client_write_key[16]
+                 server_write_key[16]
+                 client_write_IV[8]
+                 server_write_IV[8]
+\end{lstlisting}
 
 Finished:\\
 Hash mit CBC-MAC der während dem Handshake ausgetauschten Daten wie sie über die Leitung gingen (nicht entpackt, headerkompression bleibt)\\

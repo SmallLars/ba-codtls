@@ -51,13 +51,12 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
   *         Position mac genullt sein, falls ein neuer MAC berechnet werden
   *         soll. Ansonsten werden die Daten an Position MAC als Initialisierungs-
   *         vektor genutzt, so dass eine MAC-Berechnung jederzeit fortgesetzt
-  *         werden kann.
+  *         werden kann. Als Schlüssel wird der derzeit gültige Pre-shared Key benutzt.
   *
   * \param  mac         Position an der der IV liegt bzw. die MAC abgelegt wird (16 Byte)
   * \param  data        Position der Daten für die ein MAC berechnet werden soll
   * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
-  * \param  key         Schlüssel der für die CBC-MAC-Berechnung genutzt wird (16 Byte)
   */
-void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16]);
+void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len);
 
 #endif /* __ER_DTLS_13_CCM_H__ */

@@ -108,8 +108,9 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     for (i = 0; i < NONCE_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
-void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16]) {
-    uint32_t i;
+void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len) {
+    uint8_t key[16];
+    getPSK(key);
 
     ASM->CONTROL0bits.CLEAR = 1;
 
@@ -117,6 +118,7 @@ void CBC_MAC_16(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16
     ASM->CONTROL0bits.LOAD_MAC = 1;
 
     aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
+    uint32_t i;
     for (i = 0; i < data_len; i+=16) {
         aes_setData((uint32_t *) &(ASM->DATA0), data + i, min(16, data_len - i));
         aes_round();
