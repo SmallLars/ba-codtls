@@ -9,7 +9,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG
     #include <stdio.h>
@@ -19,6 +19,8 @@
 #endif
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
+
+/*---------------------------------------------------------------------------*/
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln

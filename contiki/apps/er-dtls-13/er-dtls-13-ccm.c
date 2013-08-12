@@ -7,7 +7,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG
     #include <stdio.h>
@@ -60,7 +60,7 @@ uint32_t aes_init() {
 
 void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
     uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
-    uint32_t i, turn_var;
+    uint32_t i;
 
     ASM->CONTROL0bits.CLEAR = 1;
 
@@ -70,10 +70,9 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     // Das Ergebnis fließt nicht direkt mit in den Geheimtext ein.
     memset(abs_0, 0, 16);
     abs_0[0] = (8 * ((MAC_LEN-2)/2)) + (LEN_LEN - 1);     // Flags
+    i = uip_htonl(data_len);                              // Länge der Nachricht
+    memcpy(abs_0 + 12, &i, 4);                            // Länge der Nachricht
     memcpy(abs_0 + 1, nonce, NONCE_LEN);                  // Nonce
-    for (i = 15; i > NONCE_LEN; i--) {                    // Länge der Nachricht
-        abs_0[i] = (data_len >> ((15-i)*8)) & 0xFF;       // Länge der Nachricht
-    }                                                     // Länge der Nachricht
     #if DEBUG
         PRINTF("b_0 Block für CCM:");
         for (i = 0; i < 16; i++) PRINTF(" %02X", abs_0[i]);

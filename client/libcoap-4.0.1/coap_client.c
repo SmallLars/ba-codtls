@@ -22,6 +22,17 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+/*---------------------------------------------------------------------------*/
+
+#define DEBUG 0
+
+#if DEBUG
+    #include <stdio.h>
+    #define PRINTF(...) printf(__VA_ARGS__)
+#else
+    #define PRINTF(...)
+#endif
+
 int flags = 0;
 
 static unsigned char _token_data[8];
@@ -980,7 +991,7 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   inet_ntop(AF_INET6, ip, my_uri+8, 120);
   strcat(my_uri, "]/");
   strcat(my_uri, my_res);
-  printf("%s\n", my_uri);
+  PRINTF("%s\n", my_uri);
 
   cmdline_uri(my_uri);
 

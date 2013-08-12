@@ -4,6 +4,17 @@
 #include <arpa/inet.h>
 #include <openssl/evp.h>
 
+/*---------------------------------------------------------------------------*/
+
+#define DEBUG 0
+
+#if DEBUG
+    #include <stdio.h>
+    #define PRINTF(...) printf(__VA_ARGS__)
+#else
+    #define PRINTF(...)
+#endif
+
 #define min(x,y) ((x)<(y)?(x):(y))
 
 extern uint8_t psk[16];
@@ -57,9 +68,11 @@ void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
         a[i] = (index >> ((15-i)*8)) & 0xFF;
     }
 
-    printf("a[%u] Block für CCM:", index);
-    for (i = 0; i < 16; i++) printf(" %02X", a[i]);
-    printf("\n");
+    #if DEBUG
+        printf("a[%u] Block für CCM:", index);
+        for (i = 0; i < 16; i++) printf(" %02X", a[i]);
+        printf("\n");
+    #endif
 
     EVP_CIPHER_CTX ctx;
     EVP_EncryptInit(&ctx, EVP_aes_128_ecb(), key, 0);
@@ -84,9 +97,11 @@ void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
         b_0[i] = (data_len >> ((15-i)*8)) & 0xFF;
     }
 
-    printf("b_0 Block für CCM:");
-    for (i = 0; i < 16; i++) printf(" %02X", b_0[i]);
-    printf("\n");
+    #if DEBUG
+        printf("b_0 Block für CCM:");
+        for (i = 0; i < 16; i++) printf(" %02X", b_0[i]);
+        printf("\n");
+    #endif
 
     uint8_t cypher[16];
     int32_t cypherLen;
@@ -125,5 +140,3 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
         for (j = 0; j < blocklen; j++) data[i+j] ^= s[j];
     }
 }
-
-
