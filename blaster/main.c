@@ -85,8 +85,8 @@ int main(int nArgs, char **argv) {
     memcpy(output + 4, (const void *) &length, 4);
     fprintf(stderr, "Länge: %u = 0x%08x\n", length, length);
 
-// Rest zunächst mit 0xFF füllen (gleicher wert wie nach Löschen)
-    for (; i < 0x1F000; i++) output[i] = 0xFF;
+// Rest zur initlialisierung zunächst mit 0x00 füllen
+    for (; i < 0x1F000; i++) output[i] = 0x00;
 
 // Blöcke für Random Zugriff initialisieren -----------------------------------
     output[RES_BLOCK_11] = 1;

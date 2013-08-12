@@ -104,8 +104,8 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     memset(abs_0, 0, 16);
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
-    aes_getData(abs_0, (uint32_t *) &(ASM->CTR0_RESULT), NONCE_LEN);
-    for (i = 0; i < NONCE_LEN; i++) data[data_len + i] ^= abs_0[i];
+    aes_getData(abs_0, (uint32_t *) &(ASM->CTR0_RESULT), MAC_LEN);
+    for (i = 0; i < MAC_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
 void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len) {

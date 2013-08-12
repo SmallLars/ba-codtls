@@ -20,8 +20,10 @@
     #define PRINTF(...)
 #endif
 
-void generateServerHello();
+void generateServerHello(uint8_t *buf);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
+
+uint8_t src_ip[16];
 
 static uint8_t separate_active = 0;
 
@@ -31,6 +33,8 @@ uint16_t serverHello_offset;
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+
     if (*offset != 0) {
         int8_t read = readServerHello(buffer, *offset, preferred_size);
         PRINTF("Read: %.*s\n", read, buffer);
@@ -103,19 +107,13 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                     uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
-/*
                     coap_separate_t request_metadata[1];
 
                     separate_active = 1;
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
-*/
+
                     generateServerHello(buffer); // Das dauert nun
 
-                    int8_t read = readServerHello(buffer, *offset, preferred_size);
-                    REST.set_response_status(response, CREATED_2_01);
-                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                    REST.set_response_payload(response, buffer, read == 0 ? preferred_size : read);
-/*
                     // Erstes Paket senden - START
                     coap_transaction_t *transaction = NULL;
                     if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
@@ -130,7 +128,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
 
                         // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
-                        //coap_set_header_block2(response, 0, 1, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
+                        //coap_set_header_block2(response, 0, 0, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
                         coap_set_header_block2(response, request_metadata->block2_num, 0, request_metadata->block2_size);
 
                         // TODO Warning: No check for serialization error.
@@ -138,7 +136,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         coap_send_transaction(transaction);
                     }
                     // Erstes Paket senden - ENDE
-*/
                 }
             }
         }
@@ -174,7 +171,7 @@ void generateServerHello(uint8_t *buf) {
 
     ClientInfo_t *ci = (ClientInfo_t *) buf;
     memset(ci, 0, sizeof(ClientInfo_t));
-    memcpy(ci->ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+    memcpy(ci->ip, src_ip, 16);
     memcpy(ci->session, "IJKLMNOP", 8);
     ci->epoch = 1;
     ci->pending = 1;
@@ -190,7 +187,7 @@ void generateServerHello(uint8_t *buf) {
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     printf("ECC - START\n");
-    //ecc_ec_mult(base_x, base_y, ci->private_key, result_x, result_y);
+    ecc_ec_mult(base_x, base_y, ci->private_key, result_x, result_y);
     printf("ECC - ENDE\n");
 
     memset(buf, 'A', 64);

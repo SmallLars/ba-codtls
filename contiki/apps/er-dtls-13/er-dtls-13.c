@@ -55,14 +55,14 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
 
     #if DEBUG
         uint32_t i;
-        PRINTF("Nonce:");
+        PRINTF("Bei Paketempfang berechnete Nonce:");
         for (i = 0; i < 8; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\nEpoch: %u\n", uip_htons(*((uint16_t *) nonce)));
+        PRINTF("\n");
     #endif
 
     // Bei Bedarf entschlüsseln
     uint8_t key[16];
-    if (getKey(key, ip, uip_htons(*((uint16_t *) nonce))) == 0) { // TODO
+    if (getKey(key, ip, uip_htons(*((uint16_t *) nonce))) == 0) {
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -80,24 +80,23 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     }
 
     if (type == 21) { // Alert
-        printf("Alert erhalten.\n");
+        PRINTF("Alert erhalten.\n");
         // TODO Alert-Auswertung
         coapdata->valid = 0;
     }
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
-    // Bei Bedarf verschlüsseln
-    printf("Es wird gesendet!\n");
 
-//    int8_t epoch = getEpoch(conn->ripaddr.u8);
-//    uint8_t key[16];
-//    if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
-    int8_t epoch = 1;
+    int8_t epoch = getEpoch(conn->ripaddr.u8);
+    PRINTF("Senden mit Epoch: %i\n", epoch);
     uint8_t key[16];
-    memcpy(key, "ABCDEFGHIJKLMNOP", 16);
-    if (1) {
-        printf("Verschlüsselt!\n");
+    if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
+//    int8_t epoch = 1;
+//    uint8_t key[16];
+//    memcpy(key, "ABCDEFGHIJKLMNOP", 16);
+//    if (1) {
+        PRINTF("Verschlüsselter Paketversand\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
         uint8_t headerAdd = 0;
@@ -119,7 +118,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len + MAC_LEN);
     } else {
-        printf("Unverschlüsselt!\n");
+        PRINTF("Unverschlüsselter Paketversand!\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 1 + len];
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
         record->type = application_data;
@@ -131,7 +130,6 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         memcpy(record->payload + 1, data, len);
 
-        printf("Größe: %u\n", sizeof(DTLSRecord_t) + 1 + len);
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + 1 + len);
     }
 

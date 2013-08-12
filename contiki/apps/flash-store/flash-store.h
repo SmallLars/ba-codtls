@@ -70,6 +70,14 @@
 #define LEN_CLIENT_KEYS      360
 
 /**
+  * \brief    Zurücksetzen der Blöcke für den Random-Zugriff
+  *
+  *           Löscht die 4 Blöck für den Random-Zugriff im Flashspeicher
+  *           und setzt die für das System notwendigen Bytes erneut.
+  */
+void nvm_init();
+
+/**
   * \brief    Lesen von Daten aus dem Flashspeicher
   *
   *           Liest numBytes aus dem Flashspeicher und hinterlegt diese in dest.

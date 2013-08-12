@@ -6,6 +6,15 @@
 
 /*---------------------------------------------------------------------------*/
 
+#define DEBUG 1
+
+#if DEBUG
+    #include <stdio.h>
+    #define PRINTF(...) printf(__VA_ARGS__)
+#else
+    #define PRINTF(...)
+#endif
+
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
 
 /* Private Funktionsprototypen --------------------------------------------- */
@@ -23,6 +32,14 @@ int8_t insertClient(ClientInfo_t *clientInfo) {
         nvm_setVar(clientInfo, (uint32_t) &ci[list_len], sizeof(ClientInfo_t));
         list_len++;
         nvm_setVar(&list_len, RES_CLIENT_INFO_LEN, LEN_CLIENT_INFO_LEN);
+
+        #if DEBUG
+            PRINTF("Eingefügte IP an Index %u:", list_len - 1);
+            uint8_t j;
+            for (j = 0; j < 16; j++) PRINTF(" %02X", clientInfo->ip[j]);
+            PRINTF("\n");
+        #endif
+
         return 0;
     }
 
@@ -46,6 +63,7 @@ int8_t insertKey(ClientKey_t *clientKey) {
 
 int8_t getEpoch(uint8_t *ip) {
     int8_t index = getIndexOf(ip);
+    PRINTF("Index der gesuchten IP: %i\n", getIndexOf(ip));
     if (index == -1) return -1;
 
     ClientInfo_t *ci = (ClientInfo_t *) RES_CLIENT_INFO;
@@ -105,11 +123,18 @@ int8_t updateIp(uint8_t *session, uint8_t *ip) {
 /* Private Funktionen ------------------------------------------------------ */
 
 int8_t getIndexOf(uint8_t *ip) {
+    #if DEBUG
+        PRINTF("Suche nach IP:");
+        uint8_t j;
+        for (j = 0; j < 16; j++) PRINTF(" %02X", ip[j]);
+        PRINTF("\n");
+    #endif
+
     uint8_t list_len;
     nvm_getVar(&list_len, RES_CLIENT_INFO_LEN, LEN_CLIENT_INFO_LEN);
 
     ClientInfo_t *ci = (ClientInfo_t *) RES_CLIENT_INFO;
-    int i;
+    uint8_t i;
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(ip, (uint32_t) ci[i].ip, 16) == 0) return i;
     }

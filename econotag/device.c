@@ -1,5 +1,6 @@
 #include "attributes.h"
 #include "button-sensor.h"
+#include "leds.h"
 
 #define DEBUG 1
 
@@ -37,6 +38,10 @@ PROCESS_THREAD(server_firmware, ev, data) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == sensors_event && data == &button_sensor) {
+            leds_on(LEDS_GREEN);
+            nvm_init();
+            leds_off(LEDS_GREEN);
+
             #if DEBUG
                 PRINTF("\n");
                 PRINTF("Speicheraufteilung (Konfiguration in contiki/cpu/mc1322x/mc1322x.lds)\n");
@@ -81,8 +86,6 @@ PROCESS_THREAD(server_firmware, ev, data) {
                 PRINTF("Nie benutzer Heap >= %d Byte\n", (uint32_t) &__heap_end__ - p - 4);
 
                 PRINTF("\n");
-            #else
-                printf("Button!\n");
             #endif
 		}
 	}

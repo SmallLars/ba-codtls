@@ -26,6 +26,26 @@ uint32_t getAddr(uint32_t address);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
+void nvm_init() {
+    PRINTF("Löschen der Random-Zugriffs-Blöcke");
+
+    nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 0x0F000000);
+
+    nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, "\001", RES_BLOCK_11, 1);
+    nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, "\001", RES_BLOCK_21, 1);
+
+    uint16_t i;
+    for (i = 1; i < 0x2000; i++) {
+        #if DEBUG
+            if (i % 0x400 == 0) PRINTF(" .");
+        #endif
+        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, "\0", RES_BLOCK_11 + i, 1);
+        nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, "\0", RES_BLOCK_21 + i, 1);
+    }
+
+    PRINTF(" Erfolgreich!\n");
+}
+
 nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes) {
     address = getAddr(address);
 
