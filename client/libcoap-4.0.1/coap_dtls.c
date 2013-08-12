@@ -76,7 +76,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
-    uint8_t nonce[8] = {0, record->epoch, 0, 0, 0, 0, 0, 0};
+    uint8_t nonce[12] = {1, 1, 1, 1, 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -90,12 +90,12 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
     }
     if (record->epoch == epoch_8_bit || record->epoch == epoch_16_bit) {
         uint8_t epoch_len = record->epoch - 4;
-        memcpy(nonce + 2 - epoch_len, payload, epoch_len);
+        memcpy(nonce + 6 - epoch_len, payload, epoch_len);
         len -= epoch_len;
         payload += epoch_len;
     }
     if (record->snr < snr_implicit) {
-        memcpy(nonce + 8 - record->snr, payload, record->snr);
+        memcpy(nonce + 12 - record->snr, payload, record->snr);
         len -= record->snr;
         payload += record->snr;
     }
@@ -107,35 +107,35 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
     #if DEBUG
         uint32_t i;
         PRINTF("Nonce:");
-        for (i = 0; i < 8; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\nEpoch: %u\n", ntohs(*((uint16_t *) nonce)));
+        for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+        PRINTF("\nEpoch: %u\n", ntohs(*((uint16_t *) (nonce + 4))));
     #endif
 
-  // Bei Bedarf entschlüsseln
-  if (record->epoch) {
-    len -= MAC_LEN;
+    // Bei Bedarf entschlüsseln
+    if (record->epoch) {
+        len -= MAC_LEN;
 
-    uint8_t oldCode[MAC_LEN];
-    memcpy(oldCode, payload + len, MAC_LEN);
+        uint8_t oldCode[MAC_LEN];
+        memcpy(oldCode, payload + len, MAC_LEN);
 
-    decrypt(payload, len, KEY, nonce);
+        decrypt(payload, len, KEY, nonce);
 
-    uint32_t check = memcmp(oldCode, payload + len, MAC_LEN);
-    if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
-    if (check != 0) len = 0;
+        uint32_t check = memcmp(oldCode, payload + len, MAC_LEN);
+        if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
+        if (check != 0) len = 0;
+        memcpy(buf, payload, len);
+    }
+
+    // In jedem Fall Daten nun in den Buffer kopieren
     memcpy(buf, payload, len);
-  }
 
-  // In jedem Fall Daten nun in den Buffer kopieren
-  memcpy(buf, payload, len);
+    if (type == 21) { // Alert
+        printf("Alert erhalten.\n");
+        // TODO Alert-Auswertung
+        len = 0;
+    }
 
-  if (type == 21) { // Alert
-    printf("Alert erhalten.\n");
-    // TODO Alert-Auswertung
-    len = 0;
-  }
+    free(record);
 
-  free(record);
-
-  return len;
+    return len;
 }

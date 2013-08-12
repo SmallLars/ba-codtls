@@ -52,8 +52,14 @@ void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
 
     a[0] = (LEN_LEN - 1);
     memcpy(a + 1, nonce, NONCE_LEN);
-    index = htonl(index);
-    memcpy(a + 12, &index, 4);
+    uint32_t i;
+    for (i = 15; i > NONCE_LEN; i--) {
+        a[i] = (index >> ((15-i)*8)) & 0xFF;
+    }
+
+    printf("a[%u] Block für CCM:", index);
+    for (i = 0; i < 16; i++) printf(" %02X", a[i]);
+    printf("\n");
 
     EVP_CIPHER_CTX ctx;
     EVP_EncryptInit(&ctx, EVP_aes_128_ecb(), key, 0);
@@ -64,6 +70,8 @@ void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
 }
 
 void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]) {
+    size_t i;
+
     // b_0 generieren
     uint8_t b_0[16];
     memset(b_0, 0, 16);
@@ -72,8 +80,13 @@ void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
     // Nonce
     memcpy(b_0 + 1, nonce, NONCE_LEN);
     // Länge der Nachricht
-    size_t new_len = htonl(data_len);
-    memcpy(b_0 + 12, &new_len, 4);
+    for (i = 15; i > NONCE_LEN; i--) {
+        b_0[i] = (data_len >> ((15-i)*8)) & 0xFF;
+    }
+
+    printf("b_0 Block für CCM:");
+    for (i = 0; i < 16; i++) printf(" %02X", b_0[i]);
+    printf("\n");
 
     uint8_t cypher[16];
     int32_t cypherLen;
@@ -85,7 +98,6 @@ void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
 
     EVP_EncryptUpdate(&ctx, cypher, &cypherLen, b_0, 16);
 
-    size_t i;
     uint8_t plaintext[16];
     for (i = 0; i < data_len; i+=16) {
         memset(plaintext, 0, 16);

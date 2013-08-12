@@ -8,15 +8,14 @@ CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAB}
 
 
 Neu:\\
-CODTLS\_PSK\_WITH\_AES\_128\_CCM = {0xFF,0x01}\\
-CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM = {0xFF,0x05}\\
-CODTLS\_PSK\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x07}\\
-CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x0C}\\
-ccm gemäß rfc3610 \cite{rfc3610}
+CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x01}\\
+ccm gemäß rfc3610 \cite{rfc3610}\\
+mit Nonce_Len = 12, Len_len = 3, Mac_len = 8
 
 Nonce:\\
-Nonce mit Länge 8 Byte = Epoch + message\_seq\\
-Zwar auf beiden Seiten gleich aber irrelevant da unterschiedliche keys.
+Nonce mit Länge 12 Byte = IV + Epoch + message\_seq\\
+Zwar auf beiden Seiten gleich aber irrelevant da unterschiedliche keys.\\
+außerdem unterschiedliche IV's
 
 Generell:\\
 CBC-MAC anstatt HMAC mit SHA256
@@ -38,11 +37,11 @@ key_block      = client_write_MAC_key[0]
                  server_write_MAC_key[0]
                  client_write_key[16]
                  server_write_key[16]
-                 client_write_IV[8]
-                 server_write_IV[8]
+                 client_write_IV[4]
+                 server_write_IV[4]
 \end{lstlisting}
 
 Finished:\\
 Hash mit CBC-MAC der während dem Handshake ausgetauschten Daten wie sie über die Leitung gingen (nicht entpackt, headerkompression bleibt)\\
 wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt.\\
-28 Byte lang   ->   NONCE (8) + Verschlüsselte 12 Byte vom Hash (12) + (CBC\_MAC) (8)
+20 Byte lang   ->   Verschlüsselte 12 Byte finished (12) + (CBC\_MAC) (8)

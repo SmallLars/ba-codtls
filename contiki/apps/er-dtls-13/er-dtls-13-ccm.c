@@ -7,7 +7,7 @@
 
 /*---------------------------------------------------------------------------*/
 
-#define DEBUG 0
+#define DEBUG 1
 
 #if DEBUG
     #include <stdio.h>
@@ -71,21 +71,35 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     memset(abs_0, 0, 16);
     abs_0[0] = (8 * ((MAC_LEN-2)/2)) + (LEN_LEN - 1);     // Flags
     memcpy(abs_0 + 1, nonce, NONCE_LEN);                  // Nonce
-    turn_var = uip_htonl(data_len);                       // Länge der Nachricht
-    memcpy(abs_0 + 12, &turn_var, 4);                     // Länge der Nachricht
+    for (i = 15; i > NONCE_LEN; i--) {                    // Länge der Nachricht
+        abs_0[i] = (data_len >> ((15-i)*8)) & 0xFF;       // Länge der Nachricht
+    }                                                     // Länge der Nachricht
+    #if DEBUG
+        PRINTF("b_0 Block für CCM:");
+        for (i = 0; i < 16; i++) PRINTF(" %02X", abs_0[i]);
+        PRINTF("\n");
+    #endif
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
 
     // CTR-Counter vorbereiten. Die Nonce ist schon enthalten.
     // Der Zähler selbst wird innerhalb der Schleife gesetzt.
-    // Muss auch bei nonce_only passieren, da für MAC benötigt.
+    // Muss auch bei mac_only passieren, da für MAC benötigt.
     abs_0[0] = (LEN_LEN - 1);
 
     // Zentraler Verschlüsselungprozess
     for (i = 0; i < data_len; i+=16) {
         if (!mac_only) {
-            turn_var = uip_htonl((i/16)+1);                   // Counter
-            memcpy(abs_0 + 12, &turn_var, 4);                 // Counter
+            uint8_t j;
+            uint32_t index = (i/16) + 1;
+            for (j = 15; j > NONCE_LEN; j--) {
+                abs_0[j] = (index >> ((15-j)*8)) & 0xFF;
+            }
+            #if DEBUG
+                PRINTF("a[%u] Block für CCM:", index);
+                for (j = 0; j < 16; j++) PRINTF(" %02X", abs_0[j]);
+                PRINTF("\n");
+            #endif
             aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
         }
         aes_setData((uint32_t *) &(ASM->DATA0), data + i, min(16, data_len - i));
@@ -99,7 +113,14 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     aes_getData(&data[data_len], (uint32_t *) &(ASM->CBC0_RESULT), 8);
 
     // a_0 generieren, zu s_0 verschlüsseln und mit CBC-MAC X-Oren
-    memset(abs_0 + 12, 0, 4);
+    for (i = 15; i > NONCE_LEN; i--) {
+        abs_0[i] = 0;
+    }
+    #if DEBUG
+        PRINTF("a[0] Block für CCM:");
+        for (i = 0; i < 16; i++) PRINTF(" %02X", abs_0[i]);
+        PRINTF("\n");
+    #endif
     aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
     memset(abs_0, 0, 16);
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);

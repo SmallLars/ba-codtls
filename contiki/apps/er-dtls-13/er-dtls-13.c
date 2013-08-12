@@ -18,14 +18,13 @@
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
-
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata) {
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
-    uint8_t nonce[8] = {0, record->epoch, 0, 0, 0, 0, 0, 0};
+    uint8_t nonce[12] = {1, 1, 1, 1, 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -39,12 +38,12 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     }
     if (record->epoch == epoch_8_bit || record->epoch == epoch_16_bit) {
         uint8_t epoch_len = record->epoch - 4;
-        memcpy(nonce + 2 - epoch_len, payload, epoch_len);
+        memcpy(nonce + 6 - epoch_len, payload, epoch_len);
         len -= epoch_len;
         payload += epoch_len;
     }
     if (record->snr < snr_implicit) {
-        memcpy(nonce + 8 - record->snr, payload, record->snr);
+        memcpy(nonce + 12 - record->snr, payload, record->snr);
         len -= record->snr;
         payload += record->snr;
     }
@@ -56,13 +55,13 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     #if DEBUG
         uint32_t i;
         PRINTF("Bei Paketempfang berechnete Nonce:");
-        for (i = 0; i < 8; i++) PRINTF(" %02X", nonce[i]);
+        for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
         PRINTF("\n");
     #endif
 
     // Bei Bedarf entschlüsseln
     uint8_t key[16];
-    if (getKey(key, ip, uip_htons(*((uint16_t *) nonce))) == 0) {
+    if (getKey(key, ip, record->epoch) == 0) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -92,10 +91,6 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     PRINTF("Senden mit Epoch: %i\n", epoch);
     uint8_t key[16];
     if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
-//    int8_t epoch = 1;
-//    uint8_t key[16];
-//    memcpy(key, "ABCDEFGHIJKLMNOP", 16);
-//    if (1) {
         PRINTF("Verschlüsselter Paketversand\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
@@ -110,9 +105,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
         record->length = rec_length_implicit;
         memcpy(record->payload + headerAdd, data, len);
 
-        uint8_t nonce[8];
-        nonce[1] = 1;
-        nonce[7] = 5;
+        uint8_t nonce[12] = {1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 5};
 
         crypt(record->payload + headerAdd, len, key, nonce, 0);
 
