@@ -60,9 +60,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             PRINTF("Session: %.*s\n", session_len, session);
 
             ClientKey_t ck;
-            ck.index = 0;
+            ck.index = 0;          
             ck.epoch = 1;
-            memcpy(ck.key, "ABCDEFGHIJKLMNOP", 16);
+            memcpy(ck.client_write_key, "ABCDEFGHIJKLMNOP", 16);  
+            memcpy(ck.server_write_key, "ABCDEFGHIJKLMNOP", 16);
+            memset(ck.client_write_IV, 1, 4);
+            memset(ck.server_write_IV, 1, 4);
             insertKey(&ck);
 
             DTLSContent_t *c = (DTLSContent_t *) buffer;

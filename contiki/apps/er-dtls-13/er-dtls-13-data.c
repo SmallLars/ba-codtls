@@ -91,7 +91,7 @@ int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch) {
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(&index, (uint32_t) &ck[i].index, 1) == 0) {
             if (nvm_cmp(&epoch, (uint32_t) &ck[i].epoch, 1) == 0) {
-                if (key != NULL) nvm_getVar(key, (uint32_t) ck[i].key, 16);
+                if (key != NULL) nvm_getVar(key, (uint32_t) ck[i].server_write_key, 16);
                 return 0;
             }
         }

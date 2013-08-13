@@ -16,7 +16,12 @@ typedef struct {
 typedef struct {
     uint8_t index;
     uint8_t epoch;
-    uint8_t key[16];
+//    uint8_t client_write_MAC_key[0];
+//    uint8_t server_write_MAC_key[0];
+    uint8_t client_write_key[16];
+    uint8_t server_write_key[16];
+    uint8_t client_write_IV[4];
+    uint8_t server_write_IV[4];
 }  __attribute__ ((packed)) ClientKey_t;
 
 int8_t insertClient(ClientInfo_t *clientInfo);
