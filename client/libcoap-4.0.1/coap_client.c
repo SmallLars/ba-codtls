@@ -56,7 +56,7 @@ unsigned char msgtype = COAP_MESSAGE_CON; /* usually, requests are sent confirma
 
 method_t method = COAP_REQUEST_GET;		/* the method we are using in our requests */
 
-coap_block_t block = { .num = 0, .m = 0, .szx = 6 };
+coap_block_t block = { .num = 0, .m = 0, .szx = 1 };
 
 unsigned int wait_seconds = 90;	/* default timeout in seconds */
 coap_tick_t max_wait;		/* global timeout (changed by set_timeout()) */
@@ -288,8 +288,13 @@ message_handler(struct coap_context_t  *ctx,
     ;
   }
 
+  block_opt = get_block(received, &opt_iter);
+  if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
+    debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
+    // do nothing, user need to call coap_request again with next block
+  } else
   /* output the received data, if any */
-  if (received->hdr->code == COAP_RESPONSE_CODE(205) || received->hdr->code == COAP_RESPONSE_CODE(201) || received->hdr->code == COAP_RESPONSE_CODE(102)) {
+  if (COAP_RESPONSE_CLASS(received->hdr->code) <= 2) {
 
     /* set obs timer if we have successfully subscribed a resource */
     if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {
@@ -658,28 +663,6 @@ cmdline_uri(char *arg) {
   }
 }
 
-int
-cmdline_blocksize(char *arg) {
-  unsigned short size;
-
- again:
-  size = 0;
-  while(*arg && *arg != ',')
-    size = size * 10 + (*arg++ - '0');
-  
-  if (*arg == ',') {
-    arg++;
-    block.num = size;
-    goto again;
-  }
-  
-  if (size)
-    block.szx = (coap_fls(size >> 4) - 1) & 0x07;
-
-  flags |= FLAGS_BLOCK;
-  return 1;
-}
-
 /* Called after processing the options from the commandline to set 
  * Block1 or Block2 depending on method. */
 void 
@@ -691,7 +674,7 @@ set_blocksize() {
     opt = method == COAP_REQUEST_GET ? COAP_OPTION_BLOCK2 : COAP_OPTION_BLOCK1;
 
     coap_insert(&optlist, new_option_node(opt,
-                coap_encode_var_bytes(buf, (block.num << 4 | block.szx)), buf),
+                coap_encode_var_bytes(buf, (block.num << 4 | block.m << 3 | block.szx)), buf),
 		order_opts);
   }
 }
@@ -893,18 +876,30 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   char port_str[NI_MAXSERV] = "0";
   int res; //,opt
   char *group = NULL;
-  coap_log_t log_level = LOG_WARN;
+  coap_log_t log_level = LOG_WARN;//LOG_DEBUG;
   coap_tid_t tid = COAP_INVALID_TID;
 
   memset(answer_s, 0, 512);
   answer.length = 0;
 
+  // URI setzen
+  char my_uri[128];
+  memset(my_uri, 0, 128);
+  memcpy(my_uri, "coap://[", 8);
+  inet_ntop(AF_INET6, ip, my_uri+8, 120);
+  strcat(my_uri, "]/");
+  strcat(my_uri, my_res);
+  PRINTF("%s\n", my_uri);
+  cmdline_uri(my_uri);
+
+  method = my_method;
+
+  coap_set_log_level(log_level);
+
+
 /*
   while ((opt = getopt(argc, argv, "Nb:e:f:g:m:p:s:t:o:v:A:B:O:P:T:")) != -1) {
     switch (opt) {
-    case 'b' :
-      cmdline_blocksize(optarg);
-      break;
     case 'B' :
       wait_seconds = atoi(optarg);
       break;
@@ -925,9 +920,6 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
       break;
     case 'm' :
       method = cmdline_method(optarg);
-*/
-      method = my_method;
-/*
       break;
     case 'N' :
       msgtype = COAP_MESSAGE_NON;
@@ -974,26 +966,6 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
     }
   }
 */
-
-  coap_set_log_level(log_level);
-
-/*
-  if ( optind < argc )
-    cmdline_uri( argv[optind] );
-  else {
-    usage( argv[0], PACKAGE_VERSION );
-    exit( 1 );
-  }
-*/
-  char my_uri[128];
-  memset(my_uri, 0, 128);
-  memcpy(my_uri, "coap://[", 8);
-  inet_ntop(AF_INET6, ip, my_uri+8, 120);
-  strcat(my_uri, "]/");
-  strcat(my_uri, my_res);
-  PRINTF("%s\n", my_uri);
-
-  cmdline_uri(my_uri);
 
   if (proxy.length) {
     server = proxy;
@@ -1143,6 +1115,10 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   coap_free_context( ctx );
 
   ready = 0;
+  flags = 0;
+  block.num = 0;
+  block.m = 0;
+  block.szx = 1;
   payload.s = NULL;
   payload.length = 0;
   msgtype = COAP_MESSAGE_CON;
@@ -1155,6 +1131,13 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
 void coap_setPayload(uint8_t *data, size_t len) {
   payload.s = data;
   payload.length = len;
+}
+
+void coap_setBlock1(uint8_t num, uint8_t m, uint8_t szx) {
+  flags |= FLAGS_BLOCK;
+  block.num = num;
+  block.m = m;
+  block.szx = szx;
 }
 
 void coap_setNoneConfirmable() {

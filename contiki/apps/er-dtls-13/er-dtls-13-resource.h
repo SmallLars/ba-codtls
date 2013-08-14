@@ -54,6 +54,22 @@ typedef struct {
     uint8_t data[0];
 } __attribute__ ((packed)) ClientHello_t;
 
+/*
+struct {
+    ProtocolVersion client_version;
+    Random random;
+    SessionID session_id;
+    opaque cookie<0..2^8-1>;
+    CipherSuite cipher_suites<2..2^16-2>;
+    CompressionMethod compression_methods<1..2^8-1>;
+    select (extensions_present) {
+        case false:
+            struct {};
+        case true:
+            Extension extensions<0..2^16-1>;
+    };
+} ClientHello;
+*/
 typedef struct {
     ProtocolVersion server_version;
     uint8_t cookie_len;

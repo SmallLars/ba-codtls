@@ -33,7 +33,7 @@ clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 erase
 
 upload:
-	../blaster/blaster 19 < $(CONTIKI_PROJECT)_redbee-econotag.bin > \
+	../blaster/blaster 19 -t < $(CONTIKI_PROJECT)_redbee-econotag.bin > \
 	$(CONTIKI_PROJECT)_e_redbee-econotag.bin 2> \
 	$(CONTIKI_PROJECT)_e_redbee-econotag.txt \
 	

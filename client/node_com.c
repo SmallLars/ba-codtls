@@ -37,9 +37,8 @@ void node_getTime(struct in6_addr *ip, char *target) {
     *time = ntohl(*time);
 }
 
-void node_eccTest(struct in6_addr *ip) {
-    coap_setNoneConfirmable();
-    coap_request(ip, COAP_REQUEST_GET, "d?i=ecc", NULL);
+void node_eccTest(struct in6_addr *ip, char *target) {
+    coap_request(ip, COAP_REQUEST_GET, "d?i=ecc", target);
 }
 
 void node_handshake(struct in6_addr *ip) {

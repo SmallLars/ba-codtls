@@ -38,6 +38,9 @@ PROCESS_THREAD(server_firmware, ev, data) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == sensors_event && data == &button_sensor) {
+            //Ein Versuch zu resetten, geht aber nicht :(
+            //*(uint32_t *)(0x80003050) = 0xFFFFFFFF;
+
             leds_on(LEDS_GREEN);
             nvm_init();
             leds_off(LEDS_GREEN);

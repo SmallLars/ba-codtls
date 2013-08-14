@@ -1111,9 +1111,18 @@ coap_set_header_size(void *packet, uint32_t size)
 /*-----------------------------------------------------------------------------------*/
 /*- PAYLOAD -------------------------------------------------------------------------*/
 /*-----------------------------------------------------------------------------------*/
+uint8_t block1_paylen = 0;
+uint8_t block1_buffer[COAP_BLOCK1_BUFFER_SIZE];
 int
 coap_get_payload(void *packet, const uint8_t **payload)
 {
+  if (block1_paylen) {
+    *payload = block1_buffer;
+    uint8_t my_len = block1_paylen;
+    block1_paylen = 0;
+    return my_len;
+  }
+
   coap_packet_t *const coap_pkt = (coap_packet_t *) packet;
 
   if (coap_pkt->payload) {

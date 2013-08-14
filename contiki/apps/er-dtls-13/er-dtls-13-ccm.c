@@ -131,7 +131,7 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
 void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len) {
     uint8_t key[16];
     getPSK(key);
-    printf("Key: %.*s\n", 16, key);
+    PRINTF("Key: %.*s\n", 16, key);
 
     ASM->CONTROL0bits.CLEAR = 1;
 

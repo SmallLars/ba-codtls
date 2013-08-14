@@ -28,11 +28,18 @@ void dtls_handshake(struct in6_addr *ip) {
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   Content_t *content = (Content_t *) buffer;
   HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (content->payload + content->len);
-  printf("Step 1 done: Cookie erhalten: %.*s\n", verify->cookie_len, verify->cookie);
+  printf("Step 1 done: Cookie erhalten: ");
+  uint32_t i;
+  for (i = 0; i < verify->cookie_len; i++) printf("%02X", verify->cookie[i]);
+  printf("\n");
 
   len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
   memset(buffer, 0, 128);
   coap_setPayload(message, len);
+  coap_setBlock1(0, 1, 2);
+  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  coap_setPayload(message, len);
+  coap_setBlock1(1, 0, 2);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Step 2 done: TODO Session-Id erhalten: XXXXXXXX.\n");
 

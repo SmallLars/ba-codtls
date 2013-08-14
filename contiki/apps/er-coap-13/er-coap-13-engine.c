@@ -75,6 +75,9 @@ PROCESS(coap_receiver, "CoAP Receiver");
 /*- Variables ----------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 static service_callback_t service_cbk = NULL;
+
+extern uint8_t block1_paylen;
+extern uint8_t block1_buffer[COAP_BLOCK1_BUFFER_SIZE];
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
@@ -146,6 +149,24 @@ coap_receive(void)
               coap_set_header_token(response, message->token, message->token_len);
           }
 
+          /* block 1 check -> if more != 0 -> not last packet -> no REST call */
+          uint32_t b1_num;
+          uint8_t b1_more;
+          uint16_t b1_size;
+          uint32_t b1_offset;
+          if (coap_get_header_block1(message, &b1_num, &b1_more, &b1_size, &b1_offset))
+          {
+              printf("Num: %u, More: %u, Size: %u, Offset: %u\n", b1_num, b1_more, b1_size, b1_offset);
+              const uint8_t *payload = 0;
+              int old_len = block1_paylen;
+              block1_paylen = 0;
+              block1_paylen = coap_get_payload(message, &payload);
+              if (block1_paylen && payload) {
+                  memcpy(block1_buffer + b1_offset, payload, block1_paylen);
+                  block1_paylen += old_len;
+              }
+          }
+
           /* get offset for blockwise transfers */
           if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
           {
@@ -158,17 +179,31 @@ coap_receive(void)
           if (service_cbk)
           {
             /* Call REST framework and check if found and allowed. */
-            if (service_cbk(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
+            if (b1_more || service_cbk(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
             {
               if (coap_error_code==NO_ERROR)
               {
                 /* Apply blockwise transfers. */
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
+                  if (message->block1_more)
+                  {
+                    coap_packet_t ack[1];
+                    /* ACK with empty code (0) */
+                    coap_init_message(ack, COAP_TYPE_ACK, VALID_2_03, message->mid);
+                    coap_set_header_block1(ack, message->block1_num, message->block1_more, message->block1_size);
+                    /* Serializing into IPBUF: Only overwrites header parts that are already parsed into the request struct. */
+                    coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, (uip_appdata), coap_serialize_message(ack, uip_appdata));
+                    coap_error_code = MANUAL_RESPONSE;
+                  } else {
+                    coap_set_header_block1(response, message->block1_num, message->block1_more, message->block1_size);
+                  }
+/*
                   PRINTF("Block1 NOT IMPLEMENTED\n");
 
                   coap_error_code = NOT_IMPLEMENTED_5_01;
                   coap_error_message = "NoBlock1Support";
+*/
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {

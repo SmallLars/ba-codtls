@@ -15,7 +15,7 @@ uint8_t psk[16];
 
 int main(int argc, char *argv[]) {
     // TODO vor jedem Kompilieren muss derzeit der psk vom econotag gesetzt werden
-    memcpy(psk, "_PRDWFhnt4ZgMwvk", 16);
+    memcpy(psk, "1111111111111111", 16);
 
     char buffer[512];
     char cbuffer[32];
@@ -49,8 +49,9 @@ int main(int argc, char *argv[]) {
             case 5:
                 if (!memcmp("ecc", cbuffer, 3)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 4));
-                    node_eccTest(ip);
-                    printf("Anfrage gesendet.\n");
+                    memset(buffer, 0, 512);
+                    node_eccTest(ip, buffer);
+                    printf("Dauer: %s\n", buffer);
                     unknown = 0;
                 }
                 break;

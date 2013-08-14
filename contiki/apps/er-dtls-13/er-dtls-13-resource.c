@@ -20,6 +20,8 @@
     #define PRINTF(...)
 #endif
 
+void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
+void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
 void generateServerHello(uint8_t *buf);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
@@ -34,7 +36,7 @@ uint16_t serverHello_offset;
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
-
+/*
     if (*offset != 0) {
         int8_t read = readServerHello(buffer, *offset, preferred_size);
         PRINTF("Read: %.*s\n", read, buffer);
@@ -49,15 +51,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
         return;
     }
-
+*/
     const uint8_t *payload = 0;
     size_t pay_len = REST.get_request_payload(request, &payload);
     if (pay_len && payload) {
-        size_t session_len = 0;
-        const char *session = NULL;
-        if ((session_len = REST.get_query_variable(request, "s", &session))) {
+        size_t query_session_len = 0;
+        const char *query_session = NULL;
+        if ((query_session_len = REST.get_query_variable(request, "s", &query_session))) {
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
-            PRINTF("Session: %.*s\n", session_len, session);
+            PRINTF("Session: %.*s\n", query_session_len, query_session);
 
             ClientKey_t ck;
             ck.index = 0;          
@@ -86,29 +88,33 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 if (cookie_len == 0) {
                     // ClientHello 1 ohne Cookie beantworten
-                    DTLSContent_t *content = (DTLSContent_t *) buffer;
-
-                    content->type = hello_verify_request;
-                    content->len = con_length_8_bit;
-                    content->payload[0] = 11;
-
-                    HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) (content->payload + 1);
-                    answer->server_version.major = 3;
-                    answer->server_version.minor = 3;
-                    answer->cookie_len = 8;
-                    memcpy(answer->cookie, "ABCDEFGH", 8); // TODO generieren
+                    generateHelloVerifyRequest(buffer, (DTLSContent_t *) payload, &pay_len);
 
                     REST.set_response_status(response, VERIFY_1_02);
                     REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
                     REST.set_response_payload(response, buffer, 13);
                 } else {
-                    // ClientHello 2 mit Cookie beantworten
+                    // ClientHello 2 mit Cookie beantworten falls Cookie korrekt
+                    uint8_t old_cookie[8];
+                    uint8_t new_cookie[8];
+                    memcpy(old_cookie, clienthello->data + session_len + 2, 8);
+                    generateCookie(new_cookie, (DTLSContent_t *) payload, &pay_len);
+
+                    if (memcmp(old_cookie, new_cookie, 8)) {
+                        PRINTF("Cookie Falsch!\n");
+                        generateHelloVerifyRequest(buffer, (DTLSContent_t *) payload, &pay_len);
+
+                        REST.set_response_status(response, VERIFY_1_02);
+                        REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                        REST.set_response_payload(response, buffer, 13);
+
+                        return;
+                    }
+                    PRINTF("Cookie Richtig!\n");
 
                     // Abspeichern für Finished-Hash
                     stack_init();
                     stack_push((uint8_t *) payload, pay_len);
-
-                    uint8_t *cookie = clienthello->data + session_len + 2; // TODO checken
 
                     coap_separate_t request_metadata[1];
 
@@ -146,6 +152,63 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 }
 
 /* ------------------------------------------------------------------------- */
+
+void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
+    DTLSContent_t *content = (DTLSContent_t *) dst;
+
+    content->type = hello_verify_request;
+    content->len = con_length_8_bit;
+    content->payload[0] = 11;
+
+    HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) (content->payload + 1);
+    answer->server_version.major = 3;
+    answer->server_version.minor = 3;
+    answer->cookie_len = 8;
+    generateCookie(answer->cookie, data, data_len);
+}
+
+void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
+    uint32_t i;
+
+    #if DEBUG
+        PRINTF("Content Länge Input: 0x");
+        for (i = 0; i < data->len; i++) PRINTF("%02X", data->payload[i]);
+        PRINTF(" (MSB)\n");
+    #endif
+    uint32_t hello_len = 0;
+    memcpy(((uint8_t *) &hello_len) + 4 - data->len, data->payload, data->len);
+    hello_len = uip_ntohl(hello_len);
+    PRINTF("Content Länge Berechnet: %u\n", hello_len);
+
+    #if DEBUG
+        PRINTF("Content Data (mc): ");
+        for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
+        PRINTF("\n");
+    #endif
+    // Alten Cookie entfernen falls vorhanden
+    uint32_t cookie = data->len + sizeof(ProtocolVersion) + sizeof(Random);
+    cookie += (data->payload[cookie] + 1); //Längenfeld und Länge der Session addieren
+    if (data->payload[cookie] > 0) {
+        for (i = cookie + 9; i <= hello_len; i++) {
+            data->payload[i - 8] = data->payload[i];
+        }
+        hello_len = uip_ntohl(hello_len - data->payload[cookie]);
+        memcpy(data->payload, ((uint8_t *) &hello_len) + 4 - data->len, data->len);
+        data->payload[cookie] = 0;
+        *data_len -= 8;
+    }
+    #if DEBUG
+        PRINTF("Content Data (oc): ");
+        for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
+        PRINTF("\n");
+    #endif
+
+    uint8_t mac[16];
+    memset(mac, 0, 16);
+    cbc_mac_16(mac, src_ip, 16);
+    cbc_mac_16(mac, data, *data_len);
+    memcpy(dst, mac, 8);
+}
 
 void generateServerHello(uint8_t *buf) {
     #if DEBUG
