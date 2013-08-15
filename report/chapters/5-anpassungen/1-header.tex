@@ -17,15 +17,15 @@ lässt sich der Header im besten Fall auf 2 Byte, wie in Abbildung \ref{fig:com_
   \label{fig:com_handshake_header}
 \end{figure}
 
-Der RecordType (T) kann mit 2 Bit folgende 4 Zustände annehmen: \textit{ChangeCipherSpec} (0), \textit{8-Bit-Feld} (1), \textit{Handshake} (2) und
+Der RecordType (T) kann mit 2 Bit folgende 4 Zustände annehmen: \textit{8-Bit-Feld} (0), \textit{Alert} (1), \textit{Handshake} (2) und
 \textit{Anwendungsdaten} (3). Trotz Realisierung des Handshakes über \acr{coap} ist diese Unterteilung notwendig, damit auch der DTLS-Layer über die
-Art des Inhalts informiert ist. So werden Anwendungsdaten und Handshake-Daten mit den Sicherheitsparametern der aktuell gültigen Epoche behandelt,
-wobei bei den Anwendungsdaten zusätzlich sichergestellt werden kann, dass diese nicht in Epoche 0, ohne Sicherheitsparamater, versendet oder empfangen
-werden. ChangeCipherSpec wird nach wie vor gesondert behandelt, da während dem Versand und Empfang die Epoche geändert wird. Sollten Fehler auftreten,
-die, ohne \acr{coap}, über das Alert-Protkoll gemeldet werden oder weitere Unterptokolle notwendig sein, können diese innerhalb eines 1 Byte langen Typenfeldes an
-den Header gehangen werden, was durch den Wert 1 signalisiert wird. In diesem zusätzlichen Byte wird dann der im \acr{tls}/\acr{dtls} definierte
-Wert hinterlegt. So ist es auch möglich die 3 direkt definierten Werte unkomprimiert zu versenden. Die komprimierten Werte wurden so angeordnet,
-dass durch Addition von 20 die in \acr{tls}/\acr{dtls} definierten Werte ermittelt werden können.
+Art des Inhalts informiert ist und speziell die direkt für ihn bestimmten Daten bearbeiten kann. Hierzu gehören die Daten des Alert-Protokolls,
+welche ohne \acr{coap} übertragen werden. Bei den Anwendungsdaten muss außerdem überprüft werden, dass diese nicht innerhalb der Epoche 0, ohne
+Sicherheitsparamater, versendet oder empfangen werden. Auf direkte Angabe von \textit{ChangeCipherSpec} wurde verzichtet, da dies bei einem
+Handshake über \acr{coap} nicht mehr notwendig ist (siehe Kapitel \ref{sec:handshake}). Sollten  weitere Unterptokolle notwendig sein, können
+diese innerhalb eines 1 Byte langen Typenfeldes an den Header gehangen werden, was durch den Wert 0 signalisiert wird. In diesem zusätzlichen
+Byte wird dann der im \acr{tls}/\acr{dtls} definierte Wert hinterlegt. So ist es auch möglich die 3 direkt definierten Werte unkomprimiert zu
+versenden. Die komprimierten Werte wurden so angeordnet, dass durch Addition von 20 die in \acr{tls}/\acr{dtls} definierten Werte ermittelt werden können.
 
 Die Version (V) kann mit 2 Bit folgende 4 Zustände annehmen von denen 3 Benutzt werden: \textit{\acr{dtls} 1.0} (0), \textit{16-Bit-Feld} (1) und
 \textit{\acr{dtls} 1.2} (2). \acr{dtls} 1.0 und \acr{dtls} 1.2 können hier direkt definiert werden, da \acr{dtls} 1.0 weit verbreitet

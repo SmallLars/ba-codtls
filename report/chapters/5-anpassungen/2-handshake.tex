@@ -1,4 +1,5 @@
 \section{Handshake}
+\label{sec:handshake}
 
 Auch der Handshake orientiert sich am Entwurf von K. Hartke und O. Bergmann \cite[Kapitel 4]{draftcodtls}.
 
@@ -95,7 +96,7 @@ innerhalb eines \acr{coap}-Paketes zu versenden, falls es sich um die Antwort au
 auf der Server-Seite ein Problem auslöst, erwartet der Client vom Server eine \acr{coap}-Antwort. Wird die Benachrichtigung darüber ohne \acr{coap} versendet,
 muss der Client bei Erhalt der Benachrichtigung dafür sorgen, dass die Anfrage aus der darüber liegenden \acr{coap} Schicht entfernt wird, damit diese
 nicht wiederholt wird. Bei Versand der Benachrichtigung über \acr{coap} erledigt sich dies von selbst, da ja eine Antwort auf die Anfrage erhalten wurde.
-Der \acr{coap}-Response-Code ist in diesem Fall "`2.05 Content"'. Ein Beispiel dafür ist in Abbildung \ref{fig:coaphandshakefail} zu sehen.
+Der \acr{coap}-Response-Code ist in diesem Fall "`5.00 Internal Server Error"'. Ein Beispiel dafür ist in Abbildung \ref{fig:coaphandshakefail} zu sehen.
 
 \begin{figure}[ht]
   \centering
@@ -106,7 +107,7 @@ Der \acr{coap}-Response-Code ist in diesem Fall "`2.05 Content"'. Ein Beispiel d
                   POST /dtls -------->
              ClientHello
 
-                             <-------- 2.05 Content
+                             <-------- 5.00 Internal Server Error
                                            Alert(handshake_failure)
   \end{lstlisting}
   \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
@@ -117,24 +118,23 @@ Während der Record-Typ bei Anwendungsdaten eindeutig ist, muss dieser nun für 
 Alert wird hier nur verwendet, falls es sich um eine Benachrichtigung direkt über \acr{udp} ohne \acr{coap} handelt.
 Benachrichtigungen innerhalb von \acr{coap} sind eindeutig durch den Content-Header gekennzeichnet und gehören immer zu einem Handshake
 womit hier auch der Record-Type Handshake verwendet wird. Handshake wird generell verwendet, wenn es sich um Handshake-Daten handelt.
-Die Ausnahme bildet hier ein enthaltenes ChangeCipherSpec-Paket. In diesem Fall wird ChangeCipherSpec als Record-Typ angegeben.
-Während bei \acr{dtls} der Versand eines ChangeCipherSpec-Pakets zur anschließenden Änderungen der Sicherheitsparameter des Paketversands führt,
-kommmt es bei Empfang solch eines Pakets zur Änderungen der Sicherheitsparameter des Paketempfangs für alle folgenden Pakete.
-Diese Definition muss nun dahingehend angepasst werden, dass es um den Empfang und den Versand eines \acr{coap}-Pakets geht, dass ein
-ChangeCipherSpec-Paket enthält. Zu Beachten ist dabei die blockweise Übertragung durch \acr{coap}. Während bei Empfang des \acr{coap}-Pakets
-eine Auswertung der Daten erst nach Erhalt aller Blöcke stattfindet und somit die Sicherheitsparameter für den Empfang weitere Daten problemlos
-geändert werden können ist bei einem blockweise Versand vorsicht geboten. Die Sicherheitsparameter für den Versand dürfen erst nach erfolgreichem
-Versand des letzten Blocks geändert werden. Problematisch ist dies aber nur auf der Client-Seite, da die Antwort des Servers (Nr. 6 gemäß Abbildung
-\ref{fig:coaphandshake}) in jedem Fall klein genug is um in einem \acr{coap}-Paket ohne IP-Fragmentierung übertragen werden zu können.
-
-\TODO{Gedanken ausformulieren / obigen Block anpassen}
-\begin{itemize}
-  \item Sicherheitsparameter für Paketempfang ergeben sich durch Header
-  \item Client kann alte Sicherheitsparameter für Empfang und Versand nach 3. coap-Anfrage auf ungültig setzen und neue benutzen. Da Handshake sicher beendet.
-  \item Server setzt alte Sicherheitsparameter bei Empfang der ersten Anwendungsdaten auf ungültig (vernichten)
-\end{itemize}
+Dazu zählt hier nun auch ein enthaltenes ChangeCipherSpec-Paket. Während bei \acr{tls}/\acr{dtls} der Versand eines ChangeCipherSpec-Pakets
+zur anschließenden Änderungen der Sicherheitsparameter des Paketversands führt, kommmt es bei Empfang solch eines Pakets zur Änderungen der
+Sicherheitsparameter des Paketempfangs für alle folgenden Pakete. Diese Vorgehensweise ist hier nicht mehr notwendig. Die Epoche und somit
+die Sicherheitsparameter für den Paketempfang ergeben sich durch den \acr{dtls}-Header. Beachtet werden muss nur, wann eine alte Epoche
+für den Paketempfang für ungültig erklärt werden kann. Dieses ist auf der Seite des Clienten nach erhalt der Nachricht Nr. 6 gemäß Abbildung
+\ref{fig:coaphandshake} möglich da diese die letzte Nachricht der alten Epoche ist der Handshake erfolgreich abgeschlossen wurde.
+Der Server darf die alte Epoche für den Paketempfang jedoch erst nach Erhalt der ersten Anwendungsdaten in der neuen Epoche vernichten, da
+er nicht sicherstellen kann, dass Nachricht Nr. 6 den Clienten erreicht hat und diese somit Nachricht Nr. 5 wiederholen könnte.
+Genaus so verhält es sich für die Epoche und die dazugehörenden Sicherheitsparameter für den Paketversand. Hat der Server Nachricht Nr. 6
+erhalten kann er alle weiteren Nachrichten mit den Sicherheitsparametern der neuen Epoche versenden und die alten löschen. Der Server
+weiß bei Erhalt der ersten Anwendungsdaten ebenfalls, dass Pakete innerhalb der alten Epoche nicht mehr versand werden und kann die
+dazu gehörenden Sicherheitsparameter vernichten.
 
 Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
 verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im
-Handshake ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt. Je nach Ciphersuit wird dadurch die in
-\acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen wie Nonce und MAC hinzukommen.
+Handshake ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei das das Finished-Paket durch das
+ChangeCipherSpec-Paket, welches einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Daten abgegrenzt wird.
+Das ChangeCipherSpec-Paket kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
+Je nach Ciphersuit wird dadurch die in \acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen
+wie Nonce und MAC hinzukommen.
