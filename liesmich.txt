@@ -5,7 +5,6 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
         Für client:            libssl-dev
         Für blaster:           uuid-dev
         Für ftditools:         libftdi-dev
-        Für das Flashen:       libdevice-serialport-perl, libterm-readkey-perl
 
     Kompiler:
         arm-2008q3-66-arm-none-eabi-i686-pc-linux-gnu.tar.bz2 entpacken
@@ -32,11 +31,16 @@ border-router und econotag:
     Flash löschen: make clear
 
     Nur bei econotag: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
+    Nur bei border-router: "make border" zur Aktivierung von Tunslip über /dev/ttyUSB3
 
-    make upload verwendet in beiden fällen /dev/ttyUSB1
+    make clear löscht in beiden Fällen das Gerät an Index 0
+    make upload verwendet in beiden Fällen /dev/ttyUSB1
 
 
 
 --- TODO vielleicht. Ist noch zu testen ob sinnvoll ->
 usermod -aG dialout lars
 groups lars
+
+Ausgebaut weil nun C-Flasher verwendet wird:
+Für das Flashen:       libdevice-serialport-perl, libterm-readkey-perl

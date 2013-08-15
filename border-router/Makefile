@@ -55,9 +55,6 @@ upload:
 	
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
-listen:
-	while true; do cat /dev/ttyUSB3; done
-
 border:
 	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB3 aaaa::1/64
 
