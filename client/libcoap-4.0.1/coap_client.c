@@ -243,158 +243,151 @@ check_token(coap_pdu_t *received) {
     memcmp(received->hdr->token, the_token.s, the_token.length) == 0;
 }
 
-void
-message_handler(struct coap_context_t  *ctx, 
-		const coap_address_t *remote, 
-		coap_pdu_t *sent,
-		coap_pdu_t *received,
-		const coap_tid_t id) {
+void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, coap_pdu_t *sent, coap_pdu_t *received, const coap_tid_t id) {
+    coap_pdu_t *pdu = NULL;
+    coap_opt_t *block_opt;
+    coap_opt_iterator_t opt_iter;
+    unsigned char buf[4];
+    coap_list_t *option;
+    size_t len;
+    unsigned char *databuf;
+    coap_tid_t tid;
 
-  coap_pdu_t *pdu = NULL;
-  coap_opt_t *block_opt;
-  coap_opt_iterator_t opt_iter;
-  unsigned char buf[4];
-  coap_list_t *option;
-  size_t len;
-  unsigned char *databuf;
-  coap_tid_t tid;
+    #ifndef NDEBUG
+        if (LOG_DEBUG <= coap_get_log_level()) {
+            debug("** process incoming %d.%02d response:\n", (received->hdr->code >> 5), received->hdr->code & 0x1F);
+            coap_show_pdu(received);
+        }
+    #endif
 
-#ifndef NDEBUG
-  if (LOG_DEBUG <= coap_get_log_level()) {
-    debug("** process incoming %d.%02d response:\n",
-	  (received->hdr->code >> 5), received->hdr->code & 0x1F);
-    coap_show_pdu(received);
-  }
-#endif
-
-  /* check if this is a response to our original request */
-  if (!check_token(received)) {
-    /* drop if this was just some message, or send RST in case of notification */
-    if (!sent && (received->hdr->type == COAP_MESSAGE_CON || 
-		  received->hdr->type == COAP_MESSAGE_NON))
-      coap_send_rst(ctx, remote, received);
-    return;
-  }
-
-  switch (received->hdr->type) {
-  case COAP_MESSAGE_CON:
-    /* acknowledge received response if confirmable (TODO: check Token) */
-    coap_send_ack(ctx, remote, received);
-    break;
-  case COAP_MESSAGE_RST:
-    info("got RST\n");
-    return;
-  default:
-    ;
-  }
-
-  if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
-    debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
-    // do nothing, user need to call coap_request again with next block
-  } else
-  /* output the received data, if any */
-  if (COAP_RESPONSE_CLASS(received->hdr->code) <= 2) {
-
-    /* set obs timer if we have successfully subscribed a resource */
-    if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {
-      debug("observation relationship established, set timeout to %d\n", obs_seconds);
-      set_timeout(&obs_wait, obs_seconds);
+    /* check if this is a response to our original request */
+    if (!check_token(received)) {
+        /* drop if this was just some message, or send RST in case of notification */
+        if (!sent && (received->hdr->type == COAP_MESSAGE_CON || received->hdr->type == COAP_MESSAGE_NON)) {
+            coap_send_rst(ctx, remote, received);
+        }
+        return;
     }
-    
-    /* Got some data, check if block option is set. Behavior is undefined if
-     * both, Block1 and Block2 are present. */
+
+    switch (received->hdr->type) {
+        case COAP_MESSAGE_CON:
+            /* acknowledge received response if confirmable (TODO: check Token) */
+            coap_send_ack(ctx, remote, received);
+            break;
+        case COAP_MESSAGE_RST:
+            info("got RST\n");
+            return;
+        default:
+            ;
+    }
+
     block_opt = get_block(received, &opt_iter);
-    if (!block_opt) {
-      /* There is no block option set, just read the data and we are done. */
-      if (coap_get_data(received, &len, &databuf))
-	append_to_output(databuf, len);
-    } else {
-      unsigned short blktype = opt_iter.type;
-
-      /* TODO: check if we are looking at the correct block number */
-      if (coap_get_data(received, &len, &databuf))
-	append_to_output(databuf, len);
-
-      if (COAP_OPT_BLOCK_MORE(block_opt)) {
-	/* more bit is set */
-	      debug("found the M bit, block size is %u, block nr. %u\n",
-	      COAP_OPT_BLOCK_SZX(block_opt), COAP_OPT_BLOCK_NUM(block_opt));
-
-	/* create pdu with request for next block */
-    if (method == COAP_REQUEST_GET) {
-    	pdu = coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
+    if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
+        debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
+        // do nothing, user need to call coap_request again with next block
     }
-	if ( pdu ) {
-	  /* add URI components from optlist */
-	  for (option = optlist; option; option = option->next ) {
-	    switch (COAP_OPTION_KEY(*(coap_option *)option->data)) {
-	    case COAP_OPTION_URI_HOST :
-	    case COAP_OPTION_URI_PORT :
-	    case COAP_OPTION_URI_PATH :
-	    case COAP_OPTION_URI_QUERY :
-	      coap_add_option ( pdu, COAP_OPTION_KEY(*(coap_option *)option->data),
-				COAP_OPTION_LENGTH(*(coap_option *)option->data),
-				COAP_OPTION_DATA(*(coap_option *)option->data) );
-	      break;
-	    default:
-	      ;			/* skip other options */
-	    }
-	  }
+    /* output the received data, if any */
+    else if (COAP_RESPONSE_CLASS(received->hdr->code) <= 2) {
 
-	  /* finally add updated block option from response, clear M bit */
-	  /* blocknr = (blocknr & 0xfffffff7) + 0x10; */
-	  debug("query block %d\n", (COAP_OPT_BLOCK_NUM(block_opt) + 1));
-	  coap_add_option(pdu, blktype, coap_encode_var_bytes(buf, 
-	      ((COAP_OPT_BLOCK_NUM(block_opt) + 1) << 4) | 
-              COAP_OPT_BLOCK_SZX(block_opt)), buf);
+        /* set obs timer if we have successfully subscribed a resource */
+        if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {
+            debug("observation relationship established, set timeout to %d\n", obs_seconds);
+            set_timeout(&obs_wait, obs_seconds);
+        }
+        
+        /* Got some data, check if block option is set. Behavior is undefined if
+         * both, Block1 and Block2 are present. */
+        if (!block_opt) {
+            /* There is no block option set, just read the data and we are done. */
+            if (coap_get_data(received, &len, &databuf))
+            append_to_output(databuf, len);
+        } else {
+            unsigned short blktype = opt_iter.type;
 
-	  if (received->hdr->type == COAP_MESSAGE_CON)
-	    tid = coap_send_confirmed(ctx, remote, pdu);
-	  else 
-	    tid = coap_send(ctx, remote, pdu);
+            /* TODO: check if we are looking at the correct block number */
+            if (coap_get_data(received, &len, &databuf)) {
+                append_to_output(databuf, len);
+            }
 
-	  if (tid == COAP_INVALID_TID) {
-	    debug("message_handler: error sending new request");
-            coap_delete_pdu(pdu);
-	  } else {
-	    set_timeout(&max_wait, wait_seconds);
-            if (received->hdr->type != COAP_MESSAGE_CON)
-              coap_delete_pdu(pdu);
-          }
+            if (COAP_OPT_BLOCK_MORE(block_opt)) {
+                /* more bit is set */
+                debug("found the M bit, block size is %u, block nr. %u\n", COAP_OPT_BLOCK_SZX(block_opt), COAP_OPT_BLOCK_NUM(block_opt));
 
-	  return;
-	}
-      }
+                /* create pdu with request for next block */
+                if (method == COAP_REQUEST_GET) {
+                    pdu = coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
+                }
+                if ( pdu ) {
+                    /* add URI components from optlist */
+                    for (option = optlist; option; option = option->next ) {
+                        switch (COAP_OPTION_KEY(*(coap_option *)option->data)) {
+                            case COAP_OPTION_URI_HOST :
+                            case COAP_OPTION_URI_PORT :
+                            case COAP_OPTION_URI_PATH :
+                            case COAP_OPTION_URI_QUERY :
+                                coap_add_option ( pdu, COAP_OPTION_KEY(*(coap_option *)option->data),
+                                    COAP_OPTION_LENGTH(*(coap_option *)option->data),
+                                    COAP_OPTION_DATA(*(coap_option *)option->data) );
+                                break;
+                            default:
+                                ;      /* skip other options */
+                        }
+                    }
+
+                    /* finally add updated block option from response, clear M bit */
+                    /* blocknr = (blocknr & 0xfffffff7) + 0x10; */
+                    debug("query block %d\n", (COAP_OPT_BLOCK_NUM(block_opt) + 1));
+                    coap_add_option(pdu, blktype, coap_encode_var_bytes(buf, 
+                        ((COAP_OPT_BLOCK_NUM(block_opt) + 1) << 4) | 
+                        COAP_OPT_BLOCK_SZX(block_opt)), buf);
+
+                    if (received->hdr->type == COAP_MESSAGE_CON) {
+                        tid = coap_send_confirmed(ctx, remote, pdu);
+                    } else { 
+                        tid = coap_send(ctx, remote, pdu);
+                    }
+
+                    if (tid == COAP_INVALID_TID) {
+                        debug("message_handler: error sending new request");
+                        coap_delete_pdu(pdu);
+                    } else {
+                        set_timeout(&max_wait, wait_seconds);
+                        if (received->hdr->type != COAP_MESSAGE_CON) {
+                            coap_delete_pdu(pdu);
+                        }
+                    }
+
+                    return;
+                }
+            }
+        }
+    } else {      /* no 2.05 */
+        /* check if an error was signaled and output payload if so */
+        if (COAP_RESPONSE_CLASS(received->hdr->code) >= 4) {
+            fprintf(stderr, "%d.%02d", (received->hdr->code >> 5), received->hdr->code & 0x1F);
+            if (coap_get_data(received, &len, &databuf)) {
+                fprintf(stderr, " ");
+                while(len--) {
+                    fprintf(stderr, "%c", *databuf++);
+                }
+            }
+            fprintf(stderr, "\n");
+        }
     }
-  } else {			/* no 2.05 */
 
-    /* check if an error was signaled and output payload if so */
-    if (COAP_RESPONSE_CLASS(received->hdr->code) >= 4) {
-      fprintf(stderr, "%d.%02d", 
-	      (received->hdr->code >> 5), received->hdr->code & 0x1F);
-      if (coap_get_data(received, &len, &databuf)) {
-      fprintf(stderr, " ");
-	while(len--)
-	  fprintf(stderr, "%c", *databuf++);
-      }
-      fprintf(stderr, "\n");
+    /* finally send new request, if needed */
+    if (pdu && coap_send(ctx, remote, pdu) == COAP_INVALID_TID) {
+        debug("message_handler: error sending response");
     }
-    
-  }
+    coap_delete_pdu(pdu);
 
-  /* finally send new request, if needed */
-  if (pdu && coap_send(ctx, remote, pdu) == COAP_INVALID_TID) {
-    debug("message_handler: error sending response");
-  }
-  coap_delete_pdu(pdu);
+    /* our job is done, we can exit at any time */
+    ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
 
-  /* our job is done, we can exit at any time */
-  ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
-
-  block_opt = get_block(received, &opt_iter);
-  if (opt_iter.type == COAP_OPTION_BLOCK2 && COAP_OPT_BLOCK_MORE(block_opt)) {
-    ready = 0;
-  }
+    block_opt = get_block(received, &opt_iter);
+    if (opt_iter.type == COAP_OPTION_BLOCK2 && COAP_OPT_BLOCK_MORE(block_opt)) {
+        ready = 0;
+    }
 }
 
 void
@@ -1125,13 +1118,12 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   block.num = 0;
   block.m = 0;
   block.szx = 1;
+  wait_seconds = 90;
   payload.s = NULL;
   payload.length = 0;
   msgtype = COAP_MESSAGE_CON;
   coap_delete_list(optlist);
   optlist = NULL;
-
-  //return 0;
 }
 
 void coap_setPayload(uint8_t *data, size_t len) {
@@ -1148,4 +1140,8 @@ void coap_setBlock1(uint8_t num, uint8_t m, uint8_t szx) {
 
 void coap_setNoneConfirmable() {
   msgtype = COAP_MESSAGE_NON;
+}
+
+void coap_setWait(uint32_t secs) {
+  wait_seconds = secs;
 }

@@ -88,6 +88,7 @@ void node_firmware(struct in6_addr *ip, char *file) {
     buf[1] = 0xFF;
     coap_setPayload(buf, 2);
     coap_setNoneConfirmable();
+    coap_setWait(5);
     coap_request(ip, COAP_REQUEST_POST, "f", NULL);
 }
 

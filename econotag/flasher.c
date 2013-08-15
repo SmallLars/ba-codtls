@@ -48,7 +48,7 @@ void flasher_handler(void* request, void* response, uint8_t *buffer, uint16_t pr
             #if DEBUG
                 printflash();
             #endif
-            nvm_init();
+            // nvm_init(); Bei Bedarf auch Random Zugriff Flash löschen
             uint32_t reset = 0x80003050;
             uint32_t value;
             asm volatile(

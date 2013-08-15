@@ -25,6 +25,10 @@ void dtls_handshake(struct in6_addr *ip) {
   len = makeClientHello(message, my_time, random, NULL, 0, NULL, 0);
   memset(buffer, 0, 128);
   coap_setPayload(message, len);
+  coap_setBlock1(0, 1, 1);
+  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  coap_setPayload(message, len);
+  coap_setBlock1(1, 0, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   Content_t *content = (Content_t *) buffer;
   HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (content->payload + content->len);
@@ -34,12 +38,16 @@ void dtls_handshake(struct in6_addr *ip) {
   printf("\n");
 
   len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
+  printf("Länge: %u\n", len);
   memset(buffer, 0, 128);
   coap_setPayload(message, len);
-  coap_setBlock1(0, 1, 2);
+  coap_setBlock1(0, 1, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   coap_setPayload(message, len);
-  coap_setBlock1(1, 0, 2);
+  coap_setBlock1(1, 1, 1);
+  coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+  coap_setPayload(message, len);
+  coap_setBlock1(2, 0, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Step 2 done: TODO Session-Id erhalten: XXXXXXXX.\n");
 

@@ -18,4 +18,6 @@ void coap_setBlock1(uint8_t num, uint8_t m, uint8_t szx);
 
 void coap_setNoneConfirmable();
 
+void coap_setWait(uint32_t secs);
+
 #endif /* __COAP_CLIENT_H__ */
