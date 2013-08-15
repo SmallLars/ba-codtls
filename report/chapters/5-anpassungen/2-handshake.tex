@@ -23,6 +23,8 @@ und die Übertragung nur dieses Fragments wird wiederholt. So bleibt die Menge d
 minimal und eine Übertragung der Daten ist auch bei einer hohen Rate an Paketverlusten möglich. Durch diesen Mechanismus kann auch
 auf die Datenfelder fragment\_offset und fragment\_length verzichtet werden.
 
+Problematisch: blocksize $ 2^x $ \TODO{head auseinandernehmen} bei block1 (anfrage per post) blocksize = 32, bei block2 antworten = 64
+
 Der vollständige Handshake über \acr{coap} ist in Abbildung \ref{fig:coaphandshake} zu sehen, wobei wieder die mit * markierten Daten
 in dieser Arbeit keine Anwendung finden.
 

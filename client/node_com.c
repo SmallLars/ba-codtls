@@ -45,7 +45,7 @@ void node_eccTest(struct in6_addr *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d?i=ecc", target);
 }
 
-#define BLOCKSIZE 54
+#define BLOCKSIZE 52
 
 void node_firmware(struct in6_addr *ip, char *file) {
     struct stat status;

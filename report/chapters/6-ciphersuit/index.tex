@@ -45,5 +45,6 @@ key_block      = client_write_MAC_key[0]
 
 Finished:\\
 Hash mit CBC-MAC der während dem Handshake ausgetauschten Daten wie sie über die Leitung gingen (nicht entpackt, headerkompression bleibt)\\
-wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt.\\
+wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. Sequenznummer implizit 0
+
 20 Byte lang   ->   Verschlüsselte 12 Byte finished (12) + (CBC\_MAC) (8)

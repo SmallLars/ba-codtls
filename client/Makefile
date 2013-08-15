@@ -30,7 +30,7 @@ client: client.o ip_tools.o ip_list.o border_com.o node_com.o libcoap-4.0.1/coap
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) ${DEFINES}
 
 clean:
-	rm *.o client
+	-rm *.o client
 	make -C libcoap-4.0.1 clean
 
 .PHONY: all clean
