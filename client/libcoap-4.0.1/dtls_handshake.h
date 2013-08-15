@@ -1,6 +1,6 @@
-/* __COAP_DTLS_HANDSHAKE_H__ */
-#ifndef __COAP_DTLS_HANDSHAKE_H__
-#define __COAP_DTLS_HANDSHAKE_H__
+/* __DTLS_HANDSHAKE_H__ */
+#ifndef __DTLS_HANDSHAKE_H__
+#define __DTLS_HANDSHAKE_H__
 
 #include <stdint.h>
 #include <netinet/in.h>
@@ -39,4 +39,4 @@ typedef struct {
 
 void dtls_handshake(struct in6_addr *ip);
 
-#endif /* __COAP_DTLS_HANDSHAKE_H__ */
+#endif /* __DTLS_HANDSHAKE_H__ */

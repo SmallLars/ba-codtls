@@ -1,6 +1,6 @@
-/* __COAP_CCM_H__ */
-#ifndef __COAP_CCM_H__
-#define __COAP_CCM_H__
+/* __DTLS_CCM_H__ */
+#ifndef __DTLS_CCM_H__
+#define __DTLS_CCM_H__
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -56,4 +56,4 @@ void decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NON
   */
 void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len);
 
-#endif /* __COAP_CCM__ */
+#endif /* __DTLS_CCM__ */

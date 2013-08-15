@@ -1,6 +1,6 @@
-/* __COAP_DTLS_CLIENTHELLO_H__ */
-#ifndef __COAP_DTLS_CLIENTHELLO_H__
-#define __COAP_DTLS_CLIENTHELLO_H__
+/* __DTLS_CLIENTHELLO_H__ */
+#ifndef __DTLS_CLIENTHELLO_H__
+#define __DTLS_CLIENTHELLO_H__
 
 #include <stdint.h>
 #include <time.h>
@@ -29,4 +29,4 @@ typedef struct {
 
 uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len);
 
-#endif /* __COAP_DTLS_CLIENTHELLO_H__ */
+#endif /* __DTLS_CLIENTHELLO_H__ */

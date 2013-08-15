@@ -6,6 +6,8 @@
 
 #include "mc1322x.h"
 
+#define BLOCKSIZE 54
+
 #define DEBUG 0
 
 #if DEBUG
@@ -24,10 +26,10 @@ void printflash() {
     nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, 0, 16);
     for (i = 0; i < 16; i++) printf(" %02X", buffer[i]);
     printf("\n    ");
-    nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, 54, 16);
+    nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, BLOCKSIZE - 8, 16);
     for (i = 0; i < 16; i++) printf(" %02X", buffer[i]);
     printf("\n    ");
-    nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, 116, 16);
+    nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, (2 * BLOCKSIZE) - 8, 16);
     for (i = 0; i < 16; i++) printf(" %02X", buffer[i]);
     printf("\n");
 }
@@ -71,8 +73,8 @@ void flasher_handler(void* request, void* response, uint8_t *buffer, uint16_t pr
                 #endif
             }
             if (f_block == block) {
-                uint8_t err = nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, (uint8_t *) (payload + 2), block * 62, pay_len - 2);
-                PRINTF("\rBlock %4u erhalten und an %5u geschrieben: %u", block, block * 62, err);
+                uint8_t err = nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, (uint8_t *) (payload + 2), block * BLOCKSIZE, pay_len - 2);
+                PRINTF("\rBlock %4u erhalten und an %5u geschrieben: %u", block, block * BLOCKSIZE, err);
                 f_block++;
             } else {
                 PRINTF("\nBlock %u ein weiteres Mal empfangen.\n", block);

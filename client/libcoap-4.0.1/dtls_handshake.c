@@ -1,6 +1,6 @@
-#include "coap_dtls_handshake.h"
+#include "dtls_handshake.h"
 
-#include "coap_dtls_clientHello.h"
+#include "dtls_clientHello.h"
 
 //#include <stdlib.h>
 #include <stdio.h>
@@ -8,7 +8,7 @@
 //#include <netinet/in.h>
 #include <time.h>
 
-#include "coap_dtls_random.h"
+#include "dtls_random.h"
 #include "coap_client.h"
 
 #define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"

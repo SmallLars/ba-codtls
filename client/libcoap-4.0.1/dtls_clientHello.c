@@ -1,6 +1,6 @@
-#include "coap_dtls_clientHello.h"
+#include "dtls_clientHello.h"
 
-#include "coap_dtls_handshake.h"
+#include "dtls_handshake.h"
 
 
 //#include <stdlib.h>

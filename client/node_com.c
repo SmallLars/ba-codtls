@@ -13,7 +13,7 @@
 #include "node_com.h"
 #include "ip_tools.h"
 #include "libcoap-4.0.1/coap_client.h"
-#include "libcoap-4.0.1/coap_dtls_handshake.h"
+#include "libcoap-4.0.1/dtls_handshake.h"
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
@@ -45,6 +45,8 @@ void node_eccTest(struct in6_addr *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d?i=ecc", target);
 }
 
+#define BLOCKSIZE 54
+
 void node_firmware(struct in6_addr *ip, char *file) {
     struct stat status;
     if (stat(file, &status)) {
@@ -61,12 +63,12 @@ void node_firmware(struct in6_addr *ip, char *file) {
     uint32_t size = status.st_size;
 
     int r;
-    uint8_t buf[64];
+    uint8_t buf[2 + BLOCKSIZE];
     memcpy(buf + 2, "OKOK", 4);
     memcpy(buf + 6, &size, 4);
-    r = 8 + read(fd, buf + 10, 54);
+    r = 8 + read(fd, buf + 10, BLOCKSIZE - 8);
 
-    size = (size + 8) / 62;
+    size = (size + 8) / BLOCKSIZE;
     printf("Block    0/%u gesendet!", size);
     fflush(stdout);
     uint16_t i;
@@ -76,7 +78,7 @@ void node_firmware(struct in6_addr *ip, char *file) {
         coap_request(ip, COAP_REQUEST_POST, "f", NULL);
         printf("\rBlock %4u/%u gesendet!", i, size);
         fflush(stdout);
-        r = read(fd, buf + 2, 62);
+        r = read(fd, buf + 2, BLOCKSIZE);
     }
     printf("\n");
 

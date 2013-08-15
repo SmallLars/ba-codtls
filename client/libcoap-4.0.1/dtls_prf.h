@@ -1,6 +1,6 @@
-/* __COAP_DTLS_PRF_H__ */
-#ifndef __COAP_DTLS_PRF_H__
-#define __COAP_DTLS_PRF_H__
+/* __DTLS_PRF_H__ */
+#ifndef __DTLS_PRF_H__
+#define __DTLS_PRF_H__
 
 #include <stdint.h>
 
@@ -29,6 +29,6 @@
   */
 void prf(uint8_t *dst, uint8_t len, uint8_t *seed, uint16_t seed_len);
 
-#endif /* __COAP_DTLS_PRF_H__ */
+#endif /* __DTLS_PRF_H__ */
 
 

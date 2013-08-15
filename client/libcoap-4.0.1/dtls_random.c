@@ -1,4 +1,4 @@
-#include "coap_dtls_random.h"
+#include "dtls_random.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

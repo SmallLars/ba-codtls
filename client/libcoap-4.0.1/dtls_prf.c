@@ -1,6 +1,6 @@
-#include "coap_dtls_prf.h"
+#include "dtls_prf.h"
 
-#include "coap_dtls_ccm.h"
+#include "dtls_ccm.h"
 
 #include <string.h>
 /*---------------------------------------------------------------------------*/

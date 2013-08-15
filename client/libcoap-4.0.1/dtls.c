@@ -1,10 +1,10 @@
-#include "coap_dtls.h"
+#include "dtls.h"
 
 #include <stdio.h>
 #include <arpa/inet.h>
 
-#include "coap_dtls_random.h"
-#include "coap_dtls_ccm.h"
+#include "dtls_random.h"
+#include "dtls_ccm.h"
 #include "coap_client.h"
 
 /*---------------------------------------------------------------------------*/

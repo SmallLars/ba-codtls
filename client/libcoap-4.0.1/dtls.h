@@ -1,6 +1,6 @@
-/* __COAP_DTLS_H__ */
-#ifndef __COAP_DTLS_H__
-#define __COAP_DTLS_H__
+/* __DTLS_H__ */
+#ifndef __DTLS_H__
+#define __DTLS_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -70,4 +70,4 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
-#endif /* __COAP_DTLS_H__ */
+#endif /* __DTLS_H__ */

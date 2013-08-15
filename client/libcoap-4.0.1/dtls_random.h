@@ -1,6 +1,6 @@
-/* __RANDOM_H__ */
-#ifndef __RANDOM_H__
-#define __RANDOM_H__
+/* __DTLS_RANDOM_H__ */
+#ifndef __DTLS_RANDOM_H__
+#define __DTLS_RANDOM_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -18,4 +18,4 @@
   */
 void random_x(uint8_t *c, size_t len);
 
-#endif /* __RANDOM_H__ */
+#endif /* __DTLS_RANDOM_H__ */
