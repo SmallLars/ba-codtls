@@ -72,7 +72,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             insertKey(&ck);
 
             DTLSContent_t *c = (DTLSContent_t *) buffer;
-            c->type = change_cipher_spec;
+            c->type = c_change_cipher_spec;
             c->len = con_length_0;
 
             REST.set_response_status(response, CHANGED_2_04);

@@ -161,9 +161,11 @@ coap_receive(void)
               int old_len = block1_paylen;
               block1_paylen = 0;
               block1_paylen = coap_get_payload(message, &payload);
-              if (block1_paylen && payload) {
-                  memcpy(block1_buffer + b1_offset, payload, block1_paylen);
-                  block1_paylen += old_len;
+              if (b1_offset + block1_paylen <= COAP_BLOCK1_BUFFER_SIZE) {
+                  if (block1_paylen && payload) {
+                      memcpy(block1_buffer + b1_offset, payload, block1_paylen);
+                      block1_paylen += old_len;
+                  }
               }
           }
 
@@ -186,24 +188,26 @@ coap_receive(void)
                 /* Apply blockwise transfers. */
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
-                  if (message->block1_more)
+                  if (b1_offset + block1_paylen <= COAP_BLOCK1_BUFFER_SIZE)
                   {
-                    coap_packet_t ack[1];
-                    /* ACK with empty code (0) */
-                    coap_init_message(ack, COAP_TYPE_ACK, VALID_2_03, message->mid);
-                    coap_set_header_block1(ack, message->block1_num, message->block1_more, message->block1_size);
-                    /* Serializing into IPBUF: Only overwrites header parts that are already parsed into the request struct. */
-                    coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, (uip_appdata), coap_serialize_message(ack, uip_appdata));
-                    coap_error_code = MANUAL_RESPONSE;
+                    if (message->block1_more)
+                    {
+                      coap_packet_t ack[1];
+                      /* ACK with empty code (0) */
+                      coap_init_message(ack, COAP_TYPE_ACK, VALID_2_03, message->mid);
+                      coap_set_header_block1(ack, message->block1_num, message->block1_more, message->block1_size);
+                      /* Serializing into IPBUF: Only overwrites header parts that are already parsed into the request struct. */
+                      coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, (uip_appdata), coap_serialize_message(ack, uip_appdata));
+                      coap_error_code = MANUAL_RESPONSE;
+                    } else {
+                      coap_set_header_block1(response, message->block1_num, message->block1_more, message->block1_size);
+                    }
                   } else {
-                    coap_set_header_block1(response, message->block1_num, message->block1_more, message->block1_size);
-                  }
-/*
-                  PRINTF("Block1 NOT IMPLEMENTED\n");
+                    PRINTF("Block1 NOT IMPLEMENTED\n");
 
-                  coap_error_code = NOT_IMPLEMENTED_5_01;
-                  coap_error_message = "NoBlock1Support";
-*/
+                    coap_error_code = NOT_IMPLEMENTED_5_01;
+                    coap_error_message = "Block1Support only for msg_size <= 128";
+                  }
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {
