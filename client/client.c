@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
                 }
                 break;
         }
-        if (unknown) printf("Unbekannter Befehl. Möglichkeiten: ls, name <nr>, exit\n");
+        if (unknown) printf("Unbekannter Befehl. Möglichkeiten:\n   ls\n   handshake <nr>\n   name <nr>\n   ecc <nr>\n   uuid <nr>\n   time <nr>\n   model <nr>\n   flash <nr>\n   exit\n");
     }    
 
     clear_ip(&liste);

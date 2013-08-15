@@ -1,4 +1,5 @@
 #include "attributes.h"
+#include "flasher.h"
 #include "button-sensor.h"
 #include "leds.h"
 
@@ -33,7 +34,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
     rest_init_engine();
 
     rest_activate_resource(&resource_device);
-    rest_activate_resource(&resource_firmware);
+    rest_activate_resource(&resource_flasher);
 
 	while(1) {
 		PROCESS_WAIT_EVENT();

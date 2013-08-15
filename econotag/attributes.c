@@ -70,7 +70,6 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
         //*************************************************************************
         //*  DEVICE PSK                                                           *
         //*************************************************************************
-        /*
         if (query[0] == 'p') {
             getPSK(buffer);
             buffer[REST_MAX_CHUNK_SIZE - 1] = 0;
@@ -78,7 +77,7 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
             REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
             REST.set_response_payload(response, buffer, LEN_PSK);
         }
-        */
+
         //*************************************************************************
         //*  DEVICE ECC                                                           *
         //*************************************************************************
@@ -128,48 +127,5 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
         REST.set_response_status(response, CONTENT_2_05);
         REST.set_header_content_type(response, TEXT_PLAIN);
         REST.set_response_payload(response, buffer, 43);
-    }
-}
-
-void printflash() {
-    uint8_t buffer[32];
-    nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, buffer, 0, 32);
-    uint8_t i;
-    printf("Flash:");
-    for (i = 0; i < 32; i++) printf(" %02X", buffer[i]);
-    printf("\n");
-}
-
-void firmware_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    const uint8_t *payload = 0;
-    size_t pay_len = REST.get_request_payload(request, &payload);
-    if (pay_len && payload) {
-        uint16_t block;
-        memcpy(&block, payload, 2);
-        if (block == 0xFFFF) {
-            printf("\n");
-            printflash();
-            nvm_init();
-            uint32_t reset = 0x80003050;
-            uint32_t value;
-            asm volatile(
-                "ldr %[v], [%[r]] \n\t"
-                "str %[v], [%[r]] \n\t"
-            : /* out */
-                [v] "+r" (value)
-            : /* in */
-                [r] "r" (reset)
-            : /* clobber list */
-                "memory"
-            );
-        } else {
-            if (block == 0) {
-                printflash();
-                printf("Erase: %u\n", nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 0x00FFFFFF));
-            }
-            uint8_t err = nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, (uint8_t *) (payload + 2), block * 64, pay_len - 2);
-            printf("\rBlock %4u erhalten und an %5u geschrieben: %u!", block, block * 64, err);
-        }
-        REST.set_response_status(response, CHANGED_2_04);
     }
 }

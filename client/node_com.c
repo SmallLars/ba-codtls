@@ -61,12 +61,12 @@ void node_firmware(struct in6_addr *ip, char *file) {
     uint32_t size = status.st_size;
 
     int r;
-    uint8_t buf[66];
+    uint8_t buf[64];
     memcpy(buf + 2, "OKOK", 4);
     memcpy(buf + 6, &size, 4);
-    r = 8 + read(fd, buf + 10, 56);
+    r = 8 + read(fd, buf + 10, 54);
 
-    size = (size + 8) / 64;
+    size = (size + 8) / 62;
     printf("Block    0/%u gesendet!", size);
     fflush(stdout);
     uint16_t i;
@@ -76,7 +76,7 @@ void node_firmware(struct in6_addr *ip, char *file) {
         coap_request(ip, COAP_REQUEST_POST, "f", NULL);
         printf("\rBlock %4u/%u gesendet!", i, size);
         fflush(stdout);
-        r = read(fd, buf + 2, 64);
+        r = read(fd, buf + 2, 62);
     }
     printf("\n");
 

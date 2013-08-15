@@ -27,7 +27,7 @@ APPS += ecc
 APPS += time
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
-PROJECT_SOURCEFILES = attributes.c
+PROJECT_SOURCEFILES = attributes.c flasher.c
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 erase
