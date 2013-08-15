@@ -36,8 +36,9 @@ uint16_t serverHello_offset;
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
-/*
+
     if (*offset != 0) {
+        printf("OOOHHHHH!\n");
         int8_t read = readServerHello(buffer, *offset, preferred_size);
         PRINTF("Read: %.*s\n", read, buffer);
 
@@ -51,7 +52,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
         return;
     }
-*/
+
     const uint8_t *payload = 0;
     size_t pay_len = REST.get_request_payload(request, &payload);
     if (pay_len && payload) {
@@ -137,8 +138,20 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
 
                         // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
-                        //coap_set_header_block2(response, 0, 0, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
-                        coap_set_header_block2(response, request_metadata->block2_num, 0, request_metadata->block2_size);
+                        coap_set_header_block2(response, 0, 1, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
+                        //coap_set_header_block2(response, request_metadata->block2_num, 0, request_metadata->block2_size);
+
+                        // TODO Warning: No check for serialization error.
+                        transaction->packet_len = coap_serialize_message(response, transaction->packet);
+                        coap_send_transaction(transaction);
+
+                        // Payload generieren
+                        read = readServerHello(buffer, preferred_size, preferred_size);
+                        coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
+
+                        // Das es sich hier um den ersten von mehreren Blöcken handelt wird die Blockoption gesetzt.
+                        coap_set_header_block2(response, 1, 0, preferred_size); // Block 0, Es folgen weiter, Blockgröße 64 = preferred_size
+                        //coap_set_header_block2(response, request_metadata->block2_num, 0, request_metadata->block2_size);
 
                         // TODO Warning: No check for serialization error.
                         transaction->packet_len = coap_serialize_message(response, transaction->packet);

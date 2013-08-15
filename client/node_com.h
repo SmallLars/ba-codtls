@@ -14,6 +14,8 @@ void node_getTime(struct in6_addr *ip, char *target);
 
 void node_eccTest(struct in6_addr *ip, char *target);
 
+void node_firmware(struct in6_addr *ip, char *file);
+
 void node_handshake(struct in6_addr *ip);
 
 #endif /* __NODE_COM_H__ */

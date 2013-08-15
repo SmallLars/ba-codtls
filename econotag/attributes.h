@@ -5,5 +5,6 @@
 #include "erbium.h"
 
 RESOURCE(device, METHOD_GET, "d","rt=\"device information\";if=\"core.rp\";ct=42");
+RESOURCE(firmware, METHOD_POST, "f","rt=\"device information\";if=\"core.rp\";ct=42");
 
 #endif /* __ATTRIBUTES_H__ */

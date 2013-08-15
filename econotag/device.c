@@ -33,14 +33,12 @@ PROCESS_THREAD(server_firmware, ev, data) {
     rest_init_engine();
 
     rest_activate_resource(&resource_device);
+    rest_activate_resource(&resource_firmware);
 
 	while(1) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == sensors_event && data == &button_sensor) {
-            //Ein Versuch zu resetten, geht aber nicht :(
-            //*(uint32_t *)(0x80003050) = 0xFFFFFFFF;
-
             leds_on(LEDS_GREEN);
             nvm_init();
             leds_off(LEDS_GREEN);

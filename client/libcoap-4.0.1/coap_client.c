@@ -288,7 +288,6 @@ message_handler(struct coap_context_t  *ctx,
     ;
   }
 
-  block_opt = get_block(received, &opt_iter);
   if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
     debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
     // do nothing, user need to call coap_request again with next block
@@ -322,7 +321,9 @@ message_handler(struct coap_context_t  *ctx,
 	      COAP_OPT_BLOCK_SZX(block_opt), COAP_OPT_BLOCK_NUM(block_opt));
 
 	/* create pdu with request for next block */
-	pdu = coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
+    if (method == COAP_REQUEST_GET) {
+    	pdu = coap_new_request(ctx, method, NULL); /* first, create bare PDU w/o any option  */
+    }
 	if ( pdu ) {
 	  /* add URI components from optlist */
 	  for (option = optlist; option; option = option->next ) {
@@ -389,6 +390,11 @@ message_handler(struct coap_context_t  *ctx,
 
   /* our job is done, we can exit at any time */
   ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
+
+  block_opt = get_block(received, &opt_iter);
+  if (opt_iter.type == COAP_OPTION_BLOCK2 && COAP_OPT_BLOCK_MORE(block_opt)) {
+    ready = 0;
+  }
 }
 
 void
@@ -876,7 +882,7 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   char port_str[NI_MAXSERV] = "0";
   int res; //,opt
   char *group = NULL;
-  coap_log_t log_level = LOG_WARN;//LOG_DEBUG;
+  coap_log_t log_level = LOG_WARN; // WARN | DEBUG;
   coap_tid_t tid = COAP_INVALID_TID;
 
   memset(answer_s, 0, 512);

@@ -92,6 +92,12 @@ int main(int argc, char *argv[]) {
                     printf("Model: %s\n", buffer);
                     unknown = 0;
                 }
+                if (!memcmp("flash", cbuffer, 5)) {
+                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 6));
+                    node_firmware(ip, "device_redbee-econotag.bin");
+                    printf("Flash erfolgreich!\n");
+                    unknown = 0;
+                }
                 break;
             case 11:
                 if (!memcmp("handshake", cbuffer, 9)) {

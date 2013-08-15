@@ -156,7 +156,7 @@ coap_receive(void)
           uint32_t b1_offset;
           if (coap_get_header_block1(message, &b1_num, &b1_more, &b1_size, &b1_offset))
           {
-              printf("Num: %u, More: %u, Size: %u, Offset: %u\n", b1_num, b1_more, b1_size, b1_offset);
+              PRINTF("Blockwise: block 1 request: Num: %u, More: %u, Size: %u, Offset: %u\n", b1_num, b1_more, b1_size, b1_offset);
               const uint8_t *payload = 0;
               int old_len = block1_paylen;
               block1_paylen = 0;

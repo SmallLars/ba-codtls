@@ -14,6 +14,8 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
 
 void coap_setPayload(uint8_t *data, size_t len);
 
+void coap_setBlock1(uint8_t num, uint8_t m, uint8_t szx);
+
 void coap_setNoneConfirmable();
 
 #endif /* __COAP_CLIENT_H__ */
