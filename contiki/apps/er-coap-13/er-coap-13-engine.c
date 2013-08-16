@@ -192,6 +192,7 @@ coap_receive(void)
                   {
                     if (message->block1_more)
                     {
+                      PRINTF("ACK Block1 Paket with More-Bit\n");
                       coap_packet_t ack[1];
                       /* ACK with empty code (0) */
                       coap_init_message(ack, COAP_TYPE_ACK, VALID_2_03, message->mid);

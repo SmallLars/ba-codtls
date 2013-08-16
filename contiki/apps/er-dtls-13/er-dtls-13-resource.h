@@ -163,10 +163,11 @@ typedef struct {
     uint8_t y[32];
 } __attribute__ ((packed)) ECPoint;
 
-typedef struct {
+typedef struct { // 91 Byte groß
     ECParameters curve_params;
     ECPoint public_key;
-//  Signature       signed_params;  // fehlt wegen ECDH_anon -> SignatureAlgorithm = anonymous = 0
-} __attribute__ ((packed)) ServerKeyExchange;
+    uint16_t pskHint_len;   // 20
+    uint8_t pskHint[20];
+} __attribute__ ((packed)) ServerKeyExchange_t;
 
 #endif /* __ER_DTLS_13_RESOURCE_H__ */

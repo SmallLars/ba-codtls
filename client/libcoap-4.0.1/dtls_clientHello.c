@@ -59,14 +59,14 @@ uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *
   clientHello->data[data_index++] = 0x04;        // Länge der Supported Elliptic Curves Extension Daten
   clientHello->data[data_index++] = 0x00;        // Länge des Elliptic Curves Arrays
   clientHello->data[data_index++] = 0x02;        // Länge des Elliptic Curves Arrays
-  clientHello->data[data_index++] = 0x00;        // Elliptic Curve secp256r1 = 23
-  clientHello->data[data_index++] = 0x17;        // Elliptic Curve secp256r1 = 23
+  clientHello->data[data_index++] = 0x00;        // Elliptic Curve secp256r1
+  clientHello->data[data_index++] = 0x23;        // Elliptic Curve secp256r1
   clientHello->data[data_index++] = 0x00;        // Supported Point Formats Extension
   clientHello->data[data_index++] = 0x0b;        // Supported Point Formats Extension
   clientHello->data[data_index++] = 0x00;        // Länge der Supported Point Formats Extension Daten
   clientHello->data[data_index++] = 0x02;        // Länge der Supported Point Formats Extension Daten
   clientHello->data[data_index++] = 0x01;        // Länge des Point Formats Arrays
-  clientHello->data[data_index++] = 0x00;        // Uncompressed Point = 0
+  clientHello->data[data_index++] = 0x00;        // Uncompressed Point
   content->payload[0] += data_index;
 
   return sizeof(Content_t) + content->len + content->payload[0];
