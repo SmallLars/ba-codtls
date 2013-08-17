@@ -3,7 +3,7 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
     Benötigte Pakete:
         Nur für 64 bit System: ia32-libs
         Für client:            libssl-dev
-        Für blaster:           uuid-dev
+        Für blaster:           uuid-dev, libqrencode-dev
         Für ftditools:         libftdi-dev
 
     Kompiler:

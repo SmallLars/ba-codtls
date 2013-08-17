@@ -8,7 +8,7 @@ all: blaster
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 blaster: main.o
-	$(CC) $(CFLAGS) -o $@ $^ -luuid
+	$(CC) $(CFLAGS) -o $@ $^ -luuid -lqrencode
 
 clean:
 	rm *.o blaster
