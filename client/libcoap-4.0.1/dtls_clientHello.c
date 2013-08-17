@@ -14,7 +14,7 @@
 
 
 uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len) {
-  Content_t *content = (Content_t *) target;
+  DTLSContent_t *content = (DTLSContent_t *) target;
 
   content->type = client_hello;
   content->len = con_length_8_bit;
@@ -69,5 +69,5 @@ uint8_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *
   clientHello->data[data_index++] = 0x00;        // Uncompressed Point
   content->payload[0] += data_index;
 
-  return sizeof(Content_t) + content->len + content->payload[0];
+  return sizeof(DTLSContent_t) + content->len + content->payload[0];
 }

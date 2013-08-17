@@ -2,7 +2,7 @@ CONTIKI_PROJECT = device
 
 CONTIKI = ../contiki
 TARGET = redbee-econotag
-all: $(CONTIKI_PROJECT)
+all: $(CONTIKI_PROJECT) copy
 
 WITH_UIP6=1
 UIP_CONF_IPV6=1
@@ -28,6 +28,9 @@ APPS += time
 
 # der eigentliche Code (nicht benoetigt, wenn nur eine Datei...)
 PROJECT_SOURCEFILES = attributes.c flasher.c
+
+copy:
+	 cp $(CONTIKI_PROJECT)_redbee-econotag.bin ../client/$(CONTIKI_PROJECT)_redbee-econotag.bin
 
 clear:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 erase

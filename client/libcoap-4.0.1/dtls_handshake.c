@@ -20,17 +20,17 @@ void dtls_handshake(struct in6_addr *ip) {
   time_t my_time = time(NULL);
   uint8_t random[28];
   random_x(random, 28);
-  char buffer[128];
+  char buffer[256];
 
   len = makeClientHello(message, my_time, random, NULL, 0, NULL, 0);
-  memset(buffer, 0, 128);
+  memset(buffer, 0, 256);
   coap_setPayload(message, len);
   coap_setBlock1(0, 1, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   coap_setPayload(message, len);
   coap_setBlock1(1, 0, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
-  Content_t *content = (Content_t *) buffer;
+  DTLSContent_t *content = (DTLSContent_t *) buffer;
   HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (content->payload + content->len);
   printf("Step 1 done: Cookie erhalten: ");
   uint32_t i;
@@ -39,7 +39,7 @@ void dtls_handshake(struct in6_addr *ip) {
 
   len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
   printf("Länge: %u\n", len);
-  memset(buffer, 0, 128);
+  memset(buffer, 0, 256);
   coap_setPayload(message, len);
   coap_setBlock1(0, 1, 1);
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
@@ -51,9 +51,13 @@ void dtls_handshake(struct in6_addr *ip) {
   coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
   printf("Step 2 done: TODO Session-Id erhalten: XXXXXXXX.\n");
 
-  memset(buffer, 0, 128);
-  message[0] = 20;
-  coap_setPayload(message, 1);
+  memset(buffer, 0, 256);
+  DTLSContent_t *c = (DTLSContent_t *) buffer;
+  c->type = c_change_cipher_spec;
+  c->len = con_length_8_bit;
+  c->payload[0] = 1;
+  c->payload[1] = 1;
+  coap_setPayload(message, 3);
   coap_request(ip, COAP_REQUEST_POST, "dtls?s=IJKLMNOP", buffer);
   printf("Step 3 done.\n");
 }

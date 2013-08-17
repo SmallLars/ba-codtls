@@ -21,12 +21,12 @@ package = @PACKAGE_TARNAME@-@PACKAGE_VERSION@
 # files and flags
 SOURCES:= pdu.c net.c debug.c encode.c uri.c coap_list.c resource.c hashkey.c \
 	str.c option.c async.c subscribe.c block.c dtls.c dtls_random.c dtls_ccm.c \
-	dtls_handshake.c dtls_clientHello.c dtls_prf.c
+	dtls_handshake.c dtls_clientHello.c dtls_prf.c dtls_ecc.c
 OBJECTS:= $(patsubst %.c, %.o, $(SOURCES))
 HEADERS:=coap.h config.h debug.h pdu.h net.h encode.h uri.h coap_list.h mem.h \
 	str.h option.h bits.h uthash.h utlist.h resource.h hashkey.h async.h \
 	subscribe.h block.h address.h prng.h coap_time.h dtls.h dtls_random.h dtls_ccm.h \
-	dtls_handshake.h dtls_clientHello.h dtls_prf.h
+	dtls_handshake.h dtls_clientHello.h dtls_prf.h dtls_ecc.h
 CFLAGS:=-Wall -Wextra -std=c99 -pedantic @CFLAGS@
 CPPFLAGS:=@CPPFLAGS@
 DISTDIR=$(top_builddir)/$(package)

@@ -17,7 +17,7 @@ upload:
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
 listen:
-	../libmc1322x/tools/rftestrx2pcap.py /dev/ttyUSB1 26 | wireshark -k -i -
+	../libmc1322x/tools/rftestrx2pcap.py /dev/ttyUSB3 26 | wireshark -k -i -
 
 listen2:
 	../libmc1322x/tools/rftestrx2pcap.py /dev/ttyUSB3 26 > cap.pcap

@@ -67,11 +67,13 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             DTLSContent_t *c = (DTLSContent_t *) buffer;
             c->type = c_change_cipher_spec;
-            c->len = con_length_0;
+            c->len = con_length_8_bit;
+            c->payload[0] = 1;
+            c->payload[1] = 1;
 
             REST.set_response_status(response, CHANGED_2_04);
             REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-            REST.set_response_payload(response, buffer, 1);
+            REST.set_response_payload(response, buffer, 3);
         } else {
             DTLSContent_t *content = (DTLSContent_t *) payload;
 
