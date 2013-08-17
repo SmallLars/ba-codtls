@@ -1,0 +1,8 @@
+Treiber für FTDI-Geräte: http://www.ftdichip.com/Drivers/VCP.htm
+Dadurch erscheint ein Econotag im Gerätemanager als COM(x|y).
+
+lesen.ps1 liest die Daten zeilenweise von COM4 und gibt dies aus.
+
+Sollte die Scriptausführung deaktiviert sein, lässt sich dich dies
+durch Hinzufügen eines Eintrags in der Registrierung aktivieren.
+Siehe: aktivieren.reg
