@@ -2,6 +2,7 @@
 
 #include "dtls_content.h"
 #include "dtls_clientHello.h"
+#include "dtls_serverHello.h"
 
 //#include <stdlib.h>
 #include <stdio.h>
@@ -54,12 +55,17 @@ void dtls_handshake(struct in6_addr *ip) {
     if (getContentType(buffer) != server_hello) {
         printf("Erwartetes ServerHello nicht erhalten. Abbruch.\n");
         return;
-    }
-    printf("Step 2 done: TODO Session-Id erhalten: XXXXXXXX.\n");
+    }    
+    ServerHello_t *serverHello = (ServerHello_t *) (getContentData(buffer));
+    printf("Step 2 done: Session-Id: %.*s\n", serverHello->session_id.len, serverHello->session_id.session_id);
 
+    uint8_t uri[16];
+    memcpy(uri, "dtls?s=", 7);
+    memcpy(uri + 7, serverHello->session_id.session_id, serverHello->session_id.len);
+    uri[15] = '\0';
     memset(buffer, 0, 256);
     uint8_t changeCipherSpec = 1;
     coap_setPayload(message, makeContent(message, change_cipher_spec, &changeCipherSpec, 1));
-    coap_request(ip, COAP_REQUEST_POST, "dtls?s=IJKLMNOP", buffer);
+    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
     printf("Step 3 done.\n");
 }
