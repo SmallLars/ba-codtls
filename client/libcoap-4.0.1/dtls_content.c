@@ -65,21 +65,20 @@ void *getContentData(void *data) {
 size_t makeContent(void *dst, ContentType type, void *data, size_t len) {
     Content_t *content = (Content_t *) dst;
     content->type = type;
-    uint8_t i = 0;
     if (len == 0) {
         content->len = con_length_0;
     } else {
         uint32_t rlen = htonl(len);
         uint8_t *l = &rlen;
-        while (1) {
+        uint8_t i;
+        for (i = 0; 1; i++) {
             if (l[i] != 0) {
                 content->len = 4 - i;
                 memcpy(content->payload, l + i, content->len);
                 break;
             }
-            i++;
         }
     }
-    memcpy(content->payload + i, data, len);
-    return sizeof(Content_t) + i + len;
+    memcpy(content->payload + content->len, data, len);
+    return sizeof(Content_t) + content->len + len;
 }

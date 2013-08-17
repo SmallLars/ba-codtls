@@ -20,7 +20,7 @@
     #define PRINTF(...)
 #endif
 
-#define DEBUG_COOKIE 1
+#define DEBUG_COOKIE 0
 
 #if DEBUG_COOKIE
     #include <stdio.h>
