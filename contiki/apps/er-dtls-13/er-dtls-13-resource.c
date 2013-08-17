@@ -20,7 +20,7 @@
     #define PRINTF(...)
 #endif
 
-#define DEBUG_COOKIE 0
+#define DEBUG_COOKIE 1
 
 #if DEBUG_COOKIE
     #include <stdio.h>
@@ -76,6 +76,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             REST.set_response_payload(response, buffer, 3);
         } else {
             DTLSContent_t *content = (DTLSContent_t *) payload;
+            printf("CT: %u\n", content->type);
+            printf("CL: %u\n", content->len);
 
             if (content->type == client_hello) {
                 ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
