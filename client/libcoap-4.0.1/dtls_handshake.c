@@ -72,9 +72,15 @@ void dtls_handshake(struct in6_addr *ip) {
     uint32_t result_x[8];
     uint32_t result_y[8];
     uint32_t private_key[8];
+    memset(private_key, 1, 32);
+    /*
     do {
         random_x((uint8_t *) private_key, 32);
     } while (!ecc_is_valid_key(private_key));
+    */
+    printf("Private Key : ");
+    for (i = 0; i < 8; i++) printf("%08X", htonl(private_key[i]));
+    printf("\n");
 
 // --------------------------------------------------------------------------------------------
 
@@ -106,6 +112,11 @@ void dtls_handshake(struct in6_addr *ip) {
     cke.curve_params.namedcurve = secp256r1;
     cke.public_key.len = 65;
     cke.public_key.type = uncompressed;
+    printf("BASE_POINT-X: ");
+    for (i = 0; i < 8; i++) printf("%08X", htonl(base_x[i]));
+    printf("\nBASE_POINT-Y: ");
+    for (i = 0; i < 8; i++) printf("%08X", htonl(base_y[i]));
+    printf("\n");
     ecc_ec_mult(base_x, base_y, private_key, cke.public_key.x, cke.public_key.y);
     printf("_C_PUB_KEY-X: ");
     for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.x[i]));

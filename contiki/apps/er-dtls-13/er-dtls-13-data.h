@@ -30,6 +30,8 @@ int8_t insertKey(ClientKey_t *clientkey);
 
 int8_t getEpoch(uint8_t *ip);
 
+int8_t getPrivateKey(uint32_t *key, uint8_t *ip);
+
 int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch);
 
 int8_t changeIfPending(uint8_t *ip);

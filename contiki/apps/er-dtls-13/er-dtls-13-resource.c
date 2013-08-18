@@ -65,6 +65,38 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("Session: %.*s\n", query_session_len, query_session);
 
+            DTLSContent_t *content = (DTLSContent_t *) payload;
+            KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
+
+            #ifdef DEBUG_ECC
+                uint8_t i;
+                PRINTFE("_C_PUB_KEY-X: ");
+                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(cke->public_key.x[i]));
+                PRINTFE("\n_C_PUB_KEY-Y: ");
+                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(cke->public_key.y[i]));
+                PRINTFE("\n");
+            #endif
+
+            uint32_t private_key[8];
+            getPrivateKey(private_key, src_ip);
+            #ifdef DEBUG_ECC
+                PRINTFE("Private Key : ");
+                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
+                PRINTFE("\n");
+            #endif
+
+            uint32_t result[16];
+            PRINTFE("ECC - START\n");
+            ecc_ec_mult(cke->public_key.x, cke->public_key.y, private_key, result, result + 8);
+            PRINTFE("ECC - ENDE\n");
+            #ifdef DEBUG_ECC
+                PRINTFE("SECRET_KEY-X: ");
+                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
+                PRINTFE("\nSECRET_KEY-Y: ");
+                for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(result[i]));
+                PRINTFE("\n");
+            #endif
+
             ClientKey_t ck;
             ck.index = 0;          
             ck.epoch = 1;
@@ -266,21 +298,35 @@ void generateServerHello(uint8_t *buf) {
     memcpy(ci->session, "IJKLMNOP", 8);
     ci->epoch = 1;
     ci->pending = 1;
+    /*
     do {
         random_x((uint8_t *) ci->private_key, 32);
     } while (!ecc_is_valid_key(ci->private_key));
+    */
+    memset(ci->private_key, 1, 32);
     insertClient(ci);
-
+    #ifdef DEBUG_ECC
+        uint8_t i;
+        PRINTFE("Private Key : ");
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(ci->private_key[i]));;
+        PRINTFE("\n");
+    #endif
     uint32_t result[16];
     uint32_t base_x[8];
     uint32_t base_y[8];
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
+    #ifdef DEBUG_ECC
+        PRINTFE("BASE_POINT-X: ");
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_x[i]));
+        PRINTFE("\nBASE_POINT-Y: ");
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_y[i]));
+        PRINTFE("\n");
+    #endif
     PRINTFE("ECC - START\n");
     ecc_ec_mult(base_x, base_y, ci->private_key, result, result + 8);
     PRINTFE("ECC - ENDE\n");
     #ifdef DEBUG_ECC
-        uint8_t i;
         PRINTFE("_S_PUB_KEY-X: ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
         PRINTFE("\n_S_PUB_KEY-Y: ");

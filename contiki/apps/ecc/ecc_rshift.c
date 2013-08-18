@@ -1,6 +1,6 @@
 #include "ecc_rshift.h"
 
-#define ALGO 2
+#define ALGO 0
 // NR | Beschreibung | Größe | Geschwindigkeit
 //  0 | C-Code       |     0 | Mittel
 //  1 | C-Code       |    -4 | Mittel

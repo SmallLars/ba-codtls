@@ -1,6 +1,6 @@
 #include "ecc_sub.h"
 
-#define ALGO 3
+#define ALGO 0
 // NR | Beschreibung | Größe | Geschwindigkeit
 //  0 | C-Code       |     0 | Langsam
 //  1 | ASM          |   -20 | Mittel

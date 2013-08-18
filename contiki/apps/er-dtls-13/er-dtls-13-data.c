@@ -77,6 +77,17 @@ int8_t getEpoch(uint8_t *ip) {
     return epoch == 0 ? 0 : epoch - pending;
 }
 
+int8_t getPrivateKey(uint32_t *key, uint8_t *ip) {
+    int8_t index = getIndexOf(ip);
+    PRINTF("Index der gesuchten IP: %i\n", getIndexOf(ip));
+    if (index == -1) return -1;
+
+    ClientInfo_t *ci = (ClientInfo_t *) RES_CLIENT_INFO;
+    nvm_getVar(key, (uint32_t) &ci[index].private_key, 32);
+
+    return 0;
+}
+
 int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch) {
     if (epoch == 0) return -1;
 
