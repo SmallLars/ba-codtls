@@ -6,11 +6,10 @@
 #include <time.h>
 #include <qrencode.h>
 
-       #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
-       #include <unistd.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 // Blöcke
 // 0x18000 - 0x18FFF Random Zugriff Block 1.1
@@ -58,6 +57,10 @@
 #define LEN_MODEL        0x0E
 #define RES_FLASHTIME    0x1E0A8
 #define LEN_FLASHTIME    0x04
+
+// ----------------------------------------------------------------------------
+
+void writeImg(char *file, unsigned char *data, int width);
 
 // ----------------------------------------------------------------------------
 
@@ -191,33 +194,41 @@ int main(int nArgs, char **argv) {
 // Ausgeben -------------------------------------------------------------------
     for (i = 4; i < 0x1F000; i++) putchar(output[i]);
 
-// QR-Code generieren
-    char qbuf[54];
-    memcpy(qbuf, uuid, 36);
-    qbuf[36] = ':';
-    memcpy(qbuf + 37, psk, 16);
-    qbuf[53] = '\0';
-    QRcode *code = QRcode_encodeString8bit(qbuf, 3, QR_ECLEVEL_L);
-
-    int fd = open("qr-code.ppm", O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-
-    sprintf(qbuf, "P3\n# qr-code.ppm\n%2u %2u\n1", code->width, code->width);
-    write(fd, qbuf, 24);
-
-    int pixel = code->width * code->width;
-    for (i = 0; i < pixel; i++) {
-        if (i % code->width == 0) {
-            qbuf[0] = '\n';
-            write(fd, qbuf, 1);
-        }
-        if (code->data[i] & 0x01) {
-            memcpy(qbuf, " 0 0 0", 6);
-        } else {
-            memcpy(qbuf, " 1 1 1", 6);
-        }
-        write(fd, qbuf, 6);        
-    }
-    close(fd);
+// QR-Code generieren ---------------------------------------------------------
+    char qrdata[54];
+    memcpy(qrdata, uuid, 36);
+    qrdata[36] = ':';
+    memcpy(qrdata + 37, psk, 16);
+    qrdata[53] = '\0';
+    QRcode *code = QRcode_encodeString8bit(qrdata, 3, QR_ECLEVEL_L);
+    writeImg("qr-code.ppm", code->data, code->width);
 
     return 0;
+}
+
+// ----------------------------------------------------------------------------
+
+void writeImg(char *file, unsigned char *data, int width) {
+    char buf[32];
+
+    int fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+
+    sprintf(buf, "P3\n# qr-code.ppm\n%2u %2u\n1", width, width);
+    write(fd, buf, 24);
+
+    int i;
+    int pixel = width * width;
+    for (i = 0; i < pixel; i++) {
+        if (i % width == 0) {
+            buf[0] = '\n';
+            write(fd, buf, 1);
+        }
+        if (data[i] & 0x01) {
+            memcpy(buf, " 0 0 0", 6);
+        } else {
+            memcpy(buf, " 1 1 1", 6);
+        }
+        write(fd, buf, 6);        
+    }
+    close(fd);
 }
