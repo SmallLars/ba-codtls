@@ -159,15 +159,15 @@ typedef enum {
 typedef struct {
     uint8_t len;     // 0x41 = 65 Lang
     PointType type;  // 0x04 uncompressed
-    uint8_t x[32];
-    uint8_t y[32];
+    uint32_t x[8];
+    uint32_t y[8];
 } __attribute__ ((packed)) ECPoint;
 
 typedef struct { // 91 Byte groß
+    uint16_t pskHint_len;   // 16
+    uint8_t pskHint[16];
     ECParameters curve_params;
     ECPoint public_key;
-    uint16_t pskHint_len;   // 20
-    uint8_t pskHint[20];
-} __attribute__ ((packed)) ServerKeyExchange_t;
+} __attribute__ ((packed)) KeyExchange_t;
 
 #endif /* __ER_DTLS_13_RESOURCE_H__ */

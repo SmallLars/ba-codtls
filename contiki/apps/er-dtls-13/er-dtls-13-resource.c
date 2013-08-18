@@ -29,6 +29,15 @@
     #define PRINTFC(...)
 #endif
 
+#define DEBUG_ECC 1
+
+#if DEBUG_ECC
+    #include <stdio.h>
+    #define PRINTFE(...) printf(__VA_ARGS__)
+#else
+    #define PRINTFE(...)
+#endif
+
 
 void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
 void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
@@ -240,14 +249,16 @@ void generateServerHello(uint8_t *buf) {
     //ServerKeyExchange
     content->type = server_key_exchange;
     content->len = con_length_8_bit;
-    content->payload[0] = sizeof(ServerKeyExchange_t);
+    content->payload[0] = sizeof(KeyExchange_t);
 
-    ServerKeyExchange_t *ske = (ServerKeyExchange_t *) (content->payload + content->len);
+    KeyExchange_t *ske = (KeyExchange_t *) (content->payload + content->len);
+    ske->pskHint_len = uip_htons(LEN_UUID);
+    nvm_getVar(ske->pskHint, RES_UUID, LEN_UUID);
     ske->curve_params.curve_type = named_curve;
     ske->curve_params.namedcurve = secp256r1;
     ske->public_key.len = 65;
     ske->public_key.type = uncompressed;
-    stack_push(buf, sizeof(DTLSContent_t) + 1 + 5);
+    stack_push(buf, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
     ClientInfo_t *ci = (ClientInfo_t *) buf;
     memset(ci, 0, sizeof(ClientInfo_t));
@@ -265,15 +276,18 @@ void generateServerHello(uint8_t *buf) {
     uint32_t base_y[8];
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
-    PRINTF("ECC - START\n");
+    PRINTFE("ECC - START\n");
     ecc_ec_mult(base_x, base_y, ci->private_key, result, result + 8);
-    PRINTF("ECC - ENDE\n");
+    PRINTFE("ECC - ENDE\n");
+    #ifdef DEBUG_ECC
+        uint8_t i;
+        PRINTFE("_S_PUB_KEY-X: ");
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
+        PRINTFE("\n_S_PUB_KEY-Y: ");
+        for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(result[i]));
+        PRINTFE("\n");
+    #endif
     stack_push((uint8_t *) result, 64);
-
-    buf[0] = 0x00; 
-    buf[1] = LEN_UUID;
-    nvm_getVar(buf + 2, RES_UUID, LEN_UUID);
-    stack_push(buf, 2 + LEN_UUID);
 
     //ServerHelloDone
     content->type = server_hello_done;

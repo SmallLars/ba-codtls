@@ -1,5 +1,6 @@
 #include "dtls_content.h"
 
+#include <string.h>
 #include <arpa/inet.h>
 
 typedef enum {
@@ -69,7 +70,7 @@ size_t makeContent(void *dst, ContentType type, void *data, size_t len) {
         content->len = con_length_0;
     } else {
         uint32_t rlen = htonl(len);
-        uint8_t *l = &rlen;
+        uint8_t *l = (uint8_t *) &rlen;
         uint8_t i;
         for (i = 0; 1; i++) {
             if (l[i] != 0) {
