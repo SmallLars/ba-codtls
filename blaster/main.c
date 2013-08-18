@@ -58,9 +58,17 @@
 #define RES_FLASHTIME    0x1E0A8
 #define LEN_FLASHTIME    0x04
 
+typedef enum {
+    pbm_ascii = 0,
+    pbm_binary = 1,
+    png = 2
+} ImageType;
+
+#define SCALE 1
+
 // ----------------------------------------------------------------------------
 
-void writeImg(char *file, unsigned char *data, int width);
+void writeImg(char *file, ImageType it, unsigned char *data, int width);
 
 // ----------------------------------------------------------------------------
 
@@ -201,34 +209,39 @@ int main(int nArgs, char **argv) {
     memcpy(qrdata + 37, psk, 16);
     qrdata[53] = '\0';
     QRcode *code = QRcode_encodeString8bit(qrdata, 3, QR_ECLEVEL_L);
-    writeImg("qr-code.ppm", code->data, code->width);
+    writeImg("qr-code.pbm", pbm_ascii, code->data, code->width);
 
     return 0;
 }
 
 // ----------------------------------------------------------------------------
 
-void writeImg(char *file, unsigned char *data, int width) {
-    char buf[32];
-
-    int fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-
-    sprintf(buf, "P3\n# qr-code.ppm\n%2u %2u\n1", width, width);
-    write(fd, buf, 24);
-
+void writeImg(char *file, ImageType it, unsigned char *data, int width) {
     int i;
+    int fd;
+    char buf[32];
     int pixel = width * width;
-    for (i = 0; i < pixel; i++) {
-        if (i % width == 0) {
-            buf[0] = '\n';
-            write(fd, buf, 1);
-        }
-        if (data[i] & 0x01) {
-            memcpy(buf, " 0 0 0", 6);
-        } else {
-            memcpy(buf, " 1 1 1", 6);
-        }
-        write(fd, buf, 6);        
+
+    switch (it) {
+        case pbm_ascii:
+            fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+
+            sprintf(buf, "P1\n# %s\n%2u %2u", file, width, width);
+            write(fd, buf, 22);
+
+            for (i = 0; i < pixel; i++) {
+                if (i % width == 0) {
+                    buf[0] = '\n';
+                    write(fd, buf, 1);
+                }
+                sprintf(buf, "%2u", data[i] & 0x01);
+                write(fd, buf, 2);        
+            }
+            close(fd);
+            break;
+        case pbm_binary:
+            break;
+        case png:
+            break;
     }
-    close(fd);
 }
