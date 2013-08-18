@@ -1,10 +1,10 @@
 #include "ecc_rshift.h"
 
-#define ALGO 0
-// NR | Beschreibung | Größe | Geschwindigkeit
-//  0 | C-Code       |     0 | Mittel
-//  1 | C-Code       |    -4 | Mittel
-//  2 | ASM          |    -4 | Schnell
+#define ALGO 2
+// NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
+//  0 | C-Code       |     0 | Mittel          | Funktioniert
+//  1 | C-Code       |    -4 | Mittel          | Funktioniert
+//  2 | ASM          |    -4 | Schnell         | Funktioniert
 
 void ecc_rshift(uint32_t *A) {
 

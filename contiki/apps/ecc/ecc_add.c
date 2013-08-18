@@ -1,11 +1,11 @@
 #include "ecc_add.h"
 
-#define ALGO 0
-// NR | Beschreibung | Größe | Geschwindigkeit
-//  0 | C-Code       |     0 | Langsam
-//  1 | ASM          |   -20 | Mittel
-//  2 | ASM          |   +84 | Schnell
-//  3 | ASM fix l=8  |   +12 | Schnell
+#define ALGO 1
+// NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
+//  0 | C-Code       |     0 | Langsam         | Funktioniert
+//  1 | ASM          |   -20 | Mittel          | Funktioniert
+//  2 | ASM          |   +84 | Schnell         | Fehlerhaft !!!
+//  3 | ASM fix l=8  |   +12 | Schnell         | Unbrauchbar für ECC
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
 

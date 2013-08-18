@@ -72,12 +72,9 @@ void dtls_handshake(struct in6_addr *ip) {
     uint32_t result_x[8];
     uint32_t result_y[8];
     uint32_t private_key[8];
-    memset(private_key, 1, 32);
-    /*
     do {
         random_x((uint8_t *) private_key, 32);
     } while (!ecc_is_valid_key(private_key));
-    */
     printf("Private Key : ");
     for (i = 0; i < 8; i++) printf("%08X", htonl(private_key[i]));
     printf("\n");

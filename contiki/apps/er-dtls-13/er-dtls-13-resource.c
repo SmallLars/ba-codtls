@@ -86,8 +86,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             #endif
 
             uint32_t result[16];
+            uint32_t point[16];
+            memcpy(point, cke->public_key.x, 32);
+            memcpy(point + 8, cke->public_key.y, 32);
             PRINTFE("ECC - START\n");
-            ecc_ec_mult(cke->public_key.x, cke->public_key.y, private_key, result, result + 8);
+            ecc_ec_mult(point, point + 8, private_key, result, result + 8);
             PRINTFE("ECC - ENDE\n");
             #ifdef DEBUG_ECC
                 PRINTFE("SECRET_KEY-X: ");
@@ -298,13 +301,11 @@ void generateServerHello(uint8_t *buf) {
     memcpy(ci->session, "IJKLMNOP", 8);
     ci->epoch = 1;
     ci->pending = 1;
-    /*
     do {
         random_x((uint8_t *) ci->private_key, 32);
     } while (!ecc_is_valid_key(ci->private_key));
-    */
-    memset(ci->private_key, 1, 32);
     insertClient(ci);
+
     #ifdef DEBUG_ECC
         uint8_t i;
         PRINTFE("Private Key : ");
@@ -324,7 +325,9 @@ void generateServerHello(uint8_t *buf) {
         PRINTFE("\n");
     #endif
     PRINTFE("ECC - START\n");
-    ecc_ec_mult(base_x, base_y, ci->private_key, result, result + 8);
+    uint32_t private_key[8];
+    getPrivateKey(private_key, src_ip);
+    ecc_ec_mult(base_x, base_y, private_key, result, result + 8);
     PRINTFE("ECC - ENDE\n");
     #ifdef DEBUG_ECC
         PRINTFE("_S_PUB_KEY-X: ");
