@@ -209,7 +209,7 @@ int main(int nArgs, char **argv) {
     memcpy(qrdata + 37, psk, 16);
     qrdata[53] = '\0';
     QRcode *code = QRcode_encodeString8bit(qrdata, 3, QR_ECLEVEL_L);
-    writeImg("qr-code.pbm", pbm_ascii, code->data, code->width);
+    writeImg("qr-code.pbm", pbm_binary, code->data, code->width);
 
     return 0;
 }
@@ -217,10 +217,8 @@ int main(int nArgs, char **argv) {
 // ----------------------------------------------------------------------------
 
 void writeImg(char *file, ImageType it, unsigned char *data, int width) {
-    int i;
     int fd;
     char buf[32];
-    int pixel = width * width;
 
     switch (it) {
         case pbm_ascii:
@@ -229,7 +227,8 @@ void writeImg(char *file, ImageType it, unsigned char *data, int width) {
             sprintf(buf, "P1\n# %s\n%2u %2u", file, width, width);
             write(fd, buf, 22);
 
-            for (i = 0; i < pixel; i++) {
+            int i;
+            for (i = 0; i < width * width; i++) {
                 if (i % width == 0) {
                     buf[0] = '\n';
                     write(fd, buf, 1);
@@ -240,6 +239,24 @@ void writeImg(char *file, ImageType it, unsigned char *data, int width) {
             close(fd);
             break;
         case pbm_binary:
+            fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+
+            sprintf(buf, "P4\n# %s\n%2u %2u\n", file, width, width);
+            write(fd, buf, 23);
+
+            int x, y;
+            for (x = 0; x < width; x++) {
+                uint8_t byte = 0;
+                for (y = 0; y < width; y++) {
+                    byte |= ((data[(x * width) + y] & 0x01) << (7 - (y % 8)));
+                    if (y % 8 == 7) {
+                        write(fd, &byte, 1);
+                        byte = 0;
+                    }
+                }
+                write(fd, &byte, 1);
+            }
+            close(fd);
             break;
         case png:
             break;
