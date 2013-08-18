@@ -58,17 +58,9 @@
 #define RES_FLASHTIME    0x1E0A8
 #define LEN_FLASHTIME    0x04
 
-typedef enum {
-    pbm_ascii = 0,
-    pbm_binary = 1,
-    png = 2
-} ImageType;
-
-#define SCALE 1
-
 // ----------------------------------------------------------------------------
 
-void writeImg(char *file, ImageType it, unsigned char *data, int width);
+void writeImg(char *file, unsigned char *data, int width);
 
 // ----------------------------------------------------------------------------
 
@@ -209,56 +201,30 @@ int main(int nArgs, char **argv) {
     memcpy(qrdata + 37, psk, 16);
     qrdata[53] = '\0';
     QRcode *code = QRcode_encodeString8bit(qrdata, 3, QR_ECLEVEL_L);
-    writeImg("qr-code.pbm", pbm_binary, code->data, code->width);
+    writeImg("qr-code.pbm", code->data, code->width);
 
     return 0;
 }
 
 // ----------------------------------------------------------------------------
 
-void writeImg(char *file, ImageType it, unsigned char *data, int width) {
-    int fd;
-    char buf[32];
+void writeImg(char *file, unsigned char *data, int width) {
+    unsigned int buf[64];
 
-    switch (it) {
-        case pbm_ascii:
-            fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+    int fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+    write(fd, buf, sprintf((char *) buf, "P4\n# %s\n%3u %3u\n", file, width * 32, width * 32));
 
-            sprintf(buf, "P1\n# %s\n%2u %2u", file, width, width);
-            write(fd, buf, 22);
-
-            int i;
-            for (i = 0; i < width * width; i++) {
-                if (i % width == 0) {
-                    buf[0] = '\n';
-                    write(fd, buf, 1);
-                }
-                sprintf(buf, "%2u", data[i] & 0x01);
-                write(fd, buf, 2);        
+    int x, y;
+    for (y = 0; y < width; y++) {
+        for (x = 0; x < width; x++) {
+            if (data[(y * width) + x] & 0x01) {
+                buf[x] = 0xFFFFFFFF;
+            } else {
+                buf[x] = 0x00000000;
             }
-            close(fd);
-            break;
-        case pbm_binary:
-            fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
-
-            sprintf(buf, "P4\n# %s\n%2u %2u\n", file, width, width);
-            write(fd, buf, 23);
-
-            int x, y;
-            for (x = 0; x < width; x++) {
-                uint8_t byte = 0;
-                for (y = 0; y < width; y++) {
-                    byte |= ((data[(x * width) + y] & 0x01) << (7 - (y % 8)));
-                    if (y % 8 == 7) {
-                        write(fd, &byte, 1);
-                        byte = 0;
-                    }
-                }
-                write(fd, &byte, 1);
-            }
-            close(fd);
-            break;
-        case png:
-            break;
+        }
+        for (x = 0; x < 32; x++) write(fd, &buf, width * 4);
     }
+
+    close(fd);
 }
