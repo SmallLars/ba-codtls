@@ -167,7 +167,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     while (1) {
                         int8_t read = readServerHello(buffer, i * 32, 32);
                         coap_transaction_t *transaction = NULL;
-                        if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
+                        if ( (transaction = coap_new_transaction(request_metadata->mid + i, &request_metadata->addr, request_metadata->port)) ) {
                             printf("%u\n", i);
                             coap_packet_t response[1];
                             coap_separate_resume(response, request_metadata, REST.status.CREATED);

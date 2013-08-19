@@ -67,20 +67,16 @@ coap_tick_t obs_wait = 0;	/* timeout for current subscription */
 static unsigned char answer_s[512];
 static str answer = { 0, answer_s };
 
+// to check post block 2 answer
+uint32_t expected_blocks = 0;
+uint32_t received_blocks = 0;
+
 #define min(a,b) ((a) < (b) ? (a) : (b))
 
 static inline void
 set_timeout(coap_tick_t *timer, const unsigned int seconds) {
   coap_ticks(timer);
   *timer += seconds * COAP_TICKS_PER_SECOND;
-}
-
-int
-append_to_output(const unsigned char *data, size_t len) {
-  memcpy(answer.s + answer.length, data, len);
-  answer.length += len;
-
-  return 0;
 }
 
 coap_pdu_t *
@@ -297,16 +293,26 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
         
         /* Got some data, check if block option is set. Behavior is undefined if
          * both, Block1 and Block2 are present. */
-        if (!block_opt) {
+        block_opt = get_block(received, &opt_iter);
+        if (opt_iter.type != COAP_OPTION_BLOCK2) {
             /* There is no block option set, just read the data and we are done. */
-            if (coap_get_data(received, &len, &databuf))
-            append_to_output(databuf, len);
+            if (coap_get_data(received, &len, &databuf)) {
+                memcpy(answer.s, databuf, len); 
+                answer.length = len;
+            }
         } else {
             unsigned short blktype = opt_iter.type;
 
             /* TODO: check if we are looking at the correct block number */
             if (coap_get_data(received, &len, &databuf)) {
-                append_to_output(databuf, len);
+                unsigned int offset = COAP_OPT_BLOCK_NUM(block_opt) * (1 << (COAP_OPT_BLOCK_SZX(block_opt) + 4));
+                printf("Offset: %u\n", offset);
+                received_blocks |= (1 << COAP_OPT_BLOCK_NUM(block_opt));
+                memcpy(answer.s + offset, databuf, len);
+                if (COAP_OPT_BLOCK_MORE(block_opt) == 0) {
+                    expected_blocks = (0xFFFFFFFF >> (31 - COAP_OPT_BLOCK_NUM(block_opt)));
+                    answer.length = offset + len;
+                }
             }
 
             if (COAP_OPT_BLOCK_MORE(block_opt)) {
@@ -385,7 +391,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
     ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
 
     block_opt = get_block(received, &opt_iter);
-    if (opt_iter.type == COAP_OPTION_BLOCK2 && COAP_OPT_BLOCK_MORE(block_opt)) {
+    if (opt_iter.type == COAP_OPTION_BLOCK2 && expected_blocks != received_blocks) {
         ready = 0;
     }
 }
@@ -878,6 +884,8 @@ void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *t
   coap_log_t log_level = LOG_WARN; // WARN | DEBUG;
   coap_tid_t tid = COAP_INVALID_TID;
 
+  expected_blocks = 0;
+  received_blocks = 0;
   memset(answer_s, 0, 512);
   answer.length = 0;
 
