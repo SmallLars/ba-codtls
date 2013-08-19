@@ -4,8 +4,8 @@
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
 //  1 | ASM          |   -20 | Mittel          | Funktioniert
-//  2 | ASM          |   +84 | Schnell         | Funktioniert für l=8. Rest ist noch zu testen.
-//  3 | ASM fix l=8  |   +12 | Schnell         | Funktioniert
+//  2 | ASM 1,2,4,8  |   +84 | Schnell         | Funktioniert
+//  3 | ASM nur 8    |   +12 | Schnell         | Funktioniert
 
 uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
 

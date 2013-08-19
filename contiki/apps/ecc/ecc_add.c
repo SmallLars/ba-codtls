@@ -1,13 +1,30 @@
 #include "ecc_add.h"
 
-#define ALGO 1
+#include <string.h>
+
+#define ALGO 2
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
 //  1 | ASM          |   -20 | Mittel          | Funktioniert
-//  2 | ASM          |   +84 | Schnell         | Fehlerhaft !!!
-//  3 | ASM fix l=8  |   +12 | Schnell         | Unbrauchbar für ECC
+//  2 | ASM 1,2,4,8  |  +168 | Schnell         | Funktioniert
+//  3 | ASM nur 8    |   +96 | Schnell         | Unbrauchbar für ECC
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
+
+// Unterstützung für 512 Bit Addition bei ALGO 2 und 3 -> + 84 Byte Größe
+#if ALGO == 2 || ALGO == 3
+    if (length == 16) {
+        uint8_t c1 = ecc_add(x, y, result, 8);
+        uint8_t c2 = ecc_add(x + 8, y + 8, result + 8, 8);
+        if (c1) {
+            uint32_t z[8];
+            memset(z, 0, 32);
+            z[0] = 0x0000001;
+            c2 |= ecc_add(result + 8, z, result + 8, 8);
+        }
+        return c2;
+    }
+#endif
 
 #if ALGO == 0
     uint8_t d = 0; // carry
