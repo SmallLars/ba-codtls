@@ -275,6 +275,21 @@ coap_receive(void)
         if (message->type==COAP_TYPE_ACK)
         {
           PRINTF("Received ACK\n");
+          uint32_t b2_num;
+          uint8_t b2_more;
+          uint16_t b2_size;
+          uint32_t b2_offset;
+          if (coap_get_header_block2(message, &b2_num, &b2_more, &b2_size, &b2_offset))
+          {
+            PRINTF("ACK contains Block2: Num: %u, More: %u, Size: %u, Offset: %u\n", b2_num, b2_more, b2_size, b2_offset);
+            if (b2_more)
+            {
+              b2_offset += b2_size;
+              //Problem: message dont contain uri for find handler.
+              //TODO: Idear: create a changeable ack_handler
+              //service_cbk(message, NULL, NULL, b2_size, &b2_offset);
+            }
+          }
         }
         else if (message->type==COAP_TYPE_RST)
         {

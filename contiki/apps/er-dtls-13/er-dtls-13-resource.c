@@ -54,6 +54,11 @@ uint16_t changed_offset;
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    if (*offset != 0) {
+        printf("GRRR\n");
+        return;
+    }
+
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
     const uint8_t *payload = 0;
@@ -168,7 +173,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         int8_t read = readServerHello(buffer, i * 32, 32);
                         coap_transaction_t *transaction = NULL;
                         if ( (transaction = coap_new_transaction(request_metadata->mid + i, &request_metadata->addr, request_metadata->port)) ) {
-                            printf("%u\n", i);
                             coap_packet_t response[1];
                             coap_separate_resume(response, request_metadata, REST.status.CREATED);
                             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
