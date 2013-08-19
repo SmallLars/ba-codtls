@@ -13,7 +13,7 @@ alle Daten zuverlässig übertragen werden. Dies wird dadurch realisiert, dass a
 geantwortet wird. Bleibt dies aus, wird die Anfrage nach Ablauf einer Wartezeit wiederholt. Durch diese Zuverlässigkeit und den
 erhalt der Reihenfolge der Daten innerhalb eines \acr{coap}-Pakets ist es somit möglich auf das "`message\_seq"' Datenfeld zu verzichten.
 
-Um IP-Fragmentierung zu vermeiden, wird die Blockweise-Datenübertragung von \acr{coap} verwendet. Problematisch ist die Verwendung
+Um IP-Fragmentierung zu vermeiden, wird die Blockweise-Datenübertragung von \acr{coap} verwendet \cite{draftcoapblock}. Problematisch ist die Verwendung
 der IP-Fragmentierung, da bei Verlust eines einzelnen Fragments das ganze IP-Paket verworfen wird. So kommt es zu einer Wiederholung
 der \acr{coap}-Anfrage und die Übertragung aller Fragmente wird wiederholt. Je nach Anzahl der Fragmente und der Paketverluste, kann
 es somit zu einer mehrfachen Übertragung, die sowohl Zeit als auch Energie benötigt. Um dies zu vermeiden werden die Daten schon
@@ -23,7 +23,15 @@ und die Übertragung nur dieses Fragments wird wiederholt. So bleibt die Menge d
 minimal und eine Übertragung der Daten ist auch bei einer hohen Rate an Paketverlusten möglich. Durch diesen Mechanismus kann auch
 auf die Datenfelder fragment\_offset und fragment\_length verzichtet werden.
 
-Problematisch: blocksize $ 2^x $ \TODO{head auseinandernehmen} bei block1 (anfrage per post) blocksize = 32, bei block2 antworten = 64
+Zu beachten ist jedoch die in \acr{coap} genutze Blockgröße. Diese kann nur die Werte $ 2^x $ annehmen, wobei x im Bereich von 4 - 10 liegt.
+Unter Beachtung der maximalen Paketgröße von 127 Byte kommen hier somit nur die Blockgrößen 16, 32 und 64 in Frage. Es hat sich gezeigt,
+dass in der Testumgebung der Header eines \acr{6lowpan}-Paketes in das Sensornetz 48 Byte groß ist, während der Header eines \acr{6lowpan}-Paketes
+aus dem Sensornetz eine Größe von 40 Byte hat. Hinzu kommt jeweils noch der 8 Byte große UDP-Header, womit 71 bzw. 79 Byte für die \acr{coap}-Anfrage bzw.
+-Antwort verbleiben. Der \acr{coap}-Header ist minimal 4 Byte groß und eine Blockoption benötigt zusätzliche 3 Byte womit noch 64 bzw. 72 Byte
+für die Daten des Handshakes selbst bleiben. Da bei einer \acr{coap}-Anfrage aber auch noch die \acr{uri} in den \acr{coap}-Optionen hinzukommt,
+fällt die Blockgröße von 64 Byte für eine \acr{coap}-Anfrage weg, so dass hier nur die Blockgrößen 16 und 32 zur Auswahl stehen. Bezieht man schließlich
+auch noch den \acr{dtls}-Header mit ein und berücksicht, dass ein Handschake auch innerhalb einer sicheren Verbindung durchgeführt werden kann, wobei
+dann noch ein 8 bis 16 Byte langer \acr{mac} hinzukommt, lassen sich auch \acr{coap}-Antworten nur mit einer Blockgröße von 16 und 32 Byte übertragen.
 
 Der vollständige Handshake über \acr{coap} ist in Abbildung \ref{fig:coaphandshake} zu sehen, wobei wieder die mit * markierten Daten
 in dieser Arbeit keine Anwendung finden.

@@ -163,7 +163,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                     generateServerHello(buffer); // Das dauert nun
 
-                    int8_t read = readServerHello(buffer, 0, preferred_size);
+                    int8_t read = readServerHello(buffer, 0, 32);
                     uint8_t i = 0;
                     while (read >= 0) {
                         coap_transaction_t *transaction = NULL;
@@ -171,13 +171,13 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                             coap_packet_t response[1];
                             coap_separate_resume(response, request_metadata, REST.status.CREATED);
                             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                            coap_set_payload(response, buffer, read == 0 ? preferred_size : read);
-                            coap_set_header_block2(response, i, read == 0 ? 1 : 0, preferred_size);
+                            coap_set_payload(response, buffer, read == 0 ? 32 : read);
+                            coap_set_header_block2(response, i, read == 0 ? 1 : 0, 32);
                             // TODO Warning: No check for serialization error.
                             transaction->packet_len = coap_serialize_message(response, transaction->packet);
                             coap_send_transaction(transaction);
                             i++;
-                            read = readServerHello(buffer, i * preferred_size, preferred_size);
+                            read = readServerHello(buffer, i * 32, 32);
                         }
                     }
                 }
