@@ -306,7 +306,6 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
             /* TODO: check if we are looking at the correct block number */
             if (coap_get_data(received, &len, &databuf)) {
                 unsigned int offset = COAP_OPT_BLOCK_NUM(block_opt) * (1 << (COAP_OPT_BLOCK_SZX(block_opt) + 4));
-                printf("Offset: %u\n", offset);
                 received_blocks |= (1 << COAP_OPT_BLOCK_NUM(block_opt));
                 memcpy(answer.s + offset, databuf, len);
                 if (COAP_OPT_BLOCK_MORE(block_opt) == 0) {
