@@ -163,11 +163,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                     generateServerHello(buffer); // Das dauert nun
 
-                    int8_t read = readServerHello(buffer, 0, 32);
                     uint8_t i = 0;
-                    while (read >= 0) {
+                    while (1) {
+                        int8_t read = readServerHello(buffer, i * 32, 32);
                         coap_transaction_t *transaction = NULL;
                         if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
+                            printf("%u\n", i);
                             coap_packet_t response[1];
                             coap_separate_resume(response, request_metadata, REST.status.CREATED);
                             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
@@ -177,7 +178,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                             transaction->packet_len = coap_serialize_message(response, transaction->packet);
                             coap_send_transaction(transaction);
                             i++;
-                            read = readServerHello(buffer, i * 32, 32);
+                            if (read != 0) break;
                         }
                     }
                 }
