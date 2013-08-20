@@ -1,18 +1,57 @@
 \chapter{Definition des Ciphersuits}
 
-Vorhanden rfc6655 \cite{rfc6655}:\\
-CipherSuite TLS\_PSK\_WITH\_AES\_128\_CCM\_8     = {0xC0,0xA8}\\
-CipherSuite TLS\_PSK\_WITH\_AES\_256\_CCM\_8     = {0xC0,0xA9)\\
-CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8 = {0xC0,0xAA}\\
-CipherSuite TLS\_PSK\_DHE\_WITH\_AES\_256\_CCM\_8 = {0xC0,0xAB}\\
-Notiz: rfc4279 \cite{rfc4279}
+Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des Handshakes ist es notwendig ein geeignetes Ciphersuit zu definieren.
+Dieses gibt vor, welche Mechanismen für die Authentisierung genutzt werden und auf Grundlage welcher Algorithmen diese durchgeführt wird. Auch kann
+ein Verfahren zum Schlüsselaustausch definiert werden. Für die Übertragung von Anwendungsdaten ist schließlich ein Verschlüsselungsverfahren festgelegt,
+das Vertraulichkeit und/oder Integrität sicherstellen soll. Das Ciphersuit beeinflusst somit wesentlich, welche und wieviel Daten während des Handshakes
+ausgetauscht werden und welche Berechnungen notwendig sind. Je nach Verfahren können diese sehr Umfangreich werden und somit insbesondere für eingeschränkte
+Umgebungen nicht immer geeignet.
 
+Da der Mikrocontroller die Verschlüsselung mit \acr{aes}-128 im CTR- und CBC-Mode in Hardware unterstützt, kommen zunächst die imm RFC 6655 \cite{rfc6655}
+aufgeführten Ciphersuits in Frage. Diese nutzen für die Verschlüsselung den \acr{ccm}-Modus der durch die Hardware einfach und effizient realisiert werden
+kann. Während in Kapitel 3 einige Ciphersuits definiert sind, die zur Berechnung des Schlüssels das rechenaufwendige \glos{rsa} benutzen, sind in Kapitel 4
+einige Ciphersuits für \acr{aes}-128 definiert, die einen \acr{psk} verwenden und von RFC 4279 \cite{rfc4279} abgleitet wurden. Der einzige Unterschied besteht
+hier darin, dass für die Berechnung des MAC in RFC 4279 der \acr{sha} verwendet wird.
+\begin{enumerate}
+  \item TLS\_PSK\_WITH\_AES\_128\_CCM
+  \item TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM
+  \item TLS\_PSK\_WITH\_AES\_128\_CCM\_8
+  \item TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8
+\end{enumerate}
+Während 1 und 2 eine 16 Byte langen MAC benutzen, ist dieser bei 3 und 4 nur 8 Byte lang. Da der MAC an jedes verschlüsselte Datenpaket angehangen wird um die
+Integrität sicherzustellen, verkürzt sich dadurch die ohnehin geringe Menge an Anwendungsdaten (siehe Kapitel \ref{sec:handshake}). Zwar ist es leichter
+einen 8 Byte langen MAC zu fälschen, da dieser anstatt $ 2^128 $ Werten, wie bei einem 16 Byte MAC, nur $ 2^64 $ Werte annehmen kann, aber dennoch fällt die
+Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Version womit Ciphersuit 1 und 2 nicht weiter betrachtet werden.
+
+Im Unterschied zu Ciphersuit 3 wird bei Ciphersuit 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
+Diffie-Hellman-Schlüsselaustausch durchgeführt und dessen Ergebnis mit dem \acr{psk} kombiniert. Der große Unterschied besteht darin, dass
+ein Angreifer mit Kenntnis des \acr{psk} ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch jederzeit in der Lage ist den Schlüssel zu
+berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des Handshakes gelauscht hat.
+Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs ist er nicht in der Lage den Schlüssel zu berechnen und die Daten zu
+entschlüssel. Problematisch bleibt nur ein Man-in-the-middle-Angriff während des Handshakes. Verhindert ein Angreifer die direkte
+Kommunikation und leitet den Handshake über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
+zukünftigen Datenverkehr mitlesen. Dies fällt erst dann auf, wenn der Angreifer verschwindet, da die beiden Parteien ohne ihn nicht
+direkt kommunizieren können. Die Verwendung von Ciphersuit 3 kommt somit nicht in Frage, womit Chipersuit 4 hier zunächst das Mittel
+der Wahl ist.
+
+Problematisch ist jedoch, dass ein Diffie-Hellman-Schlüsselaustausch sehr rechenintensiv ist. Ein Versuch hat gezeigt,
+dass ein Diffie-Hellman-Schlüsselaustausch mit 128-Bit-Zahlen 2 mal 30 Sekunden auf dem verwendeten Mikrocontroller benötigt.
+Um bei dem derzeitigen Stand der Technik eine ausreichende Sicherheit gewähleisten zu können, müssen jedoch minimal 1024-Bit-Zahlen
+verwendet werden, was außerhalb der Möglichkeiten des Mikrocontrollers liegt. Ein weiteres Manko ist auch die definierte \acr{psr}.
+Diese basiert auf HMAC mit SHA-2 \TODO{Akronyme} was die größe des Programms relevant erhöht. Laut dem Internet-Entwurf "`A Hitchhiker's
+Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} von H. Tschofenig, S.S. Kumar und S. Keoh sind diese mit
+X Byte \TODO{zahl einfügen} beziffert. Um diese Probleme zu lösen wird nun ein neues Ciphersuit definiert.
 
 Neu:\\
-CODTLS\_PSK\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x02}\\
-CODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x01}\\
+ODTLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8 = {0xFF,0x01}\\
 ccm gemäß rfc3610 \cite{rfc3610}\\
-mit Nonce\_Len = 12, Len\_len = 3, Mac\_len = 8
+mit Nonce\_Len = 12, Len\_len = 3, Mac\_len = 8\\
+\begin{lstlisting}[language=c]
+struct {
+  opaque salt[4];
+  opaque nonce_explicit[8];
+} CCMNonce;
+\end{lstlisting}
 
 Nonce:\\
 Nonce mit Länge 12 Byte = IV + Epoch + message\_seq\\
