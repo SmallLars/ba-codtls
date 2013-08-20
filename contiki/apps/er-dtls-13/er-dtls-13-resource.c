@@ -68,6 +68,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
 
+            coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
+
             DTLSContent_t *content = (DTLSContent_t *) payload;
             KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
 
@@ -118,9 +120,17 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             c->payload[0] = 1;
             c->payload[1] = 1;
 
-            REST.set_response_status(response, CHANGED_2_04);
-            REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-            REST.set_response_payload(response, buffer, 3);
+            coap_transaction_t *transaction = NULL;
+            if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
+                coap_packet_t response[1];
+                coap_separate_resume(response, request_metadata, REST.status.CHANGED);
+                coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                coap_set_payload(response, buffer, 3);
+                // TODO Warning: No check for serialization error.
+                transaction->packet_len = coap_serialize_message(response, transaction->packet);
+                transaction->callback = NULL;
+                coap_send_transaction(transaction);
+            }
         } else {
             DTLSContent_t *content = (DTLSContent_t *) payload;
 

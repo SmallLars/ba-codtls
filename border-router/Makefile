@@ -40,6 +40,9 @@ ifeq ($(PREFIX),)
 endif
 
 clear:
+	-rm $(CONTIKI_PROJECT)_e_redbee-econotag.bin
+	-rm $(CONTIKI_PROJECT)_e_redbee-econotag.txt
+	-rm qr-code.pbm
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 erase
 
 upload:
