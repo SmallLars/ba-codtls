@@ -6,7 +6,7 @@
 
 #include "mc1322x.h"
 
-#define BLOCKSIZE 52
+#define BLOCKSIZE 48
 
 #define DEBUG 0
 

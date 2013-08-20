@@ -45,7 +45,7 @@
  * The number of concurrent messages that can be stored for retransmission in the transaction layer.
  */
 #ifndef COAP_MAX_OPEN_TRANSACTIONS
-#define COAP_MAX_OPEN_TRANSACTIONS 6
+#define COAP_MAX_OPEN_TRANSACTIONS 4
 #endif /* COAP_MAX_OPEN_TRANSACTIONS */
 
 /* container for transactions with message buffer and retransmission info */

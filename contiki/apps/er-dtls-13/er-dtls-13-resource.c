@@ -29,7 +29,7 @@
     #define PRINTFC(...)
 #endif
 
-#define DEBUG_ECC 1
+#define DEBUG_ECC 0
 
 #if DEBUG_ECC
     #include <stdio.h>
@@ -42,6 +42,7 @@
 void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
 void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
 void generateServerHello(uint8_t *buf);
+void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
 uint8_t src_ip[16];
@@ -50,15 +51,12 @@ uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. z
 uint16_t created_offset;
 uint16_t changed_offset;
 
+coap_separate_t request_metadata[1];
+
 /*************************************************************************/
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    if (*offset != 0) {
-        printf("GRRR\n");
-        return;
-    }
-
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
     const uint8_t *payload = 0;
@@ -68,7 +66,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         const char *query_session = NULL;
         if ((query_session_len = REST.get_query_variable(request, "s", &query_session))) {
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
-            PRINTF("Session: %.*s\n", query_session_len, query_session);
+            PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
 
             DTLSContent_t *content = (DTLSContent_t *) payload;
             KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
@@ -94,9 +92,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             uint32_t point[16];
             memcpy(point, cke->public_key.x, 32);
             memcpy(point + 8, cke->public_key.y, 32);
-            PRINTFE("ECC - START\n");
+            PRINTF("ECC - START\n");
             ecc_ec_mult(point, point + 8, private_key, result, result + 8);
-            PRINTFE("ECC - ENDE\n");
+            PRINTF("ECC - ENDE\n");
             #ifdef DEBUG_ECC
                 PRINTFE("SECRET_KEY-X: ");
                 for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
@@ -163,28 +161,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     }
                     PRINTF("ClientHello mit korrektem Cookie erhalten\n");
 
-                    coap_separate_t request_metadata[1];
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
                     generateServerHello(buffer); // Das dauert nun
 
-                    uint8_t i = 0;
-                    while (1) {
-                        int8_t read = readServerHello(buffer, i * 32, 32);
-                        coap_transaction_t *transaction = NULL;
-                        if ( (transaction = coap_new_transaction(request_metadata->mid + i, &request_metadata->addr, request_metadata->port)) ) {
-                            coap_packet_t response[1];
-                            coap_separate_resume(response, request_metadata, REST.status.CREATED);
-                            coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                            coap_set_payload(response, buffer, read == 0 ? 32 : read);
-                            coap_set_header_block2(response, i, read == 0 ? 1 : 0, 32);
-                            // TODO Warning: No check for serialization error.
-                            transaction->packet_len = coap_serialize_message(response, transaction->packet);
-                            coap_send_transaction(transaction);
-                            i++;
-                            if (read != 0) break;
-                        }
-                    }
+                    sendServerHello(NULL, request);
                 }
             }
         }
@@ -329,11 +310,11 @@ void generateServerHello(uint8_t *buf) {
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_y[i]));
         PRINTFE("\n");
     #endif
-    PRINTFE("ECC - START\n");
+    PRINTF("ECC - START\n");
     uint32_t private_key[8];
     getPrivateKey(private_key, src_ip);
     ecc_ec_mult(base_x, base_y, private_key, result, result + 8);
-    PRINTFE("ECC - ENDE\n");
+    PRINTF("ECC - ENDE\n");
     #ifdef DEBUG_ECC
         PRINTFE("_S_PUB_KEY-X: ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
@@ -347,6 +328,31 @@ void generateServerHello(uint8_t *buf) {
     content->type = server_hello_done;
     content->len = con_length_0;
     stack_push(buf, sizeof(DTLSContent_t));
+}
+
+void sendServerHello(void *data, void* resp) {
+    if (request_metadata->block2_size == 0 || request_metadata->block2_size > 32) {
+        request_metadata->block2_size = 32;
+    }
+
+    PRINTF("Block %u wird gesendet.\n", request_metadata->block2_num);
+
+    uint8_t buffer[request_metadata->block2_size];
+    int8_t read = readServerHello(buffer, request_metadata->block2_num * request_metadata->block2_size, request_metadata->block2_size);
+
+    coap_transaction_t *transaction = NULL;
+    if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
+        coap_packet_t response[1];
+        coap_separate_resume(response, request_metadata, REST.status.CREATED);
+        coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
+        coap_set_payload(response, buffer, read == 0 ? request_metadata->block2_size : read);
+        coap_set_header_block2(response, request_metadata->block2_num, read == 0 ? 1 : 0, request_metadata->block2_size);
+        // TODO Warning: No check for serialization error.
+        transaction->packet_len = coap_serialize_message(response, transaction->packet);
+        transaction->callback = (read == 0 ? &sendServerHello : NULL);
+        coap_send_transaction(transaction);
+        request_metadata->block2_num++;
+    }
 }
 
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size) {
