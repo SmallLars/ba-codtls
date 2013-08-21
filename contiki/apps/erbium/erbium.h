@@ -49,7 +49,8 @@
  * Larger data must be handled by the resource and will be sent chunk-wise through a TCP stream or CoAP blocks.
  */
 #ifndef REST_MAX_CHUNK_SIZE
-#define REST_MAX_CHUNK_SIZE     64
+//                          802.15.4 - 6LoWPAN - UDP - DTLS - CoAP
+#define REST_MAX_CHUNK_SIZE      127 -      48 -   8 -   16 -    7 // = 48
 #endif
 
 #ifndef MIN

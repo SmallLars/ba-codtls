@@ -29,7 +29,7 @@
     #define PRINTFC(...)
 #endif
 
-#define DEBUG_ECC 0
+#define DEBUG_ECC 1
 
 #if DEBUG_ECC
     #include <stdio.h>
@@ -41,7 +41,7 @@
 
 void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
 void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
-void generateServerHello(uint8_t *buf);
+void generateServerHello(uint32_t *buf32);
 void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
@@ -59,9 +59,8 @@ coap_separate_t request_metadata[1];
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
-    //TODO own buffer in 32 bit blocks
-    //uint32_t buf32[16];
-    //uint8_t *buf08 = (uint8_t) buf32;
+    uint32_t buf32[16];
+    uint8_t *buf08 = (uint8_t *) buf32;
 
     const uint8_t *payload = 0;
     size_t pay_len = REST.get_request_payload(request, &payload);
@@ -94,18 +93,17 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 PRINTFE("\n");
             #endif
 
-            uint32_t result[16];
             uint32_t point[16];
             memcpy(point, cke->public_key.x, 32);
             memcpy(point + 8, cke->public_key.y, 32);
             PRINTF("ECC - START\n");
-            ecc_ec_mult(point, point + 8, private_key, result, result + 8);
+            ecc_ec_mult(point, point + 8, private_key, buf32, buf32 + 8);
             PRINTF("ECC - ENDE\n");
             #ifdef DEBUG_ECC
                 PRINTFE("SECRET_KEY-X: ");
-                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
+                for (i = 0; i < 32; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\nSECRET_KEY-Y: ");
-                for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(result[i]));
+                for (i = 32; i < 64; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\n");
             #endif
 
@@ -158,8 +156,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     stack_push((uint8_t *) payload, pay_len);
 
                     // ClientHello 2 mit Cookie beantworten falls Cookie korrekt
-                    uint8_t old_cookie[8];
-                    uint8_t new_cookie[8];
+                    uint8_t *old_cookie = buf08;
+                    uint8_t *new_cookie = buf08 + 8;
                     memcpy(old_cookie, clienthello->data + session_len + 2, 8);
                     generateCookie(new_cookie, (DTLSContent_t *) payload, &pay_len);
 
@@ -177,7 +175,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-                    generateServerHello(buffer); // Das dauert nun
+                    generateServerHello(buf32); // Das dauert nun
 
                     sendServerHello(NULL, request);
                 }
@@ -245,14 +243,10 @@ void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
     memcpy(dst, mac, 8);
 }
 
-void generateServerHello(uint8_t *buf) {
-    #if DEBUG
-        if (REST_MAX_CHUNK_SIZE < 64) PRINTF("ACHTUNG - Buffer zu klein!\n");
-    #endif
-
+void generateServerHello(uint32_t *buf32) {
     created_offset = stack_size();
 
-    DTLSContent_t *content = (DTLSContent_t *) buf;
+    DTLSContent_t *content = (DTLSContent_t *) buf32;
 
     // ServerHello
     content->type = server_hello;
@@ -279,7 +273,7 @@ void generateServerHello(uint8_t *buf) {
     sh->extensions[8] = 0x00;        // Elliptic Curve secp256r1
     sh->extensions[9] = 0x23;        // Elliptic Curve secp256r1
     // Keine "Supported Point Formats Extension" entspricht "Uncompressed only"
-    stack_push(buf, sizeof(DTLSContent_t) + 1 + sizeof(ServerHello_t) + 10);
+    stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(ServerHello_t) + 10);
 
     //ServerKeyExchange
     content->type = server_key_exchange;
@@ -293,9 +287,9 @@ void generateServerHello(uint8_t *buf) {
     ske->curve_params.namedcurve = secp256r1;
     ske->public_key.len = 65;
     ske->public_key.type = uncompressed;
-    stack_push(buf, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
+    stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
-    ClientInfo_t *ci = (ClientInfo_t *) buf;
+    ClientInfo_t *ci = (ClientInfo_t *) buf32;
     memset(ci, 0, sizeof(ClientInfo_t));
     memcpy(ci->ip, src_ip, 16);
     memcpy(ci->session, "IJKLMNOP", 8);
@@ -312,7 +306,6 @@ void generateServerHello(uint8_t *buf) {
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(ci->private_key[i]));;
         PRINTFE("\n");
     #endif
-    uint32_t result[16];
     uint32_t base_x[8];
     uint32_t base_y[8];
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
@@ -327,21 +320,22 @@ void generateServerHello(uint8_t *buf) {
     PRINTF("ECC - START\n");
     uint32_t private_key[8];
     getPrivateKey(private_key, src_ip);
-    ecc_ec_mult(base_x, base_y, private_key, result, result + 8);
+    ecc_ec_mult(base_x, base_y, private_key, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
     #ifdef DEBUG_ECC
+        uint8_t *buf = (uint8_t *) buf32;
         PRINTFE("_S_PUB_KEY-X: ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(result[i]));
+        for (i = 0; i < 32; i++) PRINTFE("%02X", buf[i]);
         PRINTFE("\n_S_PUB_KEY-Y: ");
-        for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(result[i]));
+        for (i = 32; i < 64; i++) PRINTFE("%02X", buf[i]);
         PRINTFE("\n");
     #endif
-    stack_push((uint8_t *) result, 64);
+    stack_push((uint8_t *) buf32, 64);
 
     //ServerHelloDone
     content->type = server_hello_done;
     content->len = con_length_0;
-    stack_push(buf, sizeof(DTLSContent_t));
+    stack_push((uint8_t *) buf32, sizeof(DTLSContent_t));
 }
 
 void sendServerHello(void *data, void* resp) {
