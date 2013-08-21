@@ -59,6 +59,10 @@ coap_separate_t request_metadata[1];
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
+    //TODO own buffer in 32 bit blocks
+    //uint32_t buf32[16];
+    //uint8_t *buf08 = (uint8_t) buf32;
+
     const uint8_t *payload = 0;
     size_t pay_len = REST.get_request_payload(request, &payload);
     if (pay_len && payload) {

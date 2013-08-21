@@ -16,6 +16,10 @@
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
+//  master_secret -> seed_len = 153 = 84 + 13 + 28 + 28
+//  key_block     -> seed_len = 117 = 48 + 13 + 28 + 28
+//  finished      -> seed_len =  79 = 48 + 15 + 16
+
 void prf(uint8_t *dst, uint8_t len, uint8_t *seed, uint16_t seed_len) {
     // A(1) generieren
     uint8_t ax[16];

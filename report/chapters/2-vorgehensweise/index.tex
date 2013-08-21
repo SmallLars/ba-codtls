@@ -8,14 +8,14 @@ Rolle spielen sollen: Volumen des generierten Traffics, Größe/Komplexität des
 
 Die Implementierung besteht aus dem Clienten auf einem gängigen PC/Laptop, bei dem es keine speziellen Einschränkungen an Energie,
 Speicher oder Effizienz gibt, und aus dem Server der für einen Redbee Econotag \cite{econotag} mit dem MC1322X
-Mikrocontroller \cite{mc1322x} optimiert werden soll. Da der genannte Mikrocontroller die Verschlüsselung mit dem \acr{aes} im CTR- und CBC-Mode
+Mikrocontroller \cite{mc1322x} optimiert werden soll. Da der genannte Mikrocontroller die Verschlüsselung mit dem \acr{aes} im \acr{ctr}- und \acr{cbc}-Mode
 in Hardware unterstützt und die Rechenleistung sowie der Speicher beschränkt ist, soll nur ein \glos{ciphersuit} "`TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8"',
 in Anlehnung an den RFC 6655 \cite{rfc6655}, realisiert werden. Dieses gibt einen Schlüsselaustausch mit
 Hilfe elliptischer Kurven vor, die mit kleineren Zahlen genau so sicher sind wie ein standard Diffie-Hellman-Schlüsselaustausch und sich somit
 effizient berechnen lassen. Zusätzlich wird auch ein \acr{psk} verwendet, damit der Verbindungsaufbau nur den Clienten möglich ist, die über diesen
 Schlüssel verfügen. Die Verschlüsselung der Anwendungsdaten erfolgt dann im "`\acr{aead}"' Modus \cite{rfc5116}
 wobei sich hier "`\acr{ccm}"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht
-aus einer Verschlüsselung der Daten durch \acr{aes} im CTR-Modus während der dazugehörende \acr{mac} durch \acr{aes} im CBC-Modus berechnet wird.
+aus einer Verschlüsselung der Daten durch \acr{aes} im \acr{ctr}-Modus während der dazugehörende \acr{mac} durch \acr{aes} im \acr{cbc}-Modus berechnet wird.
 Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
 Die dafür notwendigen verbindungsspezifischen Daten wie bspw. der Master-Schlüssel sollen dabei im Flash-Speicher des Redbee Econotags
 abgelegt werden, so dass nur die für das aktuelle Paket benötigten Daten im RAM-Speicher befinden. Auf diese Weise lässt sich
