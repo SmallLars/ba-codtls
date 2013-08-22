@@ -16,12 +16,17 @@ typedef struct {
 typedef struct {
     uint8_t index;
     uint8_t epoch;
-//    uint8_t client_write_MAC_key[0];
-//    uint8_t server_write_MAC_key[0];
-    uint8_t client_write_key[16];
-    uint8_t server_write_key[16];
-    uint8_t client_write_IV[4];
-    uint8_t server_write_IV[4];
+    union {
+        uint8_t key_block[40];
+        struct {
+//            uint8_t client_MAC[0];
+//            uint8_t server_MAC[0];
+            uint8_t client_key[16];
+            uint8_t server_key[16];
+            uint8_t client_IV[4];
+            uint8_t server_IV[4];
+        } write;
+    };
 }  __attribute__ ((packed)) ClientKey_t;
 
 int8_t insertClient(ClientInfo_t *clientInfo);
@@ -32,7 +37,7 @@ int8_t getEpoch(uint8_t *ip);
 
 int8_t getPrivateKey(uint32_t *key, uint8_t *ip);
 
-int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch);
+ClientKey_t *getKey(uint8_t *ip, uint8_t epoch);
 
 int8_t changeIfPending(uint8_t *ip);
 

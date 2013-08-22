@@ -88,11 +88,11 @@ int8_t getPrivateKey(uint32_t *key, uint8_t *ip) {
     return 0;
 }
 
-int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch) {
-    if (epoch == 0) return -1;
+ClientKey_t *getKey(uint8_t *ip, uint8_t epoch) {
+    if (epoch == 0) return 0;
 
     int8_t index = getIndexOf(ip);
-    if (index == -1) return -1;
+    if (index == -1) return 0;
 
     uint8_t list_len;
     nvm_getVar(&list_len, RES_CLIENT_KEYS_LEN, LEN_CLIENT_KEYS_LEN);
@@ -102,13 +102,12 @@ int8_t getKey(uint8_t *key, uint8_t *ip, uint8_t epoch) {
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(&index, (uint32_t) &ck[i].index, 1) == 0) {
             if (nvm_cmp(&epoch, (uint32_t) &ck[i].epoch, 1) == 0) {
-                if (key != NULL) nvm_getVar(key, (uint32_t) ck[i].server_write_key, 16);
-                return 0;
+                return &ck[i];
             }
         }
     }
 
-    return -1;
+    return 0;
 }
 
 int8_t changeIfPending(uint8_t *ip) {
@@ -120,7 +119,7 @@ int8_t changeIfPending(uint8_t *ip) {
     if (nvm_cmp(&pending, (uint32_t) &ci[index].pending, 1) == 0) {
         uint8_t epoch;
         nvm_getVar(&epoch, (uint32_t) &ci[index].epoch, 1);
-        if (getKey(NULL, ip, epoch) == 0) {
+        if (getKey(ip, epoch)) {
             pending = 0;
             nvm_setVar(&pending, (uint32_t) &ci[index].pending, 1);
         }

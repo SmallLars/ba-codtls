@@ -24,7 +24,7 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
-    uint8_t nonce[12] = {1, 1, 1, 1, 0, record->epoch, 0, 0, 0, 0, 0, 0};
+    uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -60,11 +60,14 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     #endif
 
     // Bei Bedarf entschlüsseln
-    uint8_t key[16];
-    if (getKey(key, ip, record->epoch) == 0) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
+    ClientKey_t *ck;
+    if ((ck = getKey(ip, record->epoch))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
+        uint8_t key[16];
+        nvm_getVar(key, (uint32_t) ck->write.server_key, 16);
+        nvm_getVar(nonce, (uint32_t) ck->write.server_IV, 4);
         crypt(payload, len, key, nonce, 0);
         crypt(payload, len, key, nonce, 1);
         uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
@@ -89,8 +92,9 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
     int8_t epoch = getEpoch(conn->ripaddr.u8);
     PRINTF("Senden mit Epoch: %i\n", epoch);
-    uint8_t key[16];
-    if (getKey(key, conn->ripaddr.u8, epoch) == 0) {
+
+    ClientKey_t *ck;
+    if ((ck = getKey(conn->ripaddr.u8, epoch))) {
         PRINTF("Verschlüsselter Paketversand\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
@@ -105,7 +109,10 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
         record->length = rec_length_implicit;
         memcpy(record->payload + headerAdd, data, len);
 
-        uint8_t nonce[12] = {1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 5};
+        uint8_t key[16];
+        uint8_t nonce[12] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5};
+        nvm_getVar(key, (uint32_t) ck->write.server_key, 16);
+        nvm_getVar(nonce, (uint32_t) ck->write.server_IV, 4);
 
         crypt(record->payload + headerAdd, len, key, nonce, 0);
 

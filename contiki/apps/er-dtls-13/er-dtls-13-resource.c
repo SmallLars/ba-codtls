@@ -72,7 +72,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         size_t query_session_len = 0;
         const char *query_session = NULL;
         if ((query_session_len = REST.get_query_variable(request, "s", &query_session))) {
-            uint8_t i;
+            uint32_t i;
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
 
@@ -113,14 +113,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 PRINTFE("\n");
             #endif
 
-            ClientKey_t ck;
-            ck.index = 0;          
-            ck.epoch = 1;
-            memcpy(ck.client_write_key, "ABCDEFGHIJKLMNOP", 16);  
-            memcpy(ck.server_write_key, "ABCDEFGHIJKLMNOP", 16);
-            memset(ck.client_write_IV, 1, 4);
-            memset(ck.server_write_IV, 1, 4);
-            insertKey(&ck);
+            ClientKey_t *ck = (ClientKey_t *) buf08;
+            ck->index = 0;          
+            ck->epoch = 1;
+            memcpy(ck->key_block, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
+            insertKey(ck);
 
             DTLSContent_t *c;
 
@@ -129,7 +126,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             c->len = con_length_8_bit;
             c->payload[0] = 1;
             c->payload[1] = 1;
-
 /*
             c = (DTLSContent_t *) (buffer + 3);
             c->type = c_change_cipher_spec;
@@ -137,13 +133,18 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             c->payload[0] = 12;
             
             uint8_t mac[16];
+            uint8_t tmp[16];
             memset(mac, 0, 16);
-            for (i = 0; i < getStackSize(); i+=16) {
-                uint8_t tmp[16];
+            uint8_t rest = stack_size() % 16;
+            for (i = 0; i < stack_size() - rest; i+=16) {
                 nvm_getVar(tmp, RES_STACK + i, 16);
                 cbc_mac_16(mac, tmp, 16);
             }
+            printf("Size: %u, Rest: %u, I: %u\n", stack_size(), rest, i);
+            nvm_getVar(tmp, RES_STACK + i, rest);
+            cbc_mac_16(mac, tmp, 16);
 */
+
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
                 coap_packet_t response[1];

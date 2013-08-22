@@ -78,7 +78,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
-    uint8_t nonce[12] = {1, 1, 1, 1, 0, record->epoch, 0, 0, 0, 0, 0, 0};
+    uint8_t nonce[12] = {'1', '1', '1', '1', 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
     if (record->type == type_8_bit) {
         type = payload[0];
