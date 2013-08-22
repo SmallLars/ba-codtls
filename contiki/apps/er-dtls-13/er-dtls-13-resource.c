@@ -29,7 +29,7 @@
     #define PRINTFC(...)
 #endif
 
-#define DEBUG_ECC 1
+#define DEBUG_ECC 0
 
 #if DEBUG_ECC
     #include <stdio.h>
@@ -144,7 +144,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 cbc_mac_16(mac, tmp, 16);
             }
 */
-
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
                 coap_packet_t response[1];
