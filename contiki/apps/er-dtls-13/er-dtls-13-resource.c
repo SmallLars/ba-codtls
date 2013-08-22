@@ -38,10 +38,14 @@
     #define PRINTFE(...)
 #endif
 
+// Die folgenden 3 Funktionen werden nur einmal aufgerufen und dienen lediglich der Codeübersicht.
+// Das inline-Keyword wird mit den gesetzten Kompiler-Parametern aufgrund der Funktionsgrößen ignoriert, weshalb das Attribut genutzt wird.
+// Bei generateHelloVerifyRequest nimmt die Programmgröße um ca 24 Byte ab während sie bei den anderen gleich bleibt.
+// Durch den gesparten Funktionsaufruf nimmt jedoch die Größe des benötigten Stacks erheblich ab.
+__attribute__((always_inline)) static void generateHelloVerifyRequest(uint8_t *dst, uint8_t *cookie, size_t cookie_len);
+__attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
+__attribute__((always_inline)) static void generateServerHello(uint32_t *buf32);
 
-void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
-void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
-void generateServerHello(uint32_t *buf32);
 void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
@@ -68,6 +72,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         size_t query_session_len = 0;
         const char *query_session = NULL;
         if ((query_session_len = REST.get_query_variable(request, "s", &query_session))) {
+            uint8_t i;
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
 
@@ -76,8 +81,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             DTLSContent_t *content = (DTLSContent_t *) payload;
             KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
 
-            #ifdef DEBUG_ECC
-                uint8_t i;
+            stack_push((uint8_t *) payload, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+
+            #if DEBUG_ECC
                 PRINTFE("_C_PUB_KEY-X: ");
                 for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(cke->public_key.x[i]));
                 PRINTFE("\n_C_PUB_KEY-Y: ");
@@ -87,7 +93,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             uint32_t private_key[8];
             getPrivateKey(private_key, src_ip);
-            #ifdef DEBUG_ECC
+            #if DEBUG_ECC
                 PRINTFE("Private Key : ");
                 for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
                 PRINTFE("\n");
@@ -99,7 +105,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             PRINTF("ECC - START\n");
             ecc_ec_mult(point, point + 8, private_key, buf32, buf32 + 8);
             PRINTF("ECC - ENDE\n");
-            #ifdef DEBUG_ECC
+            #if DEBUG_ECC
                 PRINTFE("SECRET_KEY-X: ");
                 for (i = 0; i < 32; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\nSECRET_KEY-Y: ");
@@ -116,11 +122,28 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             memset(ck.server_write_IV, 1, 4);
             insertKey(&ck);
 
-            DTLSContent_t *c = (DTLSContent_t *) buffer;
+            DTLSContent_t *c;
+
+            c = (DTLSContent_t *) buffer;
             c->type = c_change_cipher_spec;
             c->len = con_length_8_bit;
             c->payload[0] = 1;
             c->payload[1] = 1;
+
+/*
+            c = (DTLSContent_t *) (buffer + 3);
+            c->type = c_change_cipher_spec;
+            c->len = con_length_8_bit;
+            c->payload[0] = 12;
+            
+            uint8_t mac[16];
+            memset(mac, 0, 16);
+            for (i = 0; i < getStackSize(); i+=16) {
+                uint8_t tmp[16];
+                nvm_getVar(tmp, RES_STACK + i, 16);
+                cbc_mac_16(mac, tmp, 16);
+            }
+*/
 
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
@@ -141,42 +164,39 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 uint8_t session_len = clienthello->data[0];
                 uint8_t cookie_len = clienthello->data[session_len + 1];
+                uint8_t *old_cookie = buf08;
+                uint8_t *new_cookie = buf08 + 8;
 
-                if (cookie_len == 0) {
-                    // ClientHello 1 ohne Cookie beantworten
-                    PRINTF("ClientHello ohne Cookie erhalten\n");
-                    generateHelloVerifyRequest(buffer, (DTLSContent_t *) payload, &pay_len);
-
-                    REST.set_response_status(response, VERIFY_1_02);
-                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                    REST.set_response_payload(response, buffer, 13);
-                } else {
+                if (cookie_len > 0) {
                     // Abspeichern für Finished-Hash
                     stack_init();
                     stack_push((uint8_t *) payload, pay_len);
 
-                    // ClientHello 2 mit Cookie beantworten falls Cookie korrekt
-                    uint8_t *old_cookie = buf08;
-                    uint8_t *new_cookie = buf08 + 8;
-                    memcpy(old_cookie, clienthello->data + session_len + 2, 8);
-                    generateCookie(new_cookie, (DTLSContent_t *) payload, &pay_len);
+                    // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
+                    memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
+                }
 
-                    if (memcmp(old_cookie, new_cookie, 8)) {
-                        PRINTF("ClientHello mit falschem Cookie erhalten\n");
-                        generateHelloVerifyRequest(buffer, (DTLSContent_t *) payload, &pay_len);
+                generateCookie(new_cookie, content, &pay_len);
 
-                        REST.set_response_status(response, VERIFY_1_02);
-                        REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                        REST.set_response_payload(response, buffer, 13);
+                if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
+                    #if DEBUG
+                        if (cookie_len == 0) PRINTF("ClientHello ohne Cookie erhalten\n");
+                        else PRINTF("ClientHello mit falschem Cookie erhalten\n");
+                    #endif
+                    generateHelloVerifyRequest(buffer, new_cookie, 8);
 
-                        return;
-                    }
+                    REST.set_response_status(response, VERIFY_1_02);
+                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                    REST.set_response_payload(response, buffer + 1, buffer[0]);
+                } else {
                     PRINTF("ClientHello mit korrektem Cookie erhalten\n");
-
                     coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-                    generateServerHello(buf32); // Das dauert nun
+                    // TODO Parameter von ClientHello überprüfen.
 
+                    // ServerHello wird immer gleich generiert da Server nur
+                    // genau ein Ciphersuit mit einer Konfiguration beherrscht.
+                    generateServerHello(buf32); // Das dauert nun
                     sendServerHello(NULL, request);
                 }
             }
@@ -186,8 +206,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
 /* ------------------------------------------------------------------------- */
 
-void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
-    DTLSContent_t *content = (DTLSContent_t *) dst;
+__attribute__((always_inline)) static void generateHelloVerifyRequest(uint8_t *dst, uint8_t *cookie, size_t cookie_len) {
+    dst[0] = 13;
+    DTLSContent_t *content = (DTLSContent_t *) (dst + 1);
 
     content->type = hello_verify_request;
     content->len = con_length_8_bit;
@@ -196,11 +217,11 @@ void generateHelloVerifyRequest(uint8_t *dst, DTLSContent_t *data, size_t *data_
     HelloVerifyRequest_t *answer = (HelloVerifyRequest_t *) (content->payload + 1);
     answer->server_version.major = 3;
     answer->server_version.minor = 3;
-    answer->cookie_len = 8;
-    generateCookie(answer->cookie, data, data_len);
+    answer->cookie_len = cookie_len;
+    memcpy(answer->cookie, cookie, cookie_len);
 }
 
-void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
+__attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
     uint32_t i;
 
     #if DEBUG_COOKIE
@@ -243,7 +264,7 @@ void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len) {
     memcpy(dst, mac, 8);
 }
 
-void generateServerHello(uint32_t *buf32) {
+__attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) {
     created_offset = stack_size();
 
     DTLSContent_t *content = (DTLSContent_t *) buf32;
@@ -300,7 +321,7 @@ void generateServerHello(uint32_t *buf32) {
     } while (!ecc_is_valid_key(ci->private_key));
     insertClient(ci);
 
-    #ifdef DEBUG_ECC
+    #if DEBUG_ECC
         uint8_t i;
         PRINTFE("Private Key : ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(ci->private_key[i]));;
@@ -310,7 +331,7 @@ void generateServerHello(uint32_t *buf32) {
     uint32_t base_y[8];
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
-    #ifdef DEBUG_ECC
+    #if DEBUG_ECC
         PRINTFE("BASE_POINT-X: ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_x[i]));
         PRINTFE("\nBASE_POINT-Y: ");
@@ -322,7 +343,7 @@ void generateServerHello(uint32_t *buf32) {
     getPrivateKey(private_key, src_ip);
     ecc_ec_mult(base_x, base_y, private_key, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
-    #ifdef DEBUG_ECC
+    #if DEBUG_ECC
         uint8_t *buf = (uint8_t *) buf32;
         PRINTFE("_S_PUB_KEY-X: ");
         for (i = 0; i < 32; i++) PRINTFE("%02X", buf[i]);
