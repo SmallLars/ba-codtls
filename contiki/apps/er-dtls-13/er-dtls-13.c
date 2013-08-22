@@ -86,6 +86,8 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         // TODO Alert-Auswertung
         coapdata->valid = 0;
     }
+
+    checkEpochIncrease(ip, (nonce[4] << 8) + nonce[5]);
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
@@ -132,8 +134,6 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + 1 + len);
     }
-
-    changeIfPending(conn->ripaddr.u8);
 }
 
 /* Private Funktionen ------------------------------------------------------ */

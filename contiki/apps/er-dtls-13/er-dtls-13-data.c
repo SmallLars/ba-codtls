@@ -61,20 +61,17 @@ int8_t insertKey(ClientKey_t *clientKey) {
     return -1;
 }
 
-int8_t getEpoch(uint8_t *ip) {
+int16_t getEpoch(uint8_t *ip) {
     int8_t index = getIndexOf(ip);
     PRINTF("Index der gesuchten IP: %i\n", getIndexOf(ip));
     if (index == -1) return -1;
 
     ClientInfo_t *ci = (ClientInfo_t *) RES_CLIENT_INFO;
 
-    uint8_t epoch;
-    nvm_getVar(&epoch, (uint32_t) &ci[index].epoch, 1);
+    uint16_t epoch;
+    nvm_getVar(&epoch, (uint32_t) &ci[index].epoch, 2);
 
-    uint8_t pending;
-    nvm_getVar(&pending, (uint32_t) &ci[index].pending, 1);
-
-    return epoch == 0 ? 0 : epoch - pending;
+    return epoch;
 }
 
 int8_t getPrivateKey(uint32_t *key, uint8_t *ip) {
@@ -110,19 +107,18 @@ ClientKey_t *getKey(uint8_t *ip, uint8_t epoch) {
     return 0;
 }
 
-int8_t changeIfPending(uint8_t *ip) {
-    int8_t index = getIndexOf(ip);
-    if (index == -1) return -1;
+void checkEpochIncrease(uint8_t *ip, uint16_t epoch) {
+    if (epoch == 0) return;
+    epoch--;
 
-    uint8_t pending = 1;
+    int8_t index = getIndexOf(ip);
+    if (index == -1) return;
+
     ClientInfo_t *ci = (ClientInfo_t *) RES_CLIENT_INFO;
-    if (nvm_cmp(&pending, (uint32_t) &ci[index].pending, 1) == 0) {
-        uint8_t epoch;
-        nvm_getVar(&epoch, (uint32_t) &ci[index].epoch, 1);
-        if (getKey(ip, epoch)) {
-            pending = 0;
-            nvm_setVar(&pending, (uint32_t) &ci[index].pending, 1);
-        }
+    if (nvm_cmp(&epoch, (uint32_t) &ci[index].epoch, 2) == 0) {
+        epoch++;
+        nvm_setVar(&epoch, (uint32_t) &ci[index].epoch, 2);
+        // TODO daten der alten epoche entfernen
     }
 }
 

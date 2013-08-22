@@ -67,7 +67,7 @@
 #define LEN_CLIENT_KEYS_LEN    1
 
 #define RES_CLIENT_KEYS      600
-#define LEN_CLIENT_KEYS      840
+#define LEN_CLIENT_KEYS      860
 
 /**
   * \brief    Zurücksetzen der Blöcke für den Random-Zugriff

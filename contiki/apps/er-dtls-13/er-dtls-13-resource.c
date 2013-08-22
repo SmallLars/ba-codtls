@@ -310,12 +310,12 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     ske->public_key.type = uncompressed;
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
+    // TODO fall ip schon vorhanden -> update von session und private_key
     ClientInfo_t *ci = (ClientInfo_t *) buf32;
     memset(ci, 0, sizeof(ClientInfo_t));
     memcpy(ci->ip, src_ip, 16);
     memcpy(ci->session, "IJKLMNOP", 8);
-    ci->epoch = 1;
-    ci->pending = 1;
+    ci->epoch = 0;
     do {
         random_x((uint8_t *) ci->private_key, 32);
     } while (!ecc_is_valid_key(ci->private_key));

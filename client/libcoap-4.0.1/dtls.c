@@ -5,6 +5,7 @@
 
 #include "dtls_random.h"
 #include "dtls_ccm.h"
+#include "dtls_data.h"
 #include "coap_client.h"
 
 /*---------------------------------------------------------------------------*/
@@ -24,30 +25,28 @@
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln
-  if (0) {
-/*
+  if (getKey()) {
     uint8_t payload_length = len + MAC_LEN;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 13 + payload_length); // 13 = maximaler Header-Anhang
     memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
     record->type = application_data;
     record->version= dtls_1_2;
-    record->epoch = 0;
+    record->epoch = 1;
+    record->snr = snr_8_bit;
+    record->payload[0] = 5;
+    record->length = rec_length_implicit;
 
-    CCMData_t *ccmdata = (CCMData_t*) record->payload;
+    memcpy(record->payload + 1, buf, len);
+    uint8_t nonce[12] = {'1', '1', '1', '1', 0, record->epoch, 0, 0, 0, 0, 0, 5};
+    encrypt(record->payload + 1, len, KEY, nonce);
 
-    random_x(ccmdata->nonce_explicit, NONCE_LEN);
-    memcpy(ccmdata->ccm_ciphered, buf, len);
-
-    encrypt(ccmdata, KEY, payload_length);
-
-    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + payload_length, flags, dest_addr, addrlen);
-    send -= (sizeof(DTLSRecord_t) + sizeof(CCMData_t) + MAC_LEN);
+    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + 1 + payload_length, flags, dest_addr, addrlen);
+    send -= (sizeof(DTLSRecord_t) + 1 + MAC_LEN);
 
     free(record);
 
     return send;
-*/
   } else {
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 1 + len);
     memset(record, 0, sizeof(DTLSRecord_t) + len);

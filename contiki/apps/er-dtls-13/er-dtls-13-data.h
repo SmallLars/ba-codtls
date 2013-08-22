@@ -8,14 +8,13 @@
 typedef struct {
     uint8_t ip[16];
     uint8_t session[8];
-    uint8_t epoch;
-    uint8_t pending;
+    uint16_t epoch;
     uint32_t private_key[8];
 }  __attribute__ ((packed)) ClientInfo_t;
 
 typedef struct {
     uint8_t index;
-    uint8_t epoch;
+    uint16_t epoch;
     union {
         uint8_t key_block[40];
         struct {
@@ -33,13 +32,13 @@ int8_t insertClient(ClientInfo_t *clientInfo);
 
 int8_t insertKey(ClientKey_t *clientkey);
 
-int8_t getEpoch(uint8_t *ip);
+int16_t getEpoch(uint8_t *ip);
 
 int8_t getPrivateKey(uint32_t *key, uint8_t *ip);
 
 ClientKey_t *getKey(uint8_t *ip, uint8_t epoch);
 
-int8_t changeIfPending(uint8_t *ip);
+void checkEpochIncrease(uint8_t *ip, uint16_t epoch);
 
 int8_t updateIp(uint8_t *session, uint8_t *ip);
 

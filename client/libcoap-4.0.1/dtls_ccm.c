@@ -21,7 +21,7 @@ extern uint8_t psk[16];
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
-void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index);
+void getBlockKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index);
 void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
@@ -57,7 +57,7 @@ void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len) {
 
 /* Private Funktionen ------------------------------------------------------ */
 
-void getKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
+void getBlockKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index) {
     uint8_t a[16];
     memset(a, 0, 16);
 
@@ -125,7 +125,7 @@ void setAuthCode(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
 
     uint8_t s[16];
     // A-Block verschlüssel und mit dem bereits berechneten MAC X-Oren
-    getKey(s, key, nonce, 0);
+    getBlockKey(s, key, nonce, 0);
     for (i = 0; i < MAC_LEN; i++) data[data_len + i] ^= s[i];
 }
 
@@ -134,7 +134,7 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     uint8_t s[16];
 
     for (i = 0; i < data_len; i+=16) {
-        getKey(s, key, nonce, (i/16)+1);
+        getBlockKey(s, key, nonce, (i/16)+1);
         size_t j;
         size_t blocklen = min(16, data_len - i);
         for (j = 0; j < blocklen; j++) data[i+j] ^= s[j];

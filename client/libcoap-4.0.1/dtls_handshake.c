@@ -6,6 +6,7 @@
 #include "dtls_clientHello.h"
 #include "dtls_serverHello.h"
 #include "dtls_keyExchange.h"
+#include "dtls_data.h"
 
 //#include <stdlib.h>
 #include <stdio.h>
@@ -140,4 +141,6 @@ void dtls_handshake(struct in6_addr *ip) {
     coap_setBlock1(2, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
     printf("Step 3 done.\n");
+
+    setKey();
 }
