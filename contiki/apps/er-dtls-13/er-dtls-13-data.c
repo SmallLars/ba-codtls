@@ -97,9 +97,13 @@ uint32_t getKeyBlock(uint8_t *ip, uint16_t epoch, uint8_t update) {
     if (update) checkEpochIncrease(index, epoch);
 
     Session_t *s = (Session_t *) RES_SESSION_LIST;
+    KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
     if (nvm_cmp(&epoch, (uint32_t) &s[index].epoch, 2) == 0) {
-        KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
         return (uint32_t ) &kb[2 * index];
+    }
+    epoch--;
+    if (nvm_cmp(&epoch, (uint32_t) &s[index].epoch, 2) == 0) {
+        return (uint32_t ) &kb[(2 * index) + 1];
     }
 
     return 0;

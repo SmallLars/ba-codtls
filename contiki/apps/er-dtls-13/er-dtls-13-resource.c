@@ -29,7 +29,7 @@
     #define PRINTFC(...)
 #endif
 
-#define DEBUG_ECC 0
+#define DEBUG_ECC 1
 
 #if DEBUG_ECC
     #include <stdio.h>
@@ -63,7 +63,7 @@ coap_separate_t request_metadata[1];
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
-    uint32_t buf32[16];
+    uint32_t buf32[40];
     uint8_t *buf08 = (uint8_t *) buf32;
 
     const uint8_t *payload = 0;
@@ -92,17 +92,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 PRINTFE("\n");
             #endif
 
-            uint32_t private_key[8];
-            getSessionData((uint8_t *) private_key, src_ip, session_key);
-            #if DEBUG_ECC
-                PRINTFE("Private Key : ");
-                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
-                PRINTFE("\n");
-            #endif
-
             uint32_t point[16];
             memcpy(point, cke->public_key.x, 32);
             memcpy(point + 8, cke->public_key.y, 32);
+            uint32_t private_key[8];
+            getSessionData((uint8_t *) private_key, src_ip, session_key);
             PRINTF("ECC - START\n");
             ecc_ec_mult(point, point + 8, private_key, buf32, buf32 + 8);
             PRINTF("ECC - ENDE\n");
@@ -113,6 +107,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 for (i = 32; i < 64; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\n");
             #endif
+
+// PRF(pre_master_secret, „master secret“, client_random + server_random)
+// PRF(master_secret, „key expansion“, server_random + client_random)
+// PRF(master_secret, finished_label, Hash(handshake_messages))
+//     wobei finished_label = „client finished“ oder „server finished“
 
             KeyBlock_t *ck = (KeyBlock_t *) buf08;
             memcpy(ck->key_block, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
@@ -311,26 +310,26 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     ske->public_key.type = uncompressed;
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
-    #if DEBUG_ECC
-        uint8_t i;
-        PRINTFE("Private Key : ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(ci->private_key[i]));;
-        PRINTFE("\n");
-    #endif
     uint32_t base_x[8];
     uint32_t base_y[8];
     nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     #if DEBUG_ECC
+        uint8_t i;
         PRINTFE("BASE_POINT-X: ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_x[i]));
         PRINTFE("\nBASE_POINT-Y: ");
         for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_y[i]));
         PRINTFE("\n");
     #endif
-    PRINTF("ECC - START\n");
     uint32_t private_key[8];
     getSessionData((uint8_t *) private_key, src_ip, session_key);
+    #if DEBUG_ECC
+        PRINTFE("Private Key : ");
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
+        PRINTFE("\n");
+    #endif
+    PRINTF("ECC - START\n");
     ecc_ec_mult(base_x, base_y, private_key, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
     #if DEBUG_ECC
