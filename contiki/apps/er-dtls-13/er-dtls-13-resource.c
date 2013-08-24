@@ -92,22 +92,22 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 PRINTFE("\n");
             #endif
 
-            uint32_t point[16];
-            memcpy(point, cke->public_key.x, 32);
-            memcpy(point + 8, cke->public_key.y, 32);
+            memcpy(buf32 + 24, cke->public_key.x, 32);
+            memcpy(buf32 + 32, cke->public_key.y, 32);
             uint32_t private_key[8];
             getSessionData((uint8_t *) private_key, src_ip, session_key);
             PRINTF("ECC - START\n");
-            ecc_ec_mult(point, point + 8, private_key, buf32, buf32 + 8);
+            ecc_ec_mult(buf32 + 24, buf32 + 32, private_key, buf32 + 5, buf32 + 13);
             PRINTF("ECC - ENDE\n");
             #if DEBUG_ECC
                 PRINTFE("SECRET_KEY-X: ");
-                for (i = 0; i < 32; i++) PRINTFE("%02X", buf08[i]);
+                for (i = 20; i < 52; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\nSECRET_KEY-Y: ");
-                for (i = 32; i < 64; i++) PRINTFE("%02X", buf08[i]);
+                for (i = 52; i < 84; i++) PRINTFE("%02X", buf08[i]);
                 PRINTFE("\n");
             #endif
 
+// 0 16 psk[16] 0 64 pointx[32] pointy[32]
 // PRF(pre_master_secret, „master secret“, client_random + server_random)
 // PRF(master_secret, „key expansion“, server_random + client_random)
 // PRF(master_secret, finished_label, Hash(handshake_messages))
@@ -310,34 +310,30 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     ske->public_key.type = uncompressed;
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
-    uint32_t base_x[8];
-    uint32_t base_y[8];
-    nvm_getVar((void *) base_x, RES_ECC_BASE_X, LEN_ECC_BASE_X);
-    nvm_getVar((void *) base_y, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
+    nvm_getVar(buf32 + 16, RES_ECC_BASE_X, LEN_ECC_BASE_X);
+    nvm_getVar(buf32 + 24, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     #if DEBUG_ECC
         uint8_t i;
         PRINTFE("BASE_POINT-X: ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_x[i]));
+        for (i = 16; i < 24; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
         PRINTFE("\nBASE_POINT-Y: ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(base_y[i]));
+        for (i = 24; i < 32; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
         PRINTFE("\n");
     #endif
-    uint32_t private_key[8];
-    getSessionData((uint8_t *) private_key, src_ip, session_key);
+    getSessionData((uint8_t *) (buf32 + 32), src_ip, session_key);
     #if DEBUG_ECC
         PRINTFE("Private Key : ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
+        for (i = 32; i < 40; i++) PRINTFE("%08X", uip_htonl(buf32[i]));;
         PRINTFE("\n");
     #endif
     PRINTF("ECC - START\n");
-    ecc_ec_mult(base_x, base_y, private_key, buf32, buf32 + 8);
+    ecc_ec_mult(buf32 + 16, buf32 + 24, buf32 + 32, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
     #if DEBUG_ECC
-        uint8_t *buf = (uint8_t *) buf32;
         PRINTFE("_S_PUB_KEY-X: ");
-        for (i = 0; i < 32; i++) PRINTFE("%02X", buf[i]);
+        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
         PRINTFE("\n_S_PUB_KEY-Y: ");
-        for (i = 32; i < 64; i++) PRINTFE("%02X", buf[i]);
+        for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
         PRINTFE("\n");
     #endif
     stack_push((uint8_t *) buf32, 64);
