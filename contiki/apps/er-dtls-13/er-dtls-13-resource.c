@@ -12,30 +12,18 @@
 #include "flash-store.h"
 
 #define DEBUG 1
+#define DEBUG_COOKIE 0
+#define DEBUG_ECC 0
+#define DEBUG_PRF 1
+
+#if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
+    #include <stdio.h>
+#endif
 
 #if DEBUG
-    #include <stdio.h>
     #define PRINTF(...) printf(__VA_ARGS__)
 #else
     #define PRINTF(...)
-#endif
-
-#define DEBUG_COOKIE 0
-
-#if DEBUG_COOKIE
-    #include <stdio.h>
-    #define PRINTFC(...) printf(__VA_ARGS__)
-#else
-    #define PRINTFC(...)
-#endif
-
-#define DEBUG_ECC 1
-
-#if DEBUG_ECC
-    #include <stdio.h>
-    #define PRINTFE(...) printf(__VA_ARGS__)
-#else
-    #define PRINTFE(...)
 #endif
 
 // Die folgenden 3 Funktionen werden nur einmal aufgerufen und dienen lediglich der Codeübersicht.
@@ -53,7 +41,6 @@ uint8_t src_ip[16];
 
 uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. zurück auf 0 bei ersten daten
 uint16_t created_offset;
-uint16_t changed_offset;
 
 coap_separate_t request_metadata[1];
 
@@ -85,37 +72,63 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             stack_push((uint8_t *) payload, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
 
             #if DEBUG_ECC
-                PRINTFE("_C_PUB_KEY-X: ");
-                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(cke->public_key.x[i]));
-                PRINTFE("\n_C_PUB_KEY-Y: ");
-                for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(cke->public_key.y[i]));
-                PRINTFE("\n");
+                printf("_C_PUB_KEY-X: ");
+                for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.x[i]));
+                printf("\n_C_PUB_KEY-Y: ");
+                for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.y[i]));
+                printf("\n");
             #endif
 
             memcpy(buf32 + 24, cke->public_key.x, 32);
             memcpy(buf32 + 32, cke->public_key.y, 32);
-            uint32_t private_key[8];
+            uint32_t private_key[12];
             getSessionData((uint8_t *) private_key, src_ip, session_key);
             PRINTF("ECC - START\n");
             ecc_ec_mult(buf32 + 24, buf32 + 32, private_key, buf32 + 5, buf32 + 13);
             PRINTF("ECC - ENDE\n");
             #if DEBUG_ECC
-                PRINTFE("SECRET_KEY-X: ");
-                for (i = 20; i < 52; i++) PRINTFE("%02X", buf08[i]);
-                PRINTFE("\nSECRET_KEY-Y: ");
-                for (i = 52; i < 84; i++) PRINTFE("%02X", buf08[i]);
-                PRINTFE("\n");
+                printf("SECRET_KEY-X: ");
+                for (i = 20; i < 52; i++) printf("%02X", buf08[i]);
+                printf("\nSECRET_KEY-Y: ");
+                for (i = 52; i < 84; i++) printf("%02X", buf08[i]);
+                printf("\n");
             #endif
+
+            buf08[0] = 0;
+            buf08[1] = 16;
+            getPSK(buf08 + 2);
+            buf08[18] = 0;
+            buf08[19] = 64;
+            memcpy(buf08 + 84, "master secret", 13);
+            nvm_getVar(buf08 + 97, RES_STACK + 2, 28);                      // Client-Random
+            nvm_getVar(buf08 + 125, RES_STACK + created_offset + 2, 28);    // Server-Random
+            prf((uint8_t *) private_key, 48, buf08, 153);
+            #if DEBUG_PRF
+                printf("Master-Secret: ");
+                for (i = 0; i < 12; i++) printf("%02X", uip_htonl(private_key[i]));
+                printf("\n");
+            #endif
+
+            memcpy(buf08 + 40, private_key, 48);
+            memcpy(buf08 + 88, "key expansion", 13);
+            nvm_getVar(buf08 + 101, RES_STACK + created_offset + 2, 28);    // Server-Random
+            nvm_getVar(buf08 + 129, RES_STACK + 2, 28);                     // Client-Random
+            prf(buf08, 40, buf08 + 40, 117);
+            #if DEBUG_PRF
+                printf("Key-Block: ");
+                for (i = 0; i < 40; i++) printf("%02X", buf08[i]);
+                printf("\n");
+            #endif
+
+            // TODO memcpy löschen. überschreibt derzeit den berechneten keyblock
+            memcpy(buf08, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
+            insertKeyBlock(src_ip, (KeyBlock_t *) buf08);
 
 // 0 16 psk[16] 0 64 pointx[32] pointy[32]
 // PRF(pre_master_secret, „master secret“, client_random + server_random)
 // PRF(master_secret, „key expansion“, server_random + client_random)
 // PRF(master_secret, finished_label, Hash(handshake_messages))
 //     wobei finished_label = „client finished“ oder „server finished“
-
-            KeyBlock_t *ck = (KeyBlock_t *) buf08;
-            memcpy(ck->key_block, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
-            insertKeyBlock(src_ip, ck);
 
             DTLSContent_t *c;
 
@@ -223,19 +236,18 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
     uint32_t i;
 
     #if DEBUG_COOKIE
-        PRINTFC("Content Länge Input: 0x");
+        printf("Content Länge Input: 0x");
         for (i = 0; i < data->len; i++) PRINTF("%02X", data->payload[i]);
-        PRINTFC(" (MSB)\n");
+        printf(" (MSB)\n");
     #endif
     uint32_t hello_len = 0;
     memcpy(((uint8_t *) &hello_len) + 4 - data->len, data->payload, data->len);
     hello_len = uip_ntohl(hello_len);
-    PRINTFC("Content Länge Berechnet: %u\n", hello_len);
-
     #if DEBUG_COOKIE
-        PRINTFC("Content Data (mc): ");
+        printf("Content Länge Berechnet: %u\n", hello_len);
+        printf("Content Data (mc): ");
         for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
-        PRINTFC("\n");
+        printf("\n");
     #endif
     // Alten Cookie entfernen falls vorhanden
     uint32_t cookie = data->len + sizeof(ProtocolVersion) + sizeof(Random);
@@ -250,9 +262,9 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
         *data_len -= 8;
     }
     #if DEBUG_COOKIE
-        PRINTFC("Content Data (oc): ");
+        printf("Content Data (oc): ");
         for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
-        PRINTFC("\n");
+        printf("\n");
     #endif
 
     uint8_t mac[16];
@@ -314,27 +326,27 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     nvm_getVar(buf32 + 24, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     #if DEBUG_ECC
         uint8_t i;
-        PRINTFE("BASE_POINT-X: ");
-        for (i = 16; i < 24; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
-        PRINTFE("\nBASE_POINT-Y: ");
-        for (i = 24; i < 32; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
-        PRINTFE("\n");
+        printf("BASE_POINT-X: ");
+        for (i = 16; i < 24; i++) printf("%08X", uip_htonl(buf32[i]));
+        printf("\nBASE_POINT-Y: ");
+        for (i = 24; i < 32; i++) printf("%08X", uip_htonl(buf32[i]));
+        printf("\n");
     #endif
     getSessionData((uint8_t *) (buf32 + 32), src_ip, session_key);
     #if DEBUG_ECC
-        PRINTFE("Private Key : ");
-        for (i = 32; i < 40; i++) PRINTFE("%08X", uip_htonl(buf32[i]));;
-        PRINTFE("\n");
+        printf("Private Key : ");
+        for (i = 32; i < 40; i++) printf("%08X", uip_htonl(buf32[i]));;
+        printf("\n");
     #endif
     PRINTF("ECC - START\n");
     ecc_ec_mult(buf32 + 16, buf32 + 24, buf32 + 32, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
     #if DEBUG_ECC
-        PRINTFE("_S_PUB_KEY-X: ");
-        for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
-        PRINTFE("\n_S_PUB_KEY-Y: ");
-        for (i = 8; i < 16; i++) PRINTFE("%08X", uip_htonl(buf32[i]));
-        PRINTFE("\n");
+        printf("_S_PUB_KEY-X: ");
+        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf32[i]));
+        printf("\n_S_PUB_KEY-Y: ");
+        for (i = 8; i < 16; i++) printf("%08X", uip_htonl(buf32[i]));
+        printf("\n");
     #endif
     stack_push((uint8_t *) buf32, 64);
 
