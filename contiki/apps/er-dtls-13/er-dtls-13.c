@@ -60,14 +60,14 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     #endif
 
     // Bei Bedarf entschlüsseln
-    KeyBlock_t *ck;
-    if ((ck = getKeyBlock(ip, record->epoch))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
+    uint32_t key_block;
+    if ((key_block = getKeyBlock(ip, record->epoch, 1))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
         uint8_t key[16];
-        nvm_getVar(key, (uint32_t) ck->write.server_key, 16);
-        nvm_getVar(nonce, (uint32_t) ck->write.server_IV, 4);
+        nvm_getVar(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+        nvm_getVar(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
         crypt(payload, len, key, nonce, 0);
         crypt(payload, len, key, nonce, 1);
         uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
@@ -86,17 +86,17 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         // TODO Alert-Auswertung
         coapdata->valid = 0;
     }
-
-    checkEpochIncrease(ip, (nonce[4] << 8) + nonce[5]);
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
 
-    int8_t epoch = getEpoch(conn->ripaddr.u8);
+    uint16_t epoch = 0;
+    getSessionData((uint8_t *) &epoch, conn->ripaddr.u8, session_epoch);
+
     PRINTF("Senden mit Epoch: %i\n", epoch);
 
-    KeyBlock_t *ck;
-    if ((ck = getKeyBlock(conn->ripaddr.u8, epoch))) {
+    uint32_t key_block;
+    if ((key_block = getKeyBlock(conn->ripaddr.u8, epoch, 0))) {
         PRINTF("Verschlüsselter Paketversand\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
@@ -113,9 +113,8 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         uint8_t key[16];
         uint8_t nonce[12] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5};
-        nvm_getVar(key, (uint32_t) ck->write.server_key, 16);
-        nvm_getVar(nonce, (uint32_t) ck->write.server_IV, 4);
-
+        nvm_getVar(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
+        nvm_getVar(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
         crypt(record->payload + headerAdd, len, key, nonce, 0);
 
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len + MAC_LEN);

@@ -75,6 +75,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             uint32_t i;
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
+            // TODO check ob ip zur session passt
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
@@ -92,7 +93,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             #endif
 
             uint32_t private_key[8];
-            getPrivateKey(private_key, src_ip);
+            getSessionData((uint8_t *) private_key, src_ip, session_key);
             #if DEBUG_ECC
                 PRINTFE("Private Key : ");
                 for (i = 0; i < 8; i++) PRINTFE("%08X", uip_htonl(private_key[i]));;
@@ -114,10 +115,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             #endif
 
             KeyBlock_t *ck = (KeyBlock_t *) buf08;
-            ck->index = 0;          
-            ck->epoch = 1;
             memcpy(ck->key_block, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
-            insertKeyBlock(ck);
+            insertKeyBlock(src_ip, ck);
 
             DTLSContent_t *c;
 
@@ -265,6 +264,9 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 }
 
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) {
+
+    if (createSession((Session_t *) buf32, src_ip) == -1) return;
+
     created_offset = stack_size();
 
     DTLSContent_t *content = (DTLSContent_t *) buf32;
@@ -279,8 +281,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     sh->server_version.minor = 3;
     sh->random.gmt_unix_time = uip_htonl(getTime());
     random_x(sh->random.random_bytes, 28);
-    sh->session_id.len = 8;
-    memcpy (sh->session_id.session_id, "IJKLMNOP", 8); // TODO generieren
+    sh->session_id.len = getSessionData(sh->session_id.session_id, src_ip, session_id);
     sh->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
     sh->compression_method = null;
     sh->extensions[0] = 0x00;        // Länge der Extensions
@@ -310,17 +311,6 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     ske->public_key.type = uncompressed;
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
-    // TODO fall ip schon vorhanden -> update von session und private_key
-    Client_t *ci = (Client_t *) buf32;
-    memset(ci, 0, sizeof(Client_t));
-    memcpy(ci->ip, src_ip, 16);
-    memcpy(ci->session, "IJKLMNOP", 8);
-    ci->epoch = 0;
-    do {
-        random_x((uint8_t *) ci->private_key, 32);
-    } while (!ecc_is_valid_key(ci->private_key));
-    insertClient(ci);
-
     #if DEBUG_ECC
         uint8_t i;
         PRINTFE("Private Key : ");
@@ -340,7 +330,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     #endif
     PRINTF("ECC - START\n");
     uint32_t private_key[8];
-    getPrivateKey(private_key, src_ip);
+    getSessionData((uint8_t *) private_key, src_ip, session_key);
     ecc_ec_mult(base_x, base_y, private_key, buf32, buf32 + 8);
     PRINTF("ECC - ENDE\n");
     #if DEBUG_ECC

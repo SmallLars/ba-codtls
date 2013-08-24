@@ -57,17 +57,17 @@
 #define RES_NEWPSK             2
 #define LEN_NEWPSK            16
 
-#define RES_CLIENT_LEN        18
-#define LEN_CLIENT_LEN         1
+#define RES_SESSION_LEN       18
+#define LEN_SESSION_LEN        1
 
-#define RES_CLIENT_LIST       19
-#define LEN_CLIENT_LIST      580
+#define RES_SESSION_LIST      19
+#define LEN_SESSION_LIST     580
 
 #define RES_KEY_BLOCK_LEN    599
 #define LEN_KEY_BLOCK_LEN      1
 
 #define RES_KEY_BLOCK_LIST   600
-#define LEN_KEY_BLOCK_LIST   860
+#define LEN_KEY_BLOCK_LIST   800
 
 /**
   * \brief    Zurücksetzen der Blöcke für den Random-Zugriff

@@ -5,41 +5,46 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef struct {
+typedef struct { // 16 + 8 + 2 + 32 = 58
     uint8_t ip[16];
     uint8_t session[8];
     uint16_t epoch;
     uint32_t private_key[8];
-}  __attribute__ ((packed)) Client_t;
+}  __attribute__ ((packed)) Session_t;
 
-typedef struct {
-    uint8_t index;
-    uint16_t epoch;
-    union {
-        uint8_t key_block[40];
-        struct {
-//            uint8_t client_MAC[0];
-//            uint8_t server_MAC[0];
-            uint8_t client_key[16];
-            uint8_t server_key[16];
-            uint8_t client_IV[4];
-            uint8_t server_IV[4];
-        } write;
-    };
+typedef union {
+    uint8_t key_block[40];
+    struct {
+//      uint8_t client_MAC[0];
+//      uint8_t server_MAC[0];
+        uint8_t client_key[16];
+        uint8_t server_key[16];
+        uint8_t client_IV[4];
+        uint8_t server_IV[4];
+    } write;
 }  __attribute__ ((packed)) KeyBlock_t;
 
-int8_t insertClient(Client_t *client);
+#define KEY_BLOCK_CLIENT_KEY  0
+#define KEY_BLOCK_SERVER_KEY 16
+#define KEY_BLOCK_CLIENT_IV  32
+#define KEY_BLOCK_SERVER_IV  36
 
-int8_t insertKeyBlock(KeyBlock_t *key_block);
+typedef enum {
+    session_id = 0,
+    session_epoch = 1,
+    session_key = 2
+} SessionDataType;
 
-int16_t getEpoch(uint8_t *ip);
+// ----------------------------------------------------------------------------
 
-int8_t getPrivateKey(uint32_t *key, uint8_t *ip);
+int8_t createSession(Session_t *session, uint8_t ip[16]);
 
-KeyBlock_t *getKeyBlock(uint8_t *ip, uint8_t epoch);
+int8_t getSessionData(uint8_t *dst, uint8_t ip[16], SessionDataType type);
 
-void checkEpochIncrease(uint8_t *ip, uint16_t epoch);
+// ----------------------------------------------------------------------------
 
-int8_t updateIp(uint8_t *session, uint8_t *ip);
+int8_t insertKeyBlock(uint8_t ip[16], KeyBlock_t *key_block);
+
+uint32_t getKeyBlock(uint8_t ip[16], uint16_t epoch, uint8_t update);
 
 #endif /* __ER_DTLS_13_DATA_H__ */
