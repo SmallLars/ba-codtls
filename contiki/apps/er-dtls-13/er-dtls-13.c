@@ -60,8 +60,8 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     #endif
 
     // Bei Bedarf entschlüsseln
-    ClientKey_t *ck;
-    if ((ck = getKey(ip, record->epoch))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
+    KeyBlock_t *ck;
+    if ((ck = getKeyBlock(ip, record->epoch))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -95,8 +95,8 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     int8_t epoch = getEpoch(conn->ripaddr.u8);
     PRINTF("Senden mit Epoch: %i\n", epoch);
 
-    ClientKey_t *ck;
-    if ((ck = getKey(conn->ripaddr.u8, epoch))) {
+    KeyBlock_t *ck;
+    if ((ck = getKeyBlock(conn->ripaddr.u8, epoch))) {
         PRINTF("Verschlüsselter Paketversand\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 

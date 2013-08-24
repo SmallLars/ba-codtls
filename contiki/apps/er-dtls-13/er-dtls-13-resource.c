@@ -113,11 +113,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 PRINTFE("\n");
             #endif
 
-            ClientKey_t *ck = (ClientKey_t *) buf08;
+            KeyBlock_t *ck = (KeyBlock_t *) buf08;
             ck->index = 0;          
             ck->epoch = 1;
             memcpy(ck->key_block, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
-            insertKey(ck);
+            insertKeyBlock(ck);
 
             DTLSContent_t *c;
 
@@ -311,8 +311,8 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(KeyExchange_t) - 64); // -64 weil public key danach geschrieben wird
 
     // TODO fall ip schon vorhanden -> update von session und private_key
-    ClientInfo_t *ci = (ClientInfo_t *) buf32;
-    memset(ci, 0, sizeof(ClientInfo_t));
+    Client_t *ci = (Client_t *) buf32;
+    memset(ci, 0, sizeof(Client_t));
     memcpy(ci->ip, src_ip, 16);
     memcpy(ci->session, "IJKLMNOP", 8);
     ci->epoch = 0;

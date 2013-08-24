@@ -10,7 +10,7 @@ typedef struct {
     uint8_t session[8];
     uint16_t epoch;
     uint32_t private_key[8];
-}  __attribute__ ((packed)) ClientInfo_t;
+}  __attribute__ ((packed)) Client_t;
 
 typedef struct {
     uint8_t index;
@@ -26,17 +26,17 @@ typedef struct {
             uint8_t server_IV[4];
         } write;
     };
-}  __attribute__ ((packed)) ClientKey_t;
+}  __attribute__ ((packed)) KeyBlock_t;
 
-int8_t insertClient(ClientInfo_t *clientInfo);
+int8_t insertClient(Client_t *client);
 
-int8_t insertKey(ClientKey_t *clientkey);
+int8_t insertKeyBlock(KeyBlock_t *key_block);
 
 int16_t getEpoch(uint8_t *ip);
 
 int8_t getPrivateKey(uint32_t *key, uint8_t *ip);
 
-ClientKey_t *getKey(uint8_t *ip, uint8_t epoch);
+KeyBlock_t *getKeyBlock(uint8_t *ip, uint8_t epoch);
 
 void checkEpochIncrease(uint8_t *ip, uint16_t epoch);
 
