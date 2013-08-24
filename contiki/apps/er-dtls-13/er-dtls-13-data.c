@@ -25,13 +25,13 @@ int8_t getIndexOf(uint8_t *ip);
 
 int8_t insertClient(Client_t *client) {
     uint8_t list_len;
-    nvm_getVar(&list_len, RES_CLIENT_INFO_LEN, LEN_CLIENT_INFO_LEN);
+    nvm_getVar(&list_len, RES_CLIENT_LEN, LEN_CLIENT_LEN);
 
-    Client_t *ci = (Client_t *) RES_CLIENT_INFO;
+    Client_t *ci = (Client_t *) RES_CLIENT_LIST;
     if (list_len < 9) {
         nvm_setVar(client, (uint32_t) &ci[list_len], sizeof(Client_t));
         list_len++;
-        nvm_setVar(&list_len, RES_CLIENT_INFO_LEN, LEN_CLIENT_INFO_LEN);
+        nvm_setVar(&list_len, RES_CLIENT_LEN, LEN_CLIENT_LEN);
 
         #if DEBUG
             PRINTF("Eingefügte IP an Index %u:", list_len - 1);
@@ -48,13 +48,13 @@ int8_t insertClient(Client_t *client) {
 
 int8_t insertKeyBlock(KeyBlock_t *key_block) {
     uint8_t list_len;
-    nvm_getVar(&list_len, RES_CLIENT_KEYS_LEN, LEN_CLIENT_KEYS_LEN);
+    nvm_getVar(&list_len, RES_KEY_BLOCK_LEN, LEN_KEY_BLOCK_LEN);
 
-    KeyBlock_t *ck = (KeyBlock_t *) RES_CLIENT_KEYS;
+    KeyBlock_t *ck = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
     if (list_len < 20) {
         nvm_setVar(key_block, (uint32_t) &ck[list_len], sizeof(KeyBlock_t));
         list_len++;
-        nvm_setVar(&list_len, RES_CLIENT_KEYS_LEN, LEN_CLIENT_KEYS_LEN);
+        nvm_setVar(&list_len, RES_KEY_BLOCK_LEN, LEN_KEY_BLOCK_LEN);
         return 0;
     }
 
@@ -66,7 +66,7 @@ int16_t getEpoch(uint8_t *ip) {
     PRINTF("Index der gesuchten IP: %i\n", getIndexOf(ip));
     if (index == -1) return -1;
 
-    Client_t *ci = (Client_t *) RES_CLIENT_INFO;
+    Client_t *ci = (Client_t *) RES_CLIENT_LIST;
 
     uint16_t epoch;
     nvm_getVar(&epoch, (uint32_t) &ci[index].epoch, 2);
@@ -79,7 +79,7 @@ int8_t getPrivateKey(uint32_t *key, uint8_t *ip) {
     PRINTF("Index der gesuchten IP: %i\n", getIndexOf(ip));
     if (index == -1) return -1;
 
-    Client_t *ci = (Client_t *) RES_CLIENT_INFO;
+    Client_t *ci = (Client_t *) RES_CLIENT_LIST;
     nvm_getVar(key, (uint32_t) &ci[index].private_key, 32);
 
     return 0;
@@ -92,9 +92,9 @@ KeyBlock_t *getKeyBlock(uint8_t *ip, uint8_t epoch) {
     if (index == -1) return 0;
 
     uint8_t list_len;
-    nvm_getVar(&list_len, RES_CLIENT_KEYS_LEN, LEN_CLIENT_KEYS_LEN);
+    nvm_getVar(&list_len, RES_KEY_BLOCK_LEN, LEN_KEY_BLOCK_LEN);
 
-    KeyBlock_t *ck = (KeyBlock_t *) RES_CLIENT_KEYS;
+    KeyBlock_t *ck = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
     int i;
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(&index, (uint32_t) &ck[i].index, 1) == 0) {
@@ -114,7 +114,7 @@ void checkEpochIncrease(uint8_t *ip, uint16_t epoch) {
     int8_t index = getIndexOf(ip);
     if (index == -1) return;
 
-    Client_t *ci = (Client_t *) RES_CLIENT_INFO;
+    Client_t *ci = (Client_t *) RES_CLIENT_LIST;
     if (nvm_cmp(&epoch, (uint32_t) &ci[index].epoch, 2) == 0) {
         epoch++;
         nvm_setVar(&epoch, (uint32_t) &ci[index].epoch, 2);
@@ -137,9 +137,9 @@ int8_t getIndexOf(uint8_t *ip) {
     #endif
 
     uint8_t list_len;
-    nvm_getVar(&list_len, RES_CLIENT_INFO_LEN, LEN_CLIENT_INFO_LEN);
+    nvm_getVar(&list_len, RES_CLIENT_LEN, LEN_CLIENT_LEN);
 
-    Client_t *ci = (Client_t *) RES_CLIENT_INFO;
+    Client_t *ci = (Client_t *) RES_CLIENT_LIST;
     uint8_t i;
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(ip, (uint32_t) ci[i].ip, 16) == 0) return i;
