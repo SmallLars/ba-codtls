@@ -17,8 +17,6 @@
 #include "dtls_random.h"
 #include "coap_client.h"
 
-#define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
-
 uint32_t base_x[8] = {0xd898c296, 0xf4a13945, 0x2deb33a0, 0x77037d81, 0x63a440f2, 0xf8bce6e5, 0xe12c4247, 0x6b17d1f2};
 uint32_t base_y[8] = {0x37bf51f5, 0xcbb64068, 0x6b315ece, 0x2bce3357, 0x7c0f9e16, 0x8ee7eb4a, 0xfe1a7f9b, 0x4fe342e2};
 
@@ -108,7 +106,7 @@ void dtls_handshake(struct in6_addr *ip) {
     uint8_t prf_buffer[160];
     prf_buffer[0] = 0;
     prf_buffer[1] = 16;
-    memcpy(prf_buffer + 2, KEY, 16);
+    getPSK(prf_buffer + 2, NULL);
     prf_buffer[18] = 0;
     prf_buffer[19] = 64;
     memcpy(prf_buffer + 20, result_x, 32);
@@ -146,6 +144,8 @@ void dtls_handshake(struct in6_addr *ip) {
     printf("\n    ");
     for (i = 20; i < 40; i++) printf("%02X", prf_buffer[i]);
     printf("\n");
+
+    insertKeyBlock(ip, (KeyBlock_t *) prf_buffer);
 
 // --------------------------------------------------------------------------------------------
 
@@ -188,5 +188,5 @@ void dtls_handshake(struct in6_addr *ip) {
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
     printf("Step 3 done.\n");
 
-    setKey();
+    increaseEpoch(ip);
 }

@@ -141,7 +141,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             #endif
 
             // TODO memcpy löschen. überschreibt derzeit den berechneten keyblock
-            memcpy(buf08, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
+            //memcpy(buf08, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
             insertKeyBlock(src_ip, (KeyBlock_t *) buf08);
 
 // 0 16 psk[16] 0 64 pointx[32] pointy[32]

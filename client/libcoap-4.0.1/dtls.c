@@ -19,13 +19,12 @@
     #define PRINTF(...)
 #endif
 
-#define KEY (uint8_t *) "ABCDEFGHIJKLMNOP"
-
 /*---------------------------------------------------------------------------*/
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
   // Bei Bedarf verschlüsseln
-  if (getKey()) {
+  uint16_t epoch = getEpoch((uint8_t *) dest_addr->sa_data);
+  if (epoch) {
     uint8_t payload_length = len + MAC_LEN;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 13 + payload_length); // 13 = maximaler Header-Anhang
@@ -38,8 +37,16 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     record->length = rec_length_implicit;
 
     memcpy(record->payload + 1, buf, len);
-    uint8_t nonce[12] = {'1', '1', '1', '1', 0, record->epoch, 0, 0, 0, 0, 0, 5};
-    encrypt(record->payload + 1, len, KEY, nonce);
+
+    uint8_t *key_block = getKeyBlock((uint8_t *) dest_addr->sa_data, epoch);
+
+    uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 5};
+    memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+
+    uint8_t key[16];
+    memcpy(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+
+    encrypt(record->payload + 1, len, key, nonce);
 
     ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + 1 + payload_length, flags, dest_addr, addrlen);
     send -= (sizeof(DTLSRecord_t) + 1 + MAC_LEN);
@@ -77,7 +84,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
-    uint8_t nonce[12] = {'1', '1', '1', '1', 0, record->epoch, 0, 0, 0, 0, 0, 0};
+    uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -119,7 +126,13 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         uint8_t oldCode[MAC_LEN];
         memcpy(oldCode, payload + len, MAC_LEN);
 
-        decrypt(payload, len, KEY, nonce);
+        uint8_t *key_block = getKeyBlock((uint8_t *) src_addr->sa_data, record->epoch);
+        memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
+
+        uint8_t key[16];
+        memcpy(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
+        
+        decrypt(payload, len, key, nonce);
 
         uint32_t check = memcmp(oldCode, payload + len, MAC_LEN);
         if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
