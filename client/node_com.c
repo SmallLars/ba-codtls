@@ -69,14 +69,17 @@ void node_firmware(struct in6_addr *ip, char *file) {
     r = 8 + read(fd, buf + 10, BLOCKSIZE - 8);
 
     size = (size + 8) / BLOCKSIZE;
-    printf("Block    0/%u gesendet!", size);
+    printf("<|                                                  |> %3u%% (   0/%u)", 0, size);
     fflush(stdout);
-    uint16_t i;
+    uint16_t i, p;
     for (i = 0; r > 0; i++) {
         memcpy(buf, &i, 2);
         coap_setPayload(buf, 2 + r);
         coap_request(ip, COAP_REQUEST_POST, "f", NULL);
-        printf("\rBlock %4u/%u gesendet!", i, size);
+        printf("\r<|");
+        for (p = 0; p < (i * 50) / size; p++) printf("#");
+        for (; p < 50; p++) printf(" ");
+        printf("|> %3u%% (%4u/%u)", (i * 100) / size, i, size);
         fflush(stdout);
         r = read(fd, buf + 2, BLOCKSIZE);
     }
