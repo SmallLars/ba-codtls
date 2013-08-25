@@ -133,8 +133,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             nvm_getVar(buf08 + 129, RES_STACK + client_random_offset, 28);
             prf(buf08, 40, buf08 + 40, 117);
             #if DEBUG_PRF
-                printf("Key-Block: ");
-                for (i = 0; i < 40; i++) printf("%02X", buf08[i]);
+                printf("Key-Block:\n    ");
+                for (i = 0; i < 20; i++) printf("%02X", buf08[i]);
+                printf("\n    ");
+                for (i = 20; i < 40; i++) printf("%02X", buf08[i]);
                 printf("\n");
             #endif
 
