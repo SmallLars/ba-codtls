@@ -30,6 +30,10 @@ int getPSK(uint8_t dst[16], uint8_t uuid[16]) {
 }
 
 void createSession(uint8_t ip[16], uint8_t id[8]) {
+    printf("createSession: IP: ");
+    int i;
+    for (i = 0; i < 16; i++) printf("%02X", ip[i]);
+    printf("\n");
     memcpy(session[0].ip, ip, 16);
     memcpy(session[0].id, id, 8);
     session[0].epoch = 0;
@@ -47,6 +51,10 @@ int insertKeyBlock(uint8_t ip[16], KeyBlock_t *key_block) {
 }
 
 uint8_t *getKeyBlock(uint8_t ip[16], uint16_t epoch) {
+    printf("getKeyBlock: IP: ");
+    int i;
+    for (i = 0; i < 16; i++) printf("%02X", ip[i]);
+    printf("\n");
     return session[0].key_block.key_block;
 }
 

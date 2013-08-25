@@ -66,6 +66,8 @@ void dtls_handshake(struct in6_addr *ip) {
     ServerHello_t *serverHello = (ServerHello_t *) (getContentData(buffer));
     printf("Step 2 done: Session-Id: %.*s\n", serverHello->session_id.len, serverHello->session_id.session_id);
 
+    createSession(ip, serverHello->session_id.session_id);
+
 // --------------------------------------------------------------------------------------------
 
     uint32_t result_x[8];

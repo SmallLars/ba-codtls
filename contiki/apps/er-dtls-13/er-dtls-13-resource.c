@@ -14,7 +14,7 @@
 #define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
-#define DEBUG_PRF 1
+#define DEBUG_PRF 0
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
     #include <stdio.h>

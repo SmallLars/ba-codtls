@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include "dtls_random.h"
 #include "dtls_ccm.h"
@@ -22,8 +23,11 @@
 /*---------------------------------------------------------------------------*/
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
+
+  uint8_t *ip = ((struct sockaddr_in6 *) dest_addr)->sin6_addr.s6_addr;
+
   // Bei Bedarf verschlüsseln
-  uint16_t epoch = getEpoch((uint8_t *) dest_addr->sa_data);
+  uint16_t epoch = getEpoch(ip);
   if (epoch) {
     uint8_t payload_length = len + MAC_LEN;
 
@@ -38,7 +42,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 
     memcpy(record->payload + 1, buf, len);
 
-    uint8_t *key_block = getKeyBlock((uint8_t *) dest_addr->sa_data, epoch);
+    uint8_t *key_block = getKeyBlock(ip, epoch);
 
     uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 5};
     memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
@@ -77,6 +81,8 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
 
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {
     ssize_t len = recvfrom(sockfd, buf, max_len, flags, src_addr, addrlen);
+
+    uint8_t *ip = ((struct sockaddr_in6 *) src_addr)->sin6_addr.s6_addr;
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(len);
     memcpy(record, buf, len);
@@ -126,7 +132,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         uint8_t oldCode[MAC_LEN];
         memcpy(oldCode, payload + len, MAC_LEN);
 
-        uint8_t *key_block = getKeyBlock((uint8_t *) src_addr->sa_data, record->epoch);
+        uint8_t *key_block = getKeyBlock(ip, record->epoch);
         memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
 
         uint8_t key[16];
