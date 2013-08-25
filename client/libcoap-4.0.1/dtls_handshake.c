@@ -103,6 +103,41 @@ void dtls_handshake(struct in6_addr *ip) {
 
 // --------------------------------------------------------------------------------------------
 
+    ServerHello_t *sh = (ServerHello_t *) getContentData(getContent(buffer, 256, server_hello));
+
+    uint8_t prf_buffer[153];
+    prf_buffer[0] = 0;
+    prf_buffer[1] = 16;
+    memcpy(prf_buffer + 2, KEY, 16);
+    prf_buffer[18] = 0;
+    prf_buffer[19] = 64;
+    memcpy(prf_buffer + 20, result_x, 32);
+    memcpy(prf_buffer + 52, result_y, 32);
+    memcpy(prf_buffer + 84, "master secret", 13);
+    memcpy(prf_buffer + 97, random, 28);                    // Client-Random
+    memcpy(prf_buffer + 125, sh->random.random_bytes, 28);  // Server-Random
+    printf("Seed für Master-Secret:\n    ");
+    for (i = 0; i < 33; i++) printf("%02X", prf_buffer[i]);
+    printf("\n    ");
+    for (i = 33; i < 65; i++) printf("%02X", prf_buffer[i]);
+    printf("\n    ");
+    for (i = 65; i < 97; i++) printf("%02X", prf_buffer[i]);
+    printf("\n    ");
+    for (i = 97; i < 125; i++) printf("%02X", prf_buffer[i]);
+    printf("\n    ");
+    for (i = 125; i < 153; i++) printf("%02X", prf_buffer[i]);
+    printf("\n");
+
+    uint8_t master_secret[48];
+    prf(master_secret, 48, prf_buffer, 153);
+    printf("Master-Secret:\n    ");
+    for (i = 0; i < 24; i++) printf("%02X", master_secret[i]);
+    printf("\n    ");
+    for (i = 24; i < 48; i++) printf("%02X", master_secret[i]);
+    printf("\n");
+
+// --------------------------------------------------------------------------------------------
+
     KeyExchange_t cke;
     cke.pskHint_len = ske->pskHint_len;
     memcpy(cke.pskHint, ske->pskHint, ntohs(ske->pskHint_len));

@@ -15,7 +15,7 @@ uint8_t psk[16];
 
 int main(int argc, char *argv[]) {
     // TODO vor jedem Kompilieren muss derzeit der psk vom econotag gesetzt werden
-    memcpy(psk, "1111111111111111", 16);
+    memcpy(psk, "ABCDEFGHIJKLMNOP", 16);
 
     char buffer[512];
     char cbuffer[32];

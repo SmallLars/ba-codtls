@@ -94,25 +94,45 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 printf("\n");
             #endif
 
+            // UNSCHÖN TODO
+            uint32_t client_random = RES_STACK + 8;
+            uint32_t server_random = RES_STACK + created_offset + 8;
+
             buf08[0] = 0;
             buf08[1] = 16;
             getPSK(buf08 + 2);
             buf08[18] = 0;
             buf08[19] = 64;
             memcpy(buf08 + 84, "master secret", 13);
-            nvm_getVar(buf08 + 97, RES_STACK + 2, 28);                      // Client-Random
-            nvm_getVar(buf08 + 125, RES_STACK + created_offset + 2, 28);    // Server-Random
+            nvm_getVar(buf08 + 97, client_random, 28);
+            nvm_getVar(buf08 + 125, server_random, 28);
+            #if DEBUG_PRF
+                printf("Seed für Master-Secret:\n    ");
+                for (i = 0; i < 33; i++) printf("%02X", buf08[i]);
+                printf("\n    ");
+                for (i = 33; i < 65; i++) printf("%02X", buf08[i]);
+                printf("\n    ");
+                for (i = 65; i < 97; i++) printf("%02X", buf08[i]);
+                printf("\n    ");
+                for (i = 97; i < 125; i++) printf("%02X", buf08[i]);
+                printf("\n    ");
+                for (i = 125; i < 153; i++) printf("%02X", buf08[i]);
+                printf("\n");
+            #endif
+
             prf((uint8_t *) private_key, 48, buf08, 153);
             #if DEBUG_PRF
-                printf("Master-Secret: ");
-                for (i = 0; i < 12; i++) printf("%02X", uip_htonl(private_key[i]));
+                printf("Master-Secret:\n    ");
+                for (i = 0; i < 6; i++) printf("%02X", uip_htonl(private_key[i]));
+                printf("\n    ");
+                for (i = 6; i < 12; i++) printf("%02X", uip_htonl(private_key[i]));
                 printf("\n");
             #endif
 
             memcpy(buf08 + 40, private_key, 48);
             memcpy(buf08 + 88, "key expansion", 13);
-            nvm_getVar(buf08 + 101, RES_STACK + created_offset + 2, 28);    // Server-Random
-            nvm_getVar(buf08 + 129, RES_STACK + 2, 28);                     // Client-Random
+            nvm_getVar(buf08 + 101, server_random, 28);
+            nvm_getVar(buf08 + 129, client_random, 28);
             prf(buf08, 40, buf08 + 40, 117);
             #if DEBUG_PRF
                 printf("Key-Block: ");
