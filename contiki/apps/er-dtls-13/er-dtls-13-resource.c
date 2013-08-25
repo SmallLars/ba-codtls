@@ -38,11 +38,13 @@ void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
 uint8_t src_ip[16];
+coap_separate_t request_metadata[1];
 
 uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. zurück auf 0 bei ersten daten
 uint16_t created_offset;
-
-coap_separate_t request_metadata[1];
+uint16_t changed_offset;
+uint16_t client_random_offset;
+uint16_t server_random_offset;
 
 /*************************************************************************/
 /*  Ressource für den DTLS-Handshake                                     */
@@ -94,18 +96,14 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 printf("\n");
             #endif
 
-            // UNSCHÖN TODO
-            uint32_t client_random = RES_STACK + 8;
-            uint32_t server_random = RES_STACK + created_offset + 8;
-
             buf08[0] = 0;
             buf08[1] = 16;
             getPSK(buf08 + 2);
             buf08[18] = 0;
             buf08[19] = 64;
             memcpy(buf08 + 84, "master secret", 13);
-            nvm_getVar(buf08 + 97, client_random, 28);
-            nvm_getVar(buf08 + 125, server_random, 28);
+            nvm_getVar(buf08 + 97, RES_STACK + client_random_offset, 28);
+            nvm_getVar(buf08 + 125, RES_STACK + server_random_offset, 28);
             #if DEBUG_PRF
                 printf("Seed für Master-Secret:\n    ");
                 for (i = 0; i < 33; i++) printf("%02X", buf08[i]);
@@ -131,8 +129,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             memcpy(buf08 + 40, private_key, 48);
             memcpy(buf08 + 88, "key expansion", 13);
-            nvm_getVar(buf08 + 101, server_random, 28);
-            nvm_getVar(buf08 + 129, client_random, 28);
+            nvm_getVar(buf08 + 101, RES_STACK + server_random_offset, 28);
+            nvm_getVar(buf08 + 129, RES_STACK + client_random_offset, 28);
             prf(buf08, 40, buf08 + 40, 117);
             #if DEBUG_PRF
                 printf("Key-Block: ");
@@ -202,6 +200,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     // Abspeichern für Finished-Hash
                     stack_init();
                     stack_push((uint8_t *) payload, pay_len);
+                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) payload;
 
                     // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
                     memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
@@ -327,6 +326,8 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     sh->extensions[9] = 0x23;        // Elliptic Curve secp256r1
     // Keine "Supported Point Formats Extension" entspricht "Uncompressed only"
     stack_push((uint8_t *) buf32, sizeof(DTLSContent_t) + 1 + sizeof(ServerHello_t) + 10);
+
+    server_random_offset = created_offset + (uint32_t) sh->random.random_bytes - (uint32_t) buf32;
 
     //ServerKeyExchange
     content->type = server_key_exchange;
