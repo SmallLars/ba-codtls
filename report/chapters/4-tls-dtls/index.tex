@@ -1,25 +1,26 @@
 \chapter{TLS / DTLS}
 \label{chp:dtls}
 
+\TODO{Client ???}
 Das Sicherheitsprotokoll \acr{tls} \cite{rfc5246} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
-Wurde durch \acr{tcp} eine Verbindung hergestellt, können Daten von beliebieger Größer in jede Richtung
+Wurde durch \acr{tcp} eine Verbindung hergestellt, können Daten von beliebieger Größe in jede Richtung
 übertragen werden. \acr{tcp} wird dafür sorgen, dass der eingegebene Bytestrom vollständig und in der
-richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls} bezogenen Daten nun
+richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls}-bezogenen Daten nun
 zu kennzeichnen und voneinander abzugrenzen existiert das "`Record Layer Protokoll"' dessen Header in Abbildung \ref{fig:recordlayer}
 dargestellt ist. Dort ist neben der Art des Inhalts und der Protokollversion auch die Länge enthalten, so dass
 aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können. Als Inhalt kommen 4 Sub-Protokolle
 in Frage. Währen das Application-Data-Protokoll für den Transport der Anwendungsdaten genutzt wird, kommt
 das Handshake-Protokoll für die Aushandlung der Sicherheitsparameter zum Einsatz. Über das Change-Cipher-Spec-Protokoll
 werden die zuletzt ausgehandelten Sicherheitsparameter aktiviert. Sollte es beim Handshake oder der Übertragung
-von Anwendungsdaten zu Fehlern kommen, werden diese mit Hilfe des Altert-Protokolls übertragen.
+von Anwendungsdaten zu Fehlern kommen, werden diese mit Hilfe des Alert-Protokolls übertragen.
 
 Da bei \acr{dtls} \cite{rfc6347} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
 Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei einem
 \glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
 so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
 Zusätzlich sind bei \acr{dtls} nun die Datenfelder für die Epoche und die Sequenz-Nummer hinzugekommen.
-Wärend diese beiden Werte bei \acr{tls} durch die gewährleistete Reihenfolge der Daten durch \acr{tcp}
-implizit bekannt sind, müssen diese bei \acr{dtls} explizit angegben werden, da \acr{udp} weder die
+Während diese beiden Werte bei \acr{tls} durch die gewährleistete Reihenfolge der Daten durch \acr{tcp}
+implizit bekannt sind, müssen diese bei \acr{dtls} explizit angegeben werden, da \acr{udp} weder die
 Reihenfolge noch den Transport der Daten garantiert. Die Epoche wird bei einem erfolgreichen \glos{handshake}
 erhöht und ordnet so die dazugehörenden Daten den im \glos{handshake} ausgehandelten Sicherheitsparametern zu,
 während die Sequenznummer in jeder Epoche bei 0 beginnt und bei jedem Paketversand erhöht wird.
@@ -44,7 +45,7 @@ während die Sequenznummer in jeder Epoche bei 0 beginnt und bei jedem Paketvers
 
 Damit es überhaupt zu einer sicheren Verbindung kommen kann, müssen zunächst einige Sicherheitsparameter mit Hilfe des Handshake-Protokolls ausgehandelt werden.
 Der Header eines Handshake-Pakets setzt sich gemäß Abbildung \ref{fig:handshakelayer} zusammen. Während es bei TLS ausreichend ist, den Typ, die Länge und die Daten selbst
-zu senden, wurden bei DTLS weitere Datenfelder ergänzt. Das message\_seq dient zur Durchnummerierung der Handshake-Nachrichten um Paketverluste von UDP zu erkennen
+zu senden, wurden bei DTLS weitere Datenfelder ergänzt. message\_seq dient zur Durchnummerierung der Handshake-Nachrichten um Paketverluste von UDP zu erkennen
 und eine mögliche falsche Reihenfolge der Pakete auszugleichen. Da UDP eine begrenzte Paketgröße hat und eine Fragmentierung der UDP-Pakete auf IP-Ebene
 vermieden werden soll, müssen Handshake-Nachrichten eventuell auf mehrere UDP-Pakete verteilt werden. Um dies zu ermöglichen wurden fragment\_offset und fragment\_length
 ergänzt. So können die Daten in mehrere Teile geteilt werden, während die Länge und die Position im Paket hinterlegt werden. length enthält nach wie vor die
@@ -104,14 +105,14 @@ den \acr{psk} realsiert werden soll und auf die Zertifikate verzichtet wird, um 
   \label{fig:handshake}
 \end{figure}
 
-Eingeleitet wird dieser mit einem ClientHello, in dem der Client seine Möglichkeiten bekannt gibt. Dazu gehören u.a. die unterstützten Protokollversionen, \glospl{ciphersuit}
+Eingeleitet wird der Handshake mit einem ClientHello, in dem der Client seine Möglichkeiten bekannt gibt. Dazu gehören u.a. die unterstützten Protokollversionen, \glospl{ciphersuit}
 und Kompressionsmethoden. Während der Server bei TSL nun direkt mit einem ServerHello und weiteren Handshake-Paketen antworten kann, lässt sich das bei DTLS so nicht
 realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem Absender versendet werden. Auf diese Art könnte ein \acr{dos} Angriff
 durchgeführt werden, in dem zahllose Pakete mit unterschiedlichen Absendern an den Server gesendet werden, welche alle ein ClientHello enthalten. Problematisch ist
 hierbei der Zustand der für jedes ClientHello im Server erzeugt wird. Neben dem Speicherverbrauch kann die Berechnung des ServerKeyExchange eine Menge Rechenleistung
 benötigen, so dass die Ressourcen des Servers schnell aufgebraucht sind. Um dies zu vermeiden und den Absender zu verifizieren wurde in DTLS ein Cookie ergänzt.
 Dieser wird aus dem ClientHello generiert und als Antwort an den Clienten gesendet. So kann der Server den Cookie bei einem erneuten ClientHello wieder berechnen
-und mit dem mitgelieferten vergleichen. Dadurch wird bei der ersten Anfrage ein Zustand vermieden und der Client verifiziert.
+und mit dem mitgelieferten vergleichen. Dadurch wird bei der ersten Anfrage ein Zustand vermieden und der Client verifiziert. \TODO{sofern kein Man-in-the Middle}
 
 Im ServerHello gibt der Server bekannt, welche der vom Client genannten Möglichkeiten ausgewählt wurden. Folgen können dann ein Zertifikat, Daten für einen Schlüsselaustausch
 sowie eine Anfrage für das Zertifikat des Clienten. Abschließend folgt ein ServerHelloDone um dem Clienten zu signalisieren, dass er wieder an der Reihe ist. Dieser sendet
@@ -130,7 +131,7 @@ und wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. So wird 
 
 \section{Alert}
 
-Wenn es während des Handshakes oder der Übertragung von Anwendungsdaten zu fehlern kommt, werden diese mit Hilfe des Alert Protokolls übertragen.
+Wenn es während des Handshakes oder der Übertragung von Anwendungsdaten zu Fehlern kommt, werden diese mit Hilfe des Alert Protokolls übertragen.
 Der Header (siehe Abbildung \ref{fig:alertlayer}) enthält neben dem AlertLevel, welches \textit{warning} (1) oder \textit{fatal} (2) sein kann,
 die Beschreibung des Fehlers. Während Fehler des Levels \textit{fatal} zu einem unmittelbaren Verbindungsabbruch führen, sind Fehler des Levels
 \textit{warning} zur Information der Gegenseite über mögliche Probleme gedacht. Das Alert-Protokoll unterscheidet sich bei \acr{tls} und \acr{dtls}
