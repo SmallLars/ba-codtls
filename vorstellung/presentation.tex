@@ -49,13 +49,13 @@
     \item Hardware \& Umgebung
     \item DTLS
       \begin{itemize}
-        \item Ausgewählte DTLS-Header
         \item Handshake
+        \item Ausgewählte DTLS-Header
       \end{itemize}
     \item Mögliche Lösungen
     \begin{itemize}
-      \item Stateless Header Compression
       \item Handshake über CoAP
+      \item Stateless Header Compression
     \end{itemize}
     \item Geeignetes Ciphersuit
   \end{itemize}
@@ -90,6 +90,29 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}{DTLS}{Handshake}
+  \begin{scriptsize}
+  \tt ~~~~~~~~~~~~~~~~Client~~~~~~~~~~~~~Server\\
+  \tt ~~~~~~~~~~~~~~~~---------~~~~~~~~~~~~~---------\\
+  \tt ~~~~~~~~~~~ClientHello~~--0-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--0--~~HelloVerifyRequest~($ \supset $~cookie)\\
+  \tt ClientHello~(+~cookie)~~--1-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--1--~~ServerHello\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--2--~*Certificate\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--3--~*ServerKeyExchange\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--4--~*CertificateRequest\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--5--~~ServerHelloDone\\
+  \tt ~~~~~~~~~~~Certificate*~--2-->\\
+  \tt ~~~~~ClientKeyExchange~~--3-->\\
+  \tt ~~~~~CertificateVerify*~--4-->\\
+  \tt ~~~~[ChangeCipherSpec]~~--5-->\\
+  \tt ~~~~~~~~~~~~~~Finished~~--6-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--6--~~[ChangeCipherSpec]\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--7--~~Finished\\
+  \tt ~~~~~~Application~Data~~<----------->~~Application~Data
+  \end{scriptsize}
+\end{frame}
+
 \begin{frame}{DTLS}{Ausgewählte DTLS-Header}
   \begin{columns}
     \column{.5\textwidth}
@@ -115,29 +138,6 @@
       ~\\
       = 12 Byte
   \end{columns}
-\end{frame}
-
-\begin{frame}{DTLS}{Handshake}
-  \begin{scriptsize}
-  \tt ~~~~~~~~~~~~~~~~Client~~~~~~~~~~~~~Server\\
-  \tt ~~~~~~~~~~~~~~~~---------~~~~~~~~~~~~~---------\\
-  \tt ~~~~~~~~~~~ClientHello~~--0-->\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--0--~~HelloVerifyRequest~($ \supset $~cookie)\\
-  \tt ClientHello~(+~cookie)~~--1-->\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--1--~~ServerHello\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--2--~*Certificate\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--3--~*ServerKeyExchange\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--4--~*CertificateRequest\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--5--~~ServerHelloDone\\
-  \tt ~~~~~~~~~~~Certificate*~--2-->\\
-  \tt ~~~~~ClientKeyExchange~~--3-->\\
-  \tt ~~~~~CertificateVerify*~--4-->\\
-  \tt ~~~~[ChangeCipherSpec]~~--5-->\\
-  \tt ~~~~~~~~~~~~~~Finished~~--6-->\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--6--~~[ChangeCipherSpec]\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--7--~~Finished\\
-  \tt ~~~~~~Application~Data~~<----------->~~Application~Data
-  \end{scriptsize}
 \end{frame}
 
 \begin{frame}{Mögliche Lösungen}
