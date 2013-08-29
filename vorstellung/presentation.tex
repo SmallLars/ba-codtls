@@ -57,7 +57,8 @@
       \item Handshake über CoAP
       \item Stateless Header Compression
     \end{itemize}
-    \item Geeignetes Ciphersuit
+    \item Geeignete Ciphersuit
+    \item Praktische Umsetzung
   \end{itemize}
 \end{frame}
 
@@ -87,6 +88,10 @@
       \item - 8 Byte UDP-Header
       \item = 71 Byte Nutzdaten
     \end{itemize}
+    \item SmartAppContiki = Contiki + Erbium + CoAP 13
+    \begin{itemize}
+      \item 81 KiB (bei angepasster Konfiguration)
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
@@ -105,10 +110,10 @@
   \tt ~~~~~~~~~~~Certificate*~--2-->\\
   \tt ~~~~~ClientKeyExchange~~--3-->\\
   \tt ~~~~~CertificateVerify*~--4-->\\
-  \tt ~~~~[ChangeCipherSpec]~~--5-->\\
-  \tt ~~~~~~~~~~~~~~Finished~~--6-->\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--6--~~[ChangeCipherSpec]\\
-  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--7--~~Finished\\
+  \tt ~~~~[ChangeCipherSpec]~~---->\\
+  \tt ~~~~~~~~~~~~~~Finished~~--5-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<----~~[ChangeCipherSpec]\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--6--~~Finished\\
   \tt ~~~~~~Application~Data~~<----------->~~Application~Data
   \end{scriptsize}
 \end{frame}
@@ -141,7 +146,7 @@
 \end{frame}
 
 \begin{frame}{Mögliche Lösungen}
-  Vorschlänge im Entwurf von k. Hartge und O. Bergmann:\\
+  Vorschläge im Entwurf von K. Hartke und O. Bergmann:\\
   http://tools.ietf.org/html/draft-hartke-core-codtls-02\\
   \begin{itemize}
     \item Handshake über CoAP
@@ -210,7 +215,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Geeignetes Ciphersuit}
+\begin{frame}{Geeignete Ciphersuit}
   \begin{itemize}
     \item TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
   \end{itemize}
@@ -224,6 +229,43 @@
     \item Einsparung durch AES in Hardware: \textasciitilde 1.5KiB
     \item Einsparung durch CBC-MAC mit PSK: \textasciitilde 1.5KiB
   \end{itemize}
+\end{frame}
+
+\begin{frame}{Praktische Umsetzung}
+  \begin{itemize}
+    \item Ein Handshake zur Zeit
+    \item Stack mit Push und Clear im Flash-Speicher für "`Finished"'
+    \item Wechsel des Pre-shared Key nach Handshake
+    \item Ablage der Session-Daten im Flash-Speicher
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{}
+  \begin{center}
+    \begin{LARGE}
+      Vielen Dank für\\
+      eure Aufmerksamkeit\\
+      ~\\
+      \includegraphics[scale=0.2]{pic/smilie.png}
+    \end{LARGE}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Fragen}
+  \begin{center}
+    \begin{LARGE}
+      \begin{tabular}{ccccc}
+         & \textbf{?} & \textbf{?} & \textbf{?} & \\
+        \textbf{?} & \textbf{?} &  & \textbf{?} & \textbf{?}\\
+         &  &  & \textbf{?} & \textbf{?}\\
+         &  & \textbf{?} & \textbf{?} & \\
+         & \textbf{?} & \textbf{?} &  & \\
+         &  &  &  & \\
+         & \textbf{?} & \textbf{?} &  & \\
+         & \textbf{?} & \textbf{?} &  & 
+      \end{tabular}
+    \end{LARGE}
+  \end{center}
 \end{frame}
 
 \end{document}

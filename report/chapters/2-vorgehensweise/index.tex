@@ -17,7 +17,7 @@ Schlüssel verfügen. Die Verschlüsselung der Anwendungsdaten erfolgt dann im "
 wobei sich hier "`\acr{ccm}"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht
 aus einer Verschlüsselung der Daten durch \acr{aes} im \acr{ctr}-Modus während der dazugehörende \acr{mac} durch \acr{aes} im \acr{cbc}-Modus berechnet wird.
 Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
-Die dafür notwendigen verbindungsspezifischen Daten wie bspw. der Master-Schlüssel sollen dabei im Flash-Speicher des Redbee Econotags
+Die dafür notwendigen verbindungsspezifischen Daten wie bspw. der Key-Block, sollen dabei im Flash-Speicher des Redbee Econotags
 abgelegt werden, so dass nur die für das aktuelle Paket benötigten Daten im RAM-Speicher befinden. Auf diese Weise lässt sich
 die Anzahl der möglichen sicheren Verbindungen trotz Beschränkung maximieren.
 

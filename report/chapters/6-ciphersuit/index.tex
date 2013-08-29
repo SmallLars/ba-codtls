@@ -28,7 +28,7 @@ Diffie-Hellman-Schlüsselaustausch durchgeführt und dessen Ergebnis mit dem \ac
 ein Angreifer mit Kenntnis des \acr{psk} ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch jederzeit in der Lage ist den Schlüssel zu
 berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des Handshakes gelauscht hat.
 Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs ist er nicht in der Lage den Schlüssel zu berechnen und die Daten zu
-entschlüssel. Problematisch bleibt nur ein Man-in-the-middle-Angriff während des Handshakes. Verhindert ein Angreifer die direkte
+entschlüssel. Problematisch bleibt nur ein \glos{mitma} während des Handshakes. Verhindert ein Angreifer die direkte
 Kommunikation und leitet den Handshake über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
 zukünftigen Datenverkehr mitlesen. Dies fällt erst dann auf, wenn der Angreifer verschwindet, da die beiden Parteien ohne ihn nicht
 direkt kommunizieren können. Die Verwendung von Ciphersuit 3 kommt somit nicht in Frage, womit Chipersuit 4 hier zunächst das Mittel
@@ -37,12 +37,12 @@ der Wahl ist.
 Problematisch ist jedoch, dass ein Diffie-Hellman-Schlüsselaustausch sehr rechenintensiv ist. Ein Versuch innerhab des GOBI-Projektes hat
 gezeigt, dass ein Diffie-Hellman-Schlüsselaustausch mit 128-Bit-Zahlen 2 mal ca. 30 Sekunden auf dem verwendeten Mikrocontroller benötigt.
 Um bei dem derzeitigen Stand der Technik eine ausreichende Sicherheit gewähleisten zu können, müssen jedoch minimal 1024-Bit-Zahlen
-verwendet werden, was außerhalb der Möglichkeiten des Mikrocontrollers liegt. Ein weiteres Manko ist auch die definierte \acr{psr}.
+verwendet werden, was außerhalb der Möglichkeiten des Mikrocontrollers liegt. Ein weiteres Manko ist auch die definierte \acr{prf}.
 Diese basiert auf \acr{hmac} mit \acr{sha}2 was die größe des Programms relevant erhöht. Laut dem Internet-Entwurf "`A Hitchhiker's
 Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} von H. Tschofenig, S.S. Kumar und S. Keoh werden
 2.928 Byte für \acr{hmac} und 2.432 Byte für \acr{sha} benötigt. \acr{sha}2 ist hier leider nicht mit aufgeführt. Zu Beachten ist bei diesen Angaben
 jedoch, dass es sich hier um 64-Bit-Code handelt. Da der in dieser Arbeit benutzte Mikrocontroller jedoch mit 16-Bit Code betrieben wird, ist hier
-eher eine Größe von ca 1200 - 1500 Byte zu berücksichtigen, die nur für die \acr{psr} benötigt wird. Um diese Probleme zu lösen bzw. die benötigte
+eher eine Größe von ca 1200 - 1500 Byte zu berücksichtigen, die nur für die \acr{prf} benötigt wird. Um diese Probleme zu lösen bzw. die benötigte
 Codegröße und Rechenleistung zu reduzieren wird nun ein neues Ciphersuit definiert.
 
 \section{TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8}
@@ -79,7 +79,7 @@ Nonce verwendet, aus einem Initialisierungsvektor, der Epoche und der Sequenznum
 \end{figure}
 Während die Epoche und die Sequenznummer im \acr{dtls}-Header enthalten sind und in der selben Ordnung (Network Byte Order == Most Signifikant
 Byte first) in der Nonce hinterlegt werden, wird der Initialisierungsvektor nicht mit übertragen und ist implizit bekannt durch Erzeugung des
-Schlüsselblocks innerhalb des Handshakes. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{psr} erzeugt und muss somit
+Schlüsselblocks innerhalb des Handshakes. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{prf} erzeugt und muss somit
 40 Byte lang sein, welche wie folgt aufgeteilt sind:
 \begin{itemize}
   \item ~~0 Byte: client\_write\_MAC\_key
@@ -100,7 +100,7 @@ Da sich die Länge der Nonce durch 15 - L ergibt, und die Länge der Nonce berei
 Damit ist die Länge beschränkt auf 3 MiB, was aber mehr als ausreicht, da in dem betrachteten Umfeld ein Paket maximal 127 Byte groß sein kann, und die zu
 verschlüsselnde Datenmenge aufgrund der abzuziehenden Header noch weit darunter liegt.
 
-Um auf \acr{hmac} und \acr{sha}2 verzichten zu können wird nun noch die \acr{psr} für dieses Ciphersuit definiert.
+Um auf \acr{hmac} und \acr{sha}2 verzichten zu können wird nun noch die \acr{prf} für dieses Ciphersuit definiert.
 Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
 \begin{description}
   \item[master\_secret] PRF(pre\_master\_secret, "`master secret"', client\_random + server\_random)
@@ -108,7 +108,7 @@ Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
   \item[finished] PRF(master\_secret, finished\_label, Hash(handshake\_messages)) \newline wobei finished\_label = "`client finished"' oder "`server finished"'
 \end{description}
 Grundlage zur Berechnung soll der \acr{cbc}-\acr{mac} sein, wobei der \acr{psk} direkt als Schlüssel genutzt wird.
-Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{psr} nun gemäß Abbildung \ref{fig:def_psr} definiert, wobei
+Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildung \ref{fig:def_psr} definiert, wobei
 + die Konkatenation 2er Zeichenketten bedeutet.
 \begin{figure}[ht]
   \centering

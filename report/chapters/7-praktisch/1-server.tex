@@ -1,15 +1,62 @@
 \section{Server}
-gebrauch von er-coap-13 erwähnen
+
+contiki benutzung erwähnen
+
+/home/lars/Dokumente/Bachelorarbeit/contiki/cpu/mc1322x/mc1322x.lds\\
+speicherverbrauch (tabelle) bei änderung der standardkonfiguration auf stack = 1024 -> 2048 und heap = 4096 -> 16 stehen 15 KiB zur Verfügung
+
+econotag/device.c  -> bei knopfdruck speichertabelle zur überwachung von stack und heap. anpassung in 
+
+
+contiki/platform/redbee-econotag/contiki-mc1322x-main.c\\
+\#define STACKMONITOR 1 // addet for init without periodical prints\\
+\#define HEAPMONITOR 1  // addet for init without periodical prints
+
+
+basis erbium -> redbee-econotag nutzung von original contiki problem wegen econotag
+
+gebrauch und erweiterung von er-coap-13 erwähnen (erbium)
+
+und den folgenden 3 abschnitten werden zunächst contiki apps erläutert welche für dtls erstellt wurden und von diesem genutzt werden.\\
+im 4. abschnitt folgt dtls selbst 
+
+\subsection{Contiki-App: "`flash-store"'}
+erwähnen dass aus gobi-projekt aber verbessert / erweitert / geändert
+
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|}
+  \hiderowcolors
+  \hline
+  RO 1 & \multicolumn{2}{l|}{RW 1} & \multicolumn{2}{l|}{RW 2} & \multicolumn{2}{l|}{RO 2} & SR\\
+  \hline
+  $ 0x18000\newline -\newline 0x18 $FFF & $0x19000\newline -\newline 0x19 $FFF & $ 0x1 $A$ 000\newline -\newline 0x1 $AFFF & $ 0x1 $B$ 000\newline -\newline 0x1 $BFFF & $ 0x1 $C$ 000\newline -\newline 0x1 $CFFF & $ 0x1 $D$ 000\newline -\newline 0x1 $DFFF & $ 0x1 $E$ 000\newline -\newline 0x1 $EFFF & $ 0x1 $F$ 000\newline -\newline 0x1 $FFFF\\
+  \hline
+  \multicolumn{2}{|l|}{RW 1} & \multicolumn{2}{l|}{RW 2} & RAD & \multicolumn{2}{l|}{RO} & SR\\
+  \hline
+  \multicolumn{2}{|c|}{$ 0x0000 - 0x0 $FFF} & \multicolumn{2}{c|}{$ 0x1000 - 0x1 $FFF} & \multicolumn{4}{c}{$ \leftarrow $ virtuelle Speicheradressen} \\
+  \cline{1-4}
+  \showrowcolors
+\end{tabular}
+\caption{Aufteilung des erweiterten Flash-Speichers}
+\label{tbl:2-1_2-persistent}
+\end{figure}
+
+\subsection{Contiki-App: "`time"'}
+
+\subsection{Contiki-App: "`ecc"'}
+jens und jens-quellen erwähnen\\
+assembler code erwähnen der in zusammenarbeit mit jens enstanden ist\\
+3 mothoden und varianten kurz erläuterm\\
+neugierig machen auf mehr -> .asm -> carry besser nutzen
+
+\subsection{Contiki-App: "`er-13-dtls"'}
+es kann nur ein handshake zur zeit stattfinden\\
+psk wird nur benötigt bis pre master secret berechnet\\
+am ende des handshakes wird alter psk vernichtet und neuer generiert\\
+kann durch uri /psk über sichere leitung abgerufen werden so dass weitere handshakes durchgeführt werden können
 
 für hello verify cookie: cbc-mac-16(client-ip + clienthello)
 
-\subsection{flash-store}
-erwähnen dass aus gobi-projekt aber verbessert / erweitert / geändert
-
-\subsection{time}
-
-\subsection{ecc}
-jens und jens-quellen erwähnen - ohne änderungen eingebunden
-
-\subsection{er-13-dtls}
-modifikationen in er-13-coap erwähnen
+\subsection{Update-Funktion}
+flasher beschreiben: überschreibt den programmcode jedoch nicht die vom blaster generierten gerätedaten

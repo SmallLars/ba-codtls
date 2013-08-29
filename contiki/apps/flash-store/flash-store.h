@@ -69,6 +69,9 @@
 #define RES_KEY_BLOCK_LIST   600
 #define LEN_KEY_BLOCK_LIST   800
 
+#define LEN_BLOCK_1         1400
+#define LEN_BLOCK_2            1
+
 /**
   * \brief    Zurücksetzen der Blöcke für den Random-Zugriff
   *

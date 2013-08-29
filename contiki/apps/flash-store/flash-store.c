@@ -68,6 +68,7 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
         PRINTF("Schreibfehler - Ungültiger Bereich.\n");
         return gNvmErrInvalidPointer_c;
     }
+    uint16_t block_len = (address < 4096 ? LEN_BLOCK_1 : LEN_BLOCK_2);
 
     address = getAddr(address);
 
@@ -85,7 +86,7 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
     }
     PRINTF("Schreiben auf Adresse: %p\n", dst_block + i);
     nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, src, dst_block + i, numBytes);
-    for (i += numBytes; i < LEN_BLOCK_XX; i++) {
+    for (i += numBytes; i < block_len; i++) {
         uint8_t buf;
         nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, &buf, src_block + i, 1);
         nvm_write(gNvmInternalInterface_c, gNvmType_SST_c, &buf, dst_block + i, 1);
