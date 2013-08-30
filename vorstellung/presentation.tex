@@ -64,8 +64,11 @@
 
 \begin{frame}{Motivation}
   \begin{itemize}
-    \item Projekt GOBI: Mikro-DTLS (eher Mikro-Sicherheit)
-    \item Sicherheit ist auch in eingeschränkten \newline Umgebungen notwendig
+    \item Projekt GOBI
+    \begin{itemize}
+      \item Sicherheit ist auch in eingeschränkten \newline Umgebungen notwendig
+      \item Mikro-DTLS (eher Mikro-Sicherheit)
+    \end{itemize}
     \item TLS und DTLS sind bewährte Standards
     \item DTLS komplexer als TLS
     \item Problematisch in eingeschränkten Umgebungen
@@ -127,7 +130,7 @@
       \qquad \textcolor{blue}{uint16 epoch;}\\
       \qquad \textcolor{blue}{uint48 sequence\_number;}\\
       \qquad uint16 length;\\
-      \qquad uint8 ~~fragment[length];\\
+      \qquad uint8 ~~payload[length];\\
       \} DTLS\_Record;\\
       ~\\
       = 13 Byte
@@ -138,7 +141,7 @@
       \qquad \textcolor{blue}{uint16 message\_seq;}\\
       \qquad \textcolor{blue}{uint24 fragment\_offset;}\\
       \qquad \textcolor{blue}{uint24 fragment\_length;}\\
-      \qquad uint8 ~~fragment[length];\\
+      \qquad uint8 ~~payload[f.\_length];\\
       \} Handshake;\\
       ~\\
       = 12 Byte
@@ -211,7 +214,7 @@
       ~\\
       ~\\
       ~\\
-      = 1 - 3 Byte
+      = 1 - 4 Byte
   \end{columns}
 \end{frame}
 
