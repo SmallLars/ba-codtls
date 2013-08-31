@@ -95,11 +95,11 @@ int main(int argc, char *argv[]) {
                 if (!memcmp("flash", cbuffer, 5)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 6));
                     node_firmware(ip, "device_redbee-econotag.bin");
-                    printf("Flash erfolgreich. Gerät wird neu gestartet");
+                    printf("Flash erfolgreich. Gerät wird neu gestartet ");
                     fflush(stdout);
                     int i;
                     for (i = 0; i < 10; i++) {
-                        printf(" .");
+                        printf(".");
                         fflush(stdout);
                         sleep(1);
                     }

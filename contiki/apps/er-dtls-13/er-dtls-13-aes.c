@@ -140,16 +140,21 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
         }
     #endif
 
-    uint8_t key[16];
-    getPSK(key);
-    PRINTF("Key: %.*s\n", 16, key);
-
     ASM->CONTROL0bits.CLEAR = 1;
+
+    uint8_t buf[16];
+    getPSK(buf);
+    PRINTF("Key: %.*s\n", 16, buf);
+    aes_setData((uint32_t *) &(ASM->KEY0), buf, 16);
+
+    if (finish) {
+        aes_setData((uint32_t *) &(ASM->DATA0), NULL, 0);
+        aes_round();
+        aes_getData(buf, (uint32_t *) &(ASM->CBC0_RESULT), 16);
+    }
 
     aes_setData((uint32_t *) &(ASM->MAC0), mac, 16);
     ASM->CONTROL0bits.LOAD_MAC = 1;
-
-    aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
 
     if (finish) data_len -= 16;
 
@@ -160,17 +165,17 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
     }
 
     if (finish) {
-        uint8_t last_block[16];
-        memset(last_block, 0, 16);
-        memcpy(last_block, data + i, data_len + 16 - i);
+        memset(buf, 0, 16);
+        memcpy(buf, data + i, data_len + 16 - i);
         if (data_len - i) {
-            // < 16
-            // data + i
+            // verbleibende daten < 16
+            //buf[data_len + 16 - i] = 128;
+            //xor_key(buf, 2);
         } else {
-            // = 16
-            // data + i
+            // verbleibende daten = 16
+            //xor_key(buf, 1);
         }
-        aes_setData((uint32_t *) &(ASM->DATA0), last_block, 16);
+        aes_setData((uint32_t *) &(ASM->DATA0), buf, 16);
         aes_round();
     }
 

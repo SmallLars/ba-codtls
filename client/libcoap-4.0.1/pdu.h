@@ -114,7 +114,6 @@ char *coap_response_phrase(unsigned char code);
 #if 0 /* this does not exist any more */
 #define COAP_RESPONSE_100      40 /* 100 Continue */
 #endif
-#define COAP_RESPONSE_102      COAP_RESPONSE_CODE(102)  /* 2.00 Verify */
 #define COAP_RESPONSE_200      COAP_RESPONSE_CODE(200)  /* 2.00 OK */
 #define COAP_RESPONSE_201      COAP_RESPONSE_CODE(201)  /* 2.01 Created */
 #define COAP_RESPONSE_304      COAP_RESPONSE_CODE(203)  /* 2.03 Valid */
