@@ -170,10 +170,10 @@ void dtls_handshake(struct in6_addr *ip) {
     for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.y[i]));
     printf("\n");
 
-    char uri[16];
-    memcpy(uri, "dtls?s=", 7);
-    memcpy(uri + 7, serverHello->session_id.session_id, serverHello->session_id.len);
-    uri[15] = '\0';
+    char uri[14];
+    memcpy(uri, "dtls/", 5);
+    memcpy(uri + 5, serverHello->session_id.session_id, serverHello->session_id.len);
+    uri[13] = '\0';
     memset(buffer, 0, 256);
     uint8_t paylen = 0;
     paylen += makeContent(message, client_key_exchange, &cke, sizeof(KeyExchange_t));

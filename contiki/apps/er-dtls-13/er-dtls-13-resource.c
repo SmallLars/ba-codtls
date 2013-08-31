@@ -57,13 +57,61 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
     const uint8_t *payload = 0;
     size_t pay_len = REST.get_request_payload(request, &payload);
+
     if (pay_len && payload) {
-        size_t query_session_len = 0;
-        const char *query_session = NULL;
-        if ((query_session_len = REST.get_query_variable(request, "s", &query_session))) {
+
+        const char *uri_path = NULL;
+        uint8_t uri_len = REST.get_url(request, &uri_path);
+
+        if (uri_len == 4) {
+            DTLSContent_t *content = (DTLSContent_t *) payload;
+
+            if (content->type == client_hello) {
+                ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
+
+                uint8_t session_len = clienthello->data[0];
+                uint8_t cookie_len = clienthello->data[session_len + 1];
+                uint8_t *old_cookie = buf08;
+                uint8_t *new_cookie = buf08 + 8;
+
+                if (cookie_len > 0) {
+                    // Abspeichern für Finished-Hash
+                    stack_init();
+                    stack_push((uint8_t *) payload, pay_len);
+                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) payload;
+
+                    // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
+                    memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
+                }
+
+                generateCookie(new_cookie, content, &pay_len);
+
+                if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
+                    #if DEBUG
+                        if (cookie_len == 0) PRINTF("ClientHello ohne Cookie erhalten\n");
+                        else PRINTF("ClientHello mit falschem Cookie erhalten\n");
+                    #endif
+                    generateHelloVerifyRequest(buffer, new_cookie, 8);
+
+                    REST.set_response_status(response, UNAUTHORIZED_4_01);
+                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                    REST.set_response_payload(response, buffer + 1, buffer[0]);
+                } else {
+                    PRINTF("ClientHello mit korrektem Cookie erhalten\n");
+                    coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
+
+                    // TODO Parameter von ClientHello überprüfen.
+
+                    // ServerHello wird immer gleich generiert da Server nur
+                    // genau ein Ciphersuit mit einer Konfiguration beherrscht.
+                    generateServerHello(buf32); // Das dauert nun
+                    sendServerHello(NULL, request);
+                }
+            }
+        } else {
             uint32_t i;
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
-            PRINTF("POST für Session: %.*s erhalten.\n", query_session_len, query_session);
+            PRINTF("POST für Session: %.*s erhalten.\n", uri_len - 5, uri_path + 5);
             // TODO check ob ip zur session passt
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
@@ -186,51 +234,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 transaction->packet_len = coap_serialize_message(response, transaction->packet);
                 transaction->callback = NULL;
                 coap_send_transaction(transaction);
-            }
-        } else {
-            DTLSContent_t *content = (DTLSContent_t *) payload;
-
-            if (content->type == client_hello) {
-                ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
-
-                uint8_t session_len = clienthello->data[0];
-                uint8_t cookie_len = clienthello->data[session_len + 1];
-                uint8_t *old_cookie = buf08;
-                uint8_t *new_cookie = buf08 + 8;
-
-                if (cookie_len > 0) {
-                    // Abspeichern für Finished-Hash
-                    stack_init();
-                    stack_push((uint8_t *) payload, pay_len);
-                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) payload;
-
-                    // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
-                    memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
-                }
-
-                generateCookie(new_cookie, content, &pay_len);
-
-                if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
-                    #if DEBUG
-                        if (cookie_len == 0) PRINTF("ClientHello ohne Cookie erhalten\n");
-                        else PRINTF("ClientHello mit falschem Cookie erhalten\n");
-                    #endif
-                    generateHelloVerifyRequest(buffer, new_cookie, 8);
-
-                    REST.set_response_status(response, UNAUTHORIZED_4_01);
-                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                    REST.set_response_payload(response, buffer + 1, buffer[0]);
-                } else {
-                    PRINTF("ClientHello mit korrektem Cookie erhalten\n");
-                    coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
-
-                    // TODO Parameter von ClientHello überprüfen.
-
-                    // ServerHello wird immer gleich generiert da Server nur
-                    // genau ein Ciphersuit mit einer Konfiguration beherrscht.
-                    generateServerHello(buf32); // Das dauert nun
-                    sendServerHello(NULL, request);
-                }
             }
         }
     }
