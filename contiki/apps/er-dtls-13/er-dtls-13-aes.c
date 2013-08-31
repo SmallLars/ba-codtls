@@ -12,6 +12,10 @@
 #if DEBUG
     #include <stdio.h>
     #define PRINTF(...) printf(__VA_ARGS__)
+    void print_hex(uint8_t *d, uint8_t l) {
+        int i;
+        for (i = 0; i < l; i++) printf("%02X", d[i]);
+    }
 #else
     #define PRINTF(...)
 #endif
@@ -23,6 +27,7 @@
 void aes_getData(uint8_t *dest, uint32_t *src, size_t len);
 void aes_setData(uint32_t *dest, uint8_t *src, size_t len);
 void aes_round();
+__attribute__((always_inline)) static void cmac_subkey(uint8_t L[16], uint8_t K);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
@@ -74,9 +79,9 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
     memcpy(abs_0 + 12, &i, 4);                            // Länge der Nachricht
     memcpy(abs_0 + 1, nonce, NONCE_LEN);                  // Nonce
     #if DEBUG
-        PRINTF("b_0 Block für CCM:");
-        for (i = 0; i < 16; i++) PRINTF(" %02X", abs_0[i]);
-        PRINTF("\n");
+        printf("b_0 Block für CCM:");
+        print_hex(abs_0, 16);
+        printf("\n");
     #endif
     aes_setData((uint32_t *) &(ASM->DATA0), abs_0, 16);
     aes_round();
@@ -95,9 +100,9 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
                 abs_0[j] = (index >> ((15-j)*8)) & 0xFF;
             }
             #if DEBUG
-                PRINTF("a[%u] Block für CCM:", index);
-                for (j = 0; j < 16; j++) PRINTF(" %02X", abs_0[j]);
-                PRINTF("\n");
+                printf("a[%u] Block für CCM:", index);
+                print_hex(abs_0, 16);
+                printf("\n");
             #endif
             aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
         }
@@ -116,9 +121,9 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
         abs_0[i] = 0;
     }
     #if DEBUG
-        PRINTF("a[0] Block für CCM:");
-        for (i = 0; i < 16; i++) PRINTF(" %02X", abs_0[i]);
-        PRINTF("\n");
+        printf("a[0] Block für CCM:");
+        print_hex(abs_0, 16);
+        printf("\n");
     #endif
     aes_setData((uint32_t *) &(ASM->CTR0), abs_0, 16);
     memset(abs_0, 0, 16);
@@ -130,21 +135,28 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
 
 void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) {
     #if DEBUG
+        if (data_len == 0) {
+            printf("aes_cmac: Ungültiger Aufruf. data_len == 0 ist nicht zulässig.\n");
+            return;
+        }
         if (!finish && data_len % 16) {
             printf("aes_cmac: Ungütiger Aufruf. Bei finish == 0 muss data_len ein Vielfaches der Blockgröße sein.\n");
             return;
         }
-        if (finish && data_len == 0) {
-            printf("aes_cmac: Ungültiger Aufruf. Finish ist ohne weitere Daten nicht möglich.\n");
-            return;
-        }
     #endif
+
+    uint32_t i;
 
     ASM->CONTROL0bits.CLEAR = 1;
 
     uint8_t buf[16];
     getPSK(buf);
-    PRINTF("Key: %.*s\n", 16, buf);
+    #if DEBUG
+        printf("Key      ");
+        print_hex(buf, 16);
+        printf("\n");
+    #endif
+    
     aes_setData((uint32_t *) &(ASM->KEY0), buf, 16);
 
     if (finish) {
@@ -152,34 +164,57 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
         aes_round();
         aes_getData(buf, (uint32_t *) &(ASM->CBC0_RESULT), 16);
     }
+    #if DEBUG
+        printf("K0       ");
+        print_hex(buf, 16);
+        printf("\n");
+    #endif
 
     aes_setData((uint32_t *) &(ASM->MAC0), mac, 16);
     ASM->CONTROL0bits.LOAD_MAC = 1;
 
     if (finish) data_len -= 16;
 
-    uint32_t i = 0;
     for (i = 0; i < data_len; i+=16) {
         aes_setData((uint32_t *) &(ASM->DATA0), data + i, 16);
         aes_round();
     }
 
     if (finish) {
-        memset(buf, 0, 16);
-        memcpy(buf, data + i, data_len + 16 - i);
-        if (data_len - i) {
-            // verbleibende daten < 16
-            //buf[data_len + 16 - i] = 128;
-            //xor_key(buf, 2);
-        } else {
-            // verbleibende daten = 16
-            //xor_key(buf, 1);
+        data_len += 16;
+        data_len -= i;
+
+        cmac_subkey(buf, data_len == 16 ? 1 : 2);
+        #if DEBUG
+            printf("KX       ");
+            print_hex(buf, 16);
+            printf("\n");
+        #endif
+
+        uint8_t *last_block = data + i;
+
+        for (i = 0; i < data_len; i++) {
+            buf[i] ^= last_block[i];
         }
+
+        if (i < 16) {
+            buf[i] ^= 128;
+            for (i++; i < 16; i++) {
+                buf[i] ^= 0;
+            }
+        }
+
         aes_setData((uint32_t *) &(ASM->DATA0), buf, 16);
         aes_round();
     }
 
     aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), 16);
+
+    #if DEBUG
+        printf("AES_CMAC ");
+        print_hex(mac, 16);
+        printf("\n");
+    #endif
 }
 
 /* Private Funktionen ------------------------------------------------------ */
@@ -206,5 +241,23 @@ void aes_round() {
     ASM->CONTROL0bits.START = 1;
     while (ASM->STATUSbits.DONE == 0) {
         continue;
+    }
+}
+
+__attribute__((always_inline)) static void cmac_subkey(uint8_t L[16], uint8_t K) {
+    while (K > 0) {
+        uint8_t i, msb = L[0] & 0x80;
+        for (i = 0; i < 15; i++) {
+            L[i] <<= 1;
+            L[i] |= (L[i+1] >> 7);
+        }
+        L[15] <<= 1;
+        if (msb) {
+            for (i = 0; i < 15; i++) {
+                L[i] ^= 0;
+            }
+            L[15] ^= 0x87;
+        }
+        K--;
     }
 }
