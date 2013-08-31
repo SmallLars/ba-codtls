@@ -160,7 +160,17 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
     }
 
     if (finish) {
-        aes_setData((uint32_t *) &(ASM->DATA0), data + i, data_len + 16 - i);
+        uint8_t last_block[16];
+        memset(last_block, 0, 16);
+        memcpy(last_block, data + i, data_len + 16 - i);
+        if (data_len - i) {
+            // < 16
+            // data + i
+        } else {
+            // = 16
+            // data + i
+        }
+        aes_setData((uint32_t *) &(ASM->DATA0), last_block, 16);
         aes_round();
     }
 
