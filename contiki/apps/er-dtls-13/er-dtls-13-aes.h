@@ -38,7 +38,7 @@ uint32_t aes_init();
   * \param  mac_only    Falls 1, wird nur die Mac berechnet und an
   *                     Position mac hinterlegt ohne die Daten zu verändern
   */
-void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only);
+void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only);
 
 /**
   * \brief  CBC-MAC-Berechnung
@@ -57,6 +57,6 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
   * \param  data        Position der Daten für die ein MAC berechnet werden soll
   * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
   */
-void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len);
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len);
 
 #endif /* __ER_DTLS_13_CCM_H__ */

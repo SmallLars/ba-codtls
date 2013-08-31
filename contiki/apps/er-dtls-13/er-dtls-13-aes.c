@@ -1,4 +1,4 @@
-#include "er-dtls-13-ccm.h"
+#include "er-dtls-13-aes.h"
 
 #include "mc1322x.h"
 #include "../../core/net/uip.h"
@@ -58,7 +58,7 @@ uint32_t aes_init() {
     return 0;
 }
 
-void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
+void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN], uint8_t mac_only) {
     uint8_t abs_0[16];    // Für a_0, b_0 und s_0 benötigter Speicher
     uint32_t i;
 
@@ -128,7 +128,7 @@ void crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE
     for (i = 0; i < MAC_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
-void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len) {
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len) {
     uint8_t key[16];
     getPSK(key);
     PRINTF("Key: %.*s\n", 16, key);

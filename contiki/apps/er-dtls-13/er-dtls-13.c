@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "er-dtls-13-data.h"
-#include "er-dtls-13-ccm.h"
+#include "er-dtls-13-aes.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -68,8 +68,8 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         uint8_t key[16];
         nvm_getVar(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
         nvm_getVar(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
-        crypt(payload, len, key, nonce, 0);
-        crypt(payload, len, key, nonce, 1);
+        aes_crypt(payload, len, key, nonce, 0);
+        aes_crypt(payload, len, key, nonce, 1);
         uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
         if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
         coapdata->valid = (check == 0 ? 1 : 0);
@@ -115,7 +115,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
         uint8_t nonce[12] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5};
         nvm_getVar(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
         nvm_getVar(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
-        crypt(record->payload + headerAdd, len, key, nonce, 0);
+        aes_crypt(record->payload + headerAdd, len, key, nonce, 0);
 
         uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len + MAC_LEN);
     } else {

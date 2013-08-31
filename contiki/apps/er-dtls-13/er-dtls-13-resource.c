@@ -293,8 +293,8 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 
     uint8_t mac[16];
     memset(mac, 0, 16);
-    cbc_mac_16(mac, src_ip, 16);
-    cbc_mac_16(mac, data, *data_len);
+    aes_cmac(mac, src_ip, 16);
+    aes_cmac(mac, data, *data_len);
     memcpy(dst, mac, 8);
 }
 

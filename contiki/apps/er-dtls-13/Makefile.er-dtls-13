@@ -1,1 +1,1 @@
-er-dtls-13_src = er-dtls-13.c er-dtls-13-resource.c er-dtls-13-data.c er-dtls-13-ccm.c er-dtls-13-random.c er-dtls-13-psk.c er-dtls-13-prf.c
+er-dtls-13_src = er-dtls-13.c er-dtls-13-resource.c er-dtls-13-data.c er-dtls-13-aes.c er-dtls-13-random.c er-dtls-13-psk.c er-dtls-13-prf.c
