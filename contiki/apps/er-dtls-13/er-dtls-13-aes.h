@@ -57,6 +57,6 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
   * \param  data        Position der Daten für die ein MAC berechnet werden soll
   * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
   */
-void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len);
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish);
 
 #endif /* __ER_DTLS_13_CCM_H__ */

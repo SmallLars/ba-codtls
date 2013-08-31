@@ -128,7 +128,18 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
     for (i = 0; i < MAC_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
-void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len) {
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) {
+    #if DEBUG
+        if (!finish && data_len % 16) {
+            printf("aes_cmac: Ungütiger Aufruf. Bei finish == 0 muss data_len ein Vielfaches der Blockgröße sein.\n");
+            return;
+        }
+        if (finish && data_len == 0) {
+            printf("aes_cmac: Ungültiger Aufruf. Finish ist ohne weitere Daten nicht möglich.\n");
+            return;
+        }
+    #endif
+
     uint8_t key[16];
     getPSK(key);
     PRINTF("Key: %.*s\n", 16, key);
@@ -139,11 +150,20 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len) {
     ASM->CONTROL0bits.LOAD_MAC = 1;
 
     aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
-    uint32_t i;
+
+    if (finish) data_len -= 16;
+
+    uint32_t i = 0;
     for (i = 0; i < data_len; i+=16) {
-        aes_setData((uint32_t *) &(ASM->DATA0), data + i, min(16, data_len - i));
+        aes_setData((uint32_t *) &(ASM->DATA0), data + i, 16);
         aes_round();
     }
+
+    if (finish) {
+        aes_setData((uint32_t *) &(ASM->DATA0), data + i, data_len + 16 - i);
+        aes_round();
+    }
+
     aes_getData(mac, (uint32_t *) &(ASM->CBC0_RESULT), 16);
 }
 
