@@ -107,7 +107,7 @@ Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
   \item[key\_block] PRF(master\_secret, "`key expansion"', server\_random + client\_random)
   \item[finished] PRF(master\_secret, finished\_label, Hash(handshake\_messages)) \newline wobei finished\_label = "`client finished"' oder "`server finished"'
 \end{description}
-Grundlage zur Berechnung soll der \acr{cbc}-\acr{mac} sein, wobei der \acr{psk} direkt als Schlüssel genutzt wird.
+Grundlage zur Berechnung soll ein \acr{cmac} auf Basis von \acr{aes} sein, der in RFC 4493 \cite{rfc4493} definiert ist, wobei der \acr{psk} direkt als Schlüssel genutzt wird.
 Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildung \ref{fig:def_psr} definiert, wobei
 + die Konkatenation 2er Zeichenketten bedeutet.
 \begin{figure}[ht]
@@ -115,19 +115,19 @@ Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildun
   \begin{lstlisting}[language=c]
   PRF(secret, label, seed) = P_hash(secret + label + seed)
 
-  P_hash(seed) = CBC-MAC(A(1) + seed) +
-                 CBC-MAC(A(2) + seed) +
-                 CBC-MAC(A(3) + seed) + ...
+  P_hash(seed) = CMAC(A(1) + seed) +
+                 CMAC(A(2) + seed) +
+                 CMAC(A(3) + seed) + ...
   A(0) = seed
-  A(i) = CBC-MAC(A(i-1))
+  A(i) = CMAC(A(i-1))
   
-  CBC_MAC(data) = AES_CBC(psk, data)
+  CMAC(data) = AES-CMAC(psk, data)
   \end{lstlisting}
   \caption{Definition der Pseudo-Random-Funktion}
   \label{fig:def_psr}
 \end{figure}
 
-Um den Hash für die Berechnung der Finished-Nachricht zu ermitteln, wird nun ebenfalls der definierte \acr{cbc}-\acr{mac} benutzt.
+Um den Hash für die Berechnung der Finished-Nachricht zu ermitteln, wird nun ebenfalls der definierte \acr{cmac} benutzt.
 Um die Berechnung zu vereinfachen wird der Hash entgegen dem Vorschlag von K. Hartke und O. Bergmann \cite{draftcodtls} aus den
 Handshake-Nachrichten ermittelt, wie sie über das Netz versendet wurden. Sollte also eine Stateless Header Compression wie in Kapitel
 \ref{sec:headercompression} verwendet werden, dann wird der Hash auf Grundlage der komprimierten Nachrichten berechnet. So können
