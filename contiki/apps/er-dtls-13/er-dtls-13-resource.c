@@ -217,7 +217,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     #endif
                     generateHelloVerifyRequest(buffer, new_cookie, 8);
 
-                    REST.set_response_status(response, VERIFY_1_02);
+                    REST.set_response_status(response, UNAUTHORIZED_4_01);
                     REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
                     REST.set_response_payload(response, buffer + 1, buffer[0]);
                 } else {

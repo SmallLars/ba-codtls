@@ -281,9 +281,20 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
     if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
         debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
         // do nothing, user need to call coap_request again with next block
-    }
-    /* output the received data, if any */
-    else if (COAP_RESPONSE_CLASS(received->hdr->code) <= 2) {
+    } else {
+        /* check if an error was signaled and output payload if so */
+        if (COAP_RESPONSE_CLASS(received->hdr->code) >= 4) {
+            fprintf(stderr, "%d.%02d", (received->hdr->code >> 5), received->hdr->code & 0x1F);
+            if (coap_get_data(received, &len, &databuf)) {
+                fprintf(stderr, " ");
+                while(len--) {
+                    fprintf(stderr, "%c", *databuf++);
+                }
+            }
+            fprintf(stderr, "\n");
+        }
+
+        /* output the received data, if any */
 
         /* set obs timer if we have successfully subscribed a resource */
         if (sent && coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter)) {
@@ -365,18 +376,6 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
                     return;
                 }
             }
-        }
-    } else {      /* no 2.05 */
-        /* check if an error was signaled and output payload if so */
-        if (COAP_RESPONSE_CLASS(received->hdr->code) >= 4) {
-            fprintf(stderr, "%d.%02d", (received->hdr->code >> 5), received->hdr->code & 0x1F);
-            if (coap_get_data(received, &len, &databuf)) {
-                fprintf(stderr, " ");
-                while(len--) {
-                    fprintf(stderr, "%c", *databuf++);
-                }
-            }
-            fprintf(stderr, "\n");
         }
     }
 
