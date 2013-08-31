@@ -45,7 +45,7 @@ in dieser Arbeit keine Anwendung finden.
                   POST /dtls ----1--->
              ClientHello
 
-                             <---2---- 1.02 Verify
+                             <---2---- 4.01 Unauthorized
                                            HelloVerifyRequest
 
                   POST /dtls ----3--->
@@ -59,7 +59,7 @@ in dieser Arbeit keine Anwendung finden.
                                           *CertificateRequest
                                            ServerHelloDone
 
-              POST /dtls?s=X ----5--->
+                POST /dtls/X ----5--->
              Certificate*
        ClientKeyExchange
        CertificateVerify*
@@ -106,7 +106,7 @@ innerhalb eines \acr{coap}-Paketes zu versenden, falls es sich um die Antwort au
 auf der Server-Seite ein Problem auslöst, erwartet der Client vom Server eine \acr{coap}-Antwort. Wird die Benachrichtigung darüber ohne \acr{coap} versendet,
 muss der Client bei Erhalt der Benachrichtigung dafür sorgen, dass die Anfrage aus der darüber liegenden \acr{coap} Schicht entfernt wird, damit diese
 nicht wiederholt wird. Bei Versand der Benachrichtigung über \acr{coap} erledigt sich dies von selbst, da ja eine Antwort auf die Anfrage erhalten wurde.
-Der \acr{coap}-Response-Code ist in diesem Fall "`5.00 Internal Server Error"'. Ein Beispiel dafür ist in Abbildung \ref{fig:coaphandshakefail} zu sehen.
+Der \acr{coap}-Response-Code ist in diesem Fall "`4.02 Bad Option"'. Ein Beispiel dafür ist in Abbildung \ref{fig:coaphandshakefail} zu sehen.
 
 \begin{figure}[ht]
   \centering
@@ -117,7 +117,7 @@ Der \acr{coap}-Response-Code ist in diesem Fall "`5.00 Internal Server Error"'. 
                   POST /dtls -------->
              ClientHello
 
-                             <-------- 5.00 Internal Server Error
+                             <-------- 4.02 Bad Option
                                            Alert(handshake_failure)
   \end{lstlisting}
   \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
