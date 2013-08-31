@@ -130,10 +130,6 @@ typedef enum {
 typedef enum {
   NO_ERROR = 0,
 
-  #ifdef WITH_DTLS
-    VERIFY_1_02 = 34,                   /* VERIFY */
-  #endif
-
   CREATED_2_01 = 65,                    /* CREATED */
   DELETED_2_02 = 66,                    /* DELETED */
   VALID_2_03 = 67,                      /* NOT_MODIFIED */
