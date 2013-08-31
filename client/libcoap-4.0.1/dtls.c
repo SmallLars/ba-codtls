@@ -5,7 +5,7 @@
 #include <netinet/in.h>
 
 #include "dtls_random.h"
-#include "dtls_ccm.h"
+#include "dtls_aes.h"
 #include "dtls_data.h"
 #include "coap_client.h"
 
@@ -50,7 +50,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     uint8_t key[16];
     memcpy(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
 
-    encrypt(record->payload + 1, len, key, nonce);
+    aes_encrypt(record->payload + 1, len, key, nonce);
 
     ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + 1 + payload_length, flags, dest_addr, addrlen);
     send -= (sizeof(DTLSRecord_t) + 1 + MAC_LEN);
@@ -138,7 +138,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         uint8_t key[16];
         memcpy(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
         
-        decrypt(payload, len, key, nonce);
+        aes_decrypt(payload, len, key, nonce);
 
         uint32_t check = memcmp(oldCode, payload + len, MAC_LEN);
         if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");

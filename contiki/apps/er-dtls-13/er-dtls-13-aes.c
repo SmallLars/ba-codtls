@@ -134,6 +134,8 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
 }
 
 void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) {
+    uint32_t i;
+
     #if DEBUG
         if (data_len == 0) {
             printf("aes_cmac: Ungültiger Aufruf. data_len == 0 ist nicht zulässig.\n");
@@ -145,10 +147,6 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
         }
     #endif
 
-    uint32_t i;
-
-    ASM->CONTROL0bits.CLEAR = 1;
-
     uint8_t buf[16];
     getPSK(buf);
     #if DEBUG
@@ -156,6 +154,8 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
         print_hex(buf, 16);
         printf("\n");
     #endif
+
+    ASM->CONTROL0bits.CLEAR = 1;
     
     aes_setData((uint32_t *) &(ASM->KEY0), buf, 16);
 

@@ -21,7 +21,7 @@
   * \param  key         Schlüssel mit dem die Daten verschlüsselt und der MAC erzeugt wird
   * \param  nonce       Nonce die zur Verschlüsselung der Daten herangezogen wird
   */
-void encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
+void aes_encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
 /**
   * \brief    Entschlüsselung
@@ -35,7 +35,7 @@ void encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NON
   * \param  key         Schlüssel mit dem die Daten entschlüsselt und der MAC erzeugt wird
   * \param  nonce       Nonce die zur Entschlüsselung der Daten herangezogen wird
   */
-void decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
+void aes_decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
 /**
   * \brief  CBC-MAC-Berechnung
@@ -54,6 +54,6 @@ void decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NON
   * \param  data        Position der Daten für die ein MAC berechnet werden soll
   * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
   */
-void cbc_mac_16(uint8_t mac[16], uint8_t data[], size_t data_len);
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish);
 
 #endif /* __DTLS_CCM__ */

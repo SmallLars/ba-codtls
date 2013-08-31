@@ -13,6 +13,11 @@
 struct ip_list *liste = NULL;
 uint8_t psk[16];
 
+void printhex(uint8_t *d, uint8_t l) {
+  int i;
+  for (i = 0; i < l; i++) printf("%02X", d[i]);
+}
+
 int main(int argc, char *argv[]) {
     // TODO vor jedem Kompilieren muss derzeit der psk vom econotag gesetzt werden
     memcpy(psk, "ABCDEFGHIJKLMNOP", 16);
