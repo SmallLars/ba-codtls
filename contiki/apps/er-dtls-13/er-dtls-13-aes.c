@@ -163,27 +163,27 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
         aes_setData((uint32_t *) &(ASM->DATA0), NULL, 0);
         aes_round();
         aes_getData(buf, (uint32_t *) &(ASM->CBC0_RESULT), 16);
+        #if DEBUG
+            printf("K0       ");
+            print_hex(buf, 16);
+            printf("\n");
+        #endif
     }
-    #if DEBUG
-        printf("K0       ");
-        print_hex(buf, 16);
-        printf("\n");
-    #endif
 
     aes_setData((uint32_t *) &(ASM->MAC0), mac, 16);
     ASM->CONTROL0bits.LOAD_MAC = 1;
 
-    if (finish) data_len -= 16;
+    for (i = 0; 1; i+=16) {
+        if (finish && data_len <= 16) break;
 
-    for (i = 0; i < data_len; i+=16) {
         aes_setData((uint32_t *) &(ASM->DATA0), data + i, 16);
         aes_round();
+
+        data_len -= 16;
+        if (data_len == 0) break;
     }
 
     if (finish) {
-        data_len += 16;
-        data_len -= i;
-
         cmac_subkey(buf, data_len == 16 ? 1 : 2);
         #if DEBUG
             printf("KX       ");

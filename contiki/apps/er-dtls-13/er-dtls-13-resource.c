@@ -14,7 +14,7 @@
 #define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
-#define DEBUG_PRF 0
+#define DEBUG_PRF 1
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
     #include <stdio.h>
@@ -194,16 +194,37 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 for (i = 20; i < 40; i++) printf("%02X", buf08[i]);
                 printf("\n");
             #endif
-
-            // TODO memcpy löschen. überschreibt derzeit den berechneten keyblock
-            //memcpy(buf08, "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOP11111111", 40);  
             insertKeyBlock(src_ip, (KeyBlock_t *) buf08);
 
-// 0 16 psk[16] 0 64 pointx[32] pointy[32]
-// PRF(pre_master_secret, „master secret“, client_random + server_random)
-// PRF(master_secret, „key expansion“, server_random + client_random)
-// PRF(master_secret, finished_label, Hash(handshake_messages))
-//     wobei finished_label = „client finished“ oder „server finished“
+            // Finished Nachrichten berechnen
+            // buf08 = finished[20] + master_secret[48] + label[15] + hash[16]
+            //         0              20                  68          83
+            memset(buf08 + 83, 0, 16);
+            nvm_getVar(buf08, RES_STACK, 16);
+            for (i = 16; i < stack_size(); i+=16) {
+                aes_cmac(buf08 + 83, buf08, 16, 0);
+                nvm_getVar(buf08, RES_STACK + i, 16);
+            }
+            aes_cmac(buf08 + 83, buf08, stack_size() + 16 - i, 1);
+            memcpy(buf08 + 20, private_key, 48);
+
+            memcpy(buf08 + 68, "client finished", 15);
+            prf(buf08, 12, buf08 + 20, 79);
+            #if DEBUG_PRF
+                printf("Client Finished: ");
+                for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
+                printf("\n");
+            #endif
+
+            memcpy(buf08 + 68, "server finished", 15);
+            prf(buf08, 12, buf08 + 20, 79);
+            #if DEBUG_PRF
+                printf("Server Finished: ");
+                for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
+                printf("\n");
+            #endif
+
+            // Antworten generieren
 
             DTLSContent_t *c;
 

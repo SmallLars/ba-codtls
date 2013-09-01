@@ -81,16 +81,16 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
     EVP_CIPHER_CTX_init(&ctx);
     EVP_EncryptInit(&ctx, EVP_aes_128_cbc(), psk, mac);
 
-    if (finish) data_len -= 16;
+    for (i = 0; 1; i+=16) {
+        if (finish && data_len <= 16) break;
 
-    for (i = 0; i < data_len; i+=16) {
         EVP_EncryptUpdate(&ctx, mac, &cypherLen, data + i, 16);
+
+        data_len -= 16;
+        if (data_len == 0) break;
     }
 
     if (finish) {
-        data_len += 16;
-        data_len -= i;
-
         cmac_subkey(result, data_len == 16 ? 1 : 2);
         #if DEBUG
             printf("KX       ");
