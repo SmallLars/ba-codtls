@@ -39,11 +39,13 @@
 #define LEN_ECC_BASE_X   0x20
 #define RES_ECC_BASE_Y   0x1E048
 #define LEN_ECC_BASE_Y   0x20
-#define RES_NAME         0x1E068
+#define RES_ECC_ORDER    0x1E068
+#define LEN_ECC_ORDER    0x20
+#define RES_NAME         0x1E088
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E088
+#define RES_MODEL        0x1E0A8
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E0A8
+#define RES_FLASHTIME    0x1E0C8
 #define LEN_FLASHTIME    0x04
 
 //Random Access Vars - Byte 0 bis 8192

@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "ecc.h"
 #include "flash-store.h"
 
 /*---------------------------------------------------------------------------*/
@@ -25,7 +26,16 @@ void checkEpochIncrease(uint8_t index, uint16_t epoch);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-int8_t createSession(Session_t *session, uint8_t ip[16]) {
+int8_t createSession(uint32_t *buf, uint8_t ip[16]) {
+    nvm_getVar(buf, RES_ECC_ORDER, LEN_ECC_ORDER);
+    #if DEBUG
+        uint8_t i;
+        printf("ECC_ORDER: ");
+        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf[i]));
+        printf("\n");
+    #endif
+    Session_t *session = (Session_t *) (buf + 8);
+
     // TODO prüfen ob ip schon enthalten. wenn ja nur private key schreiben
     uint8_t list_len;
     nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
@@ -37,7 +47,7 @@ int8_t createSession(Session_t *session, uint8_t ip[16]) {
     session->epoch = 0;
     do {
         random_x((uint8_t *) session->private_key, 32);
-    } while (!ecc_is_valid_key(session->private_key));
+    } while (!ecc_is_valid_key(session->private_key, buf));
 
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));

@@ -149,6 +149,9 @@ void dtls_handshake(struct in6_addr *ip) {
 
     insertKeyBlock(ip, (KeyBlock_t *) prf_buffer);
 
+// PRF(master_secret, finished_label, Hash(handshake_messages))
+//     wobei finished_label = „client finished“ oder „server finished“
+
 // --------------------------------------------------------------------------------------------
 
     KeyExchange_t cke;

@@ -4,6 +4,6 @@
 
 #include "erbium.h"
 
-RESOURCE(device, METHOD_GET, "d","rt=\"device information\";if=\"core.rp\";ct=42");
+RESOURCE(device, METHOD_GET | HAS_SUB_RESOURCES, "d","rt=\"device information\";if=\"core.rp\";ct=42");
 
 #endif /* __ATTRIBUTES_H__ */

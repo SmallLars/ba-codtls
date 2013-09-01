@@ -37,7 +37,7 @@ typedef enum {
 
 // ----------------------------------------------------------------------------
 
-int8_t createSession(Session_t *session, uint8_t ip[16]);
+int8_t createSession(uint32_t *buf, uint8_t ip[16]);
 
 int8_t getSessionData(uint8_t *dst, uint8_t ip[16], SessionDataType type);
 

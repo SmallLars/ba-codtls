@@ -56,7 +56,6 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
 //simple functions to work with the big numbers
 void ecc_setZero(uint32_t *A, const int length);
 int ecc_isOne(const uint32_t* A);
-int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 
 //finite field functions
@@ -70,22 +69,22 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
                     0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
 
 // ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
-static const uint32_t ecc_order_m[8] = {0xFC632551, 0xF3B9CAC2, 0xA7179E84, 0xBCE6FAAD,
-                    0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF};
+//static const uint32_t ecc_order_m[8] = {0xFC632551, 0xF3B9CAC2, 0xA7179E84, 0xBCE6FAAD,
+//                    0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF};
 
-static const uint32_t ecc_order_r[8] = {0x039CDAAF, 0x0C46353D, 0x58E8617B, 0x43190552,
-                    0x00000000, 0x00000000, 0xFFFFFFFF, 0x00000000};
+//static const uint32_t ecc_order_r[8] = {0x039CDAAF, 0x0C46353D, 0x58E8617B, 0x43190552,
+//                    0x00000000, 0x00000000, 0xFFFFFFFF, 0x00000000};
 
 //static const uint32_t ecc_order_mu[9] = {0xEEDF9BFE, 0x012FFD85, 0xDF1A6C21, 0x43190552, //wofür wird die gebraucht?
 //                   0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0x00000000,
 //                   0x00000001};
 
-static const uint8_t ecc_order_k = 8;
+//static const uint8_t ecc_order_k = 8;
 
-const uint32_t ecc_g_point_x[8] = { 0xD898C296, 0xF4A13945, 0x2DEB33A0, 0x77037D81,
-                    0x63A440F2, 0xF8BCE6E5, 0xE12C4247, 0x6B17D1F2};
-const uint32_t ecc_g_point_y[8] = { 0x37BF51F5, 0xCBB64068, 0x6B315ECE, 0x2BCE3357,
-                    0x7C0F9E16, 0x8EE7EB4A, 0xFE1A7F9B, 0x4FE342E2};
+//const uint32_t ecc_g_point_x[8] = { 0xD898C296, 0xF4A13945, 0x2DEB33A0, 0x77037D81,
+//                    0x63A440F2, 0xF8BCE6E5, 0xE12C4247, 0x6B17D1F2};
+//const uint32_t ecc_g_point_y[8] = { 0x37BF51F5, 0xCBB64068, 0x6B315ECE, 0x2BCE3357,
+//                    0x7C0F9E16, 0x8EE7EB4A, 0xFE1A7F9B, 0x4FE342E2};
 
 
 void ecc_setZero(uint32_t *A, const int length){
@@ -119,7 +118,7 @@ int ecc_isSame(const uint32_t *A, const uint32_t *B, uint8_t length){
 }
 
 //is A greater than B?
-static int isGreater(const uint32_t *A, const uint32_t *B, uint8_t length){
+int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length){
     int i;
     for (i = length-1; i >= 0; --i)
     {
@@ -331,7 +330,7 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     //for(n=7;n<8;n++) tempm[n]=B[n+6];
     /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
-    if(isGreater(A, ecc_prime_m, arrayLength) >= 0){
+    if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
         copy(tempm, A, arrayLength);
     }
@@ -362,7 +361,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
     ecc_rshift(result);
     if(n){ //add prime if carry is still set!
         result[7] |= 0x80000000;//add the carry
-        if (isGreater(result, modulus, arrayLength) == 1)
+        if (ecc_isGreater(result, modulus, arrayLength) == 1)
         {
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
@@ -526,9 +525,4 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     }
     copy(Qx, resultx, arrayLength);
     copy(Qy, resulty, arrayLength);
-}
-
-int ecc_is_valid_key(const uint32_t * priv_key)
-{
-    return isGreater(ecc_order_m, priv_key, arrayLength) == 1;
 }

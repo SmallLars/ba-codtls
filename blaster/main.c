@@ -51,11 +51,13 @@
 #define LEN_ECC_BASE_X   0x20
 #define RES_ECC_BASE_Y   0x1E048
 #define LEN_ECC_BASE_Y   0x20
-#define RES_NAME         0x1E068
+#define RES_ECC_ORDER    0x1E068
+#define LEN_ECC_ORDER    0x20
+#define RES_NAME         0x1E088
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E088
+#define RES_MODEL        0x1E0A8
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E0A8
+#define RES_FLASHTIME    0x1E0C8
 #define LEN_FLASHTIME    0x04
 
 // ----------------------------------------------------------------------------
@@ -171,6 +173,16 @@ int main(int nArgs, char **argv) {
     base_y[5] = 0x8ee7eb4a;
     base_y[6] = 0xfe1a7f9b;
     base_y[7] = 0x4fe342e2;
+
+    uint32_t *order = (uint32_t *) (output + RES_ECC_ORDER);
+    order[0] = 0xFC632551;
+    order[1] = 0xF3B9CAC2;
+    order[2] = 0xA7179E84;
+    order[3] = 0xBCE6FAAD;
+    order[4] = 0xFFFFFFFF;
+    order[5] = 0xFFFFFFFF;
+    order[6] = 0x00000000;
+    order[7] = 0xFFFFFFFF;
 
 // Name setzen ----------------------------------------------------------------
     char *name = "DTLS-Testserver";

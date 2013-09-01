@@ -52,11 +52,14 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 5:
-                if (!memcmp("ecc", cbuffer, 3)) {
+                if (!memcmp("psk", cbuffer, 3)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 4));
                     memset(buffer, 0, 512);
-                    node_eccTest(ip, buffer);
-                    printf("Dauer: %s\n", buffer);
+                    node_getPSK(ip, buffer);
+                    printf("PSK: ");
+                    int i;
+                    for (i = 0; i < 16; i++) printf("%02X", buffer[i]);
+                    printf("\n");
                     unknown = 0;
                 }
                 break;

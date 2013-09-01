@@ -46,11 +46,10 @@
 
 //simple functions to work with the big numbers
 int ecc_isSame(const uint32_t *A, const uint32_t *B, uint8_t length);
-int ecc_is_valid_key(const uint32_t * priv_key);
-
+int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty);
-static inline void ecc_ecdh(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
-    ecc_ec_mult(px, py, secret, resultx, resulty);
-}
+
+#define ecc_is_valid_key(key, order) (ecc_isGreater(order, key, arrayLength) == 1)
+#define ecc_ecdh(px, py, secret, resultx, resulty) ecc_ec_mult(px, py, secret, resultx, resulty)
 
 #endif /* ECC_H_ */

@@ -18,6 +18,7 @@
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
     #include <stdio.h>
+    #include "mc1322x.h"
 #endif
 
 #if DEBUG
@@ -133,9 +134,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             memcpy(buf32 + 32, cke->public_key.y, 32);
             uint32_t private_key[12];
             getSessionData((uint8_t *) private_key, src_ip, session_key);
-            PRINTF("ECC - START\n");
+            #if DEBUG
+                printf("ECC - START\n");
+                uint32_t time = *MACA_CLK;
+            #endif
             ecc_ec_mult(buf32 + 24, buf32 + 32, private_key, buf32 + 5, buf32 + 13);
-            PRINTF("ECC - ENDE\n");
+            #if DEBUG
+                time = *MACA_CLK - time;
+                printf("ECC - BEENDET NACH %u MS\n", time / 250);
+            #endif
             #if DEBUG_ECC
                 printf("SECRET_KEY-X: ");
                 for (i = 20; i < 52; i++) printf("%02X", buf08[i]);
@@ -300,7 +307,7 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) {
 
-    if (createSession((Session_t *) buf32, src_ip) == -1) return;
+    if (createSession(buf32, src_ip) == -1) return;
 
     created_offset = stack_size();
 
@@ -364,9 +371,15 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
         for (i = 32; i < 40; i++) printf("%08X", uip_htonl(buf32[i]));;
         printf("\n");
     #endif
-    PRINTF("ECC - START\n");
+    #if DEBUG
+        printf("ECC - START\n");
+        uint32_t time = *MACA_CLK;
+    #endif
     ecc_ec_mult(buf32 + 16, buf32 + 24, buf32 + 32, buf32, buf32 + 8);
-    PRINTF("ECC - ENDE\n");
+    #if DEBUG
+        time = *MACA_CLK - time;
+        printf("ECC - BEENDET NACH %u MS\n", time / 250);
+    #endif
     #if DEBUG_ECC
         printf("_S_PUB_KEY-X: ");
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf32[i]));
