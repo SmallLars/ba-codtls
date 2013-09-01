@@ -28,6 +28,8 @@ ContentType getContentType(void *data);
 
 size_t getContentLen(void *data);
 
+size_t getContentDataLen(void *data);
+
 void *getContentData(void *data);
 
 size_t makeContent(void *dst, ContentType type, void *data, size_t len);

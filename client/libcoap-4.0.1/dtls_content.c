@@ -23,7 +23,7 @@ void *getContent(void *data, size_t len, ContentType type) {
         if (content->type == type) {
             return content;
         }
-        pointer += sizeof(Content_t) + content->len + getContentLen(content);
+        pointer += sizeof(Content_t) + content->len + getContentDataLen(content);
     }
     return 0;
 }
@@ -33,6 +33,11 @@ ContentType getContentType(void *data) {
 }
 
 size_t getContentLen(void *data) {
+    Content_t *content = (Content_t *) data;
+    return sizeof(Content_t) + content->len + getContentDataLen(data);
+}
+
+size_t getContentDataLen(void *data) {
     uint32_t len;
     Content_t *content = (Content_t *) data;
     switch (content->len) {

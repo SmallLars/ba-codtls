@@ -7,6 +7,8 @@
 #include "dtls_serverHello.h"
 #include "dtls_keyExchange.h"
 #include "dtls_data.h"
+#include "dtls_prf.h"
+#include "dtls_aes.h"
 
 //#include <stdlib.h>
 #include <stdio.h>
@@ -20,7 +22,12 @@
 uint32_t base_x[8] = {0xd898c296, 0xf4a13945, 0x2deb33a0, 0x77037d81, 0x63a440f2, 0xf8bce6e5, 0xe12c4247, 0x6b17d1f2};
 uint32_t base_y[8] = {0x37bf51f5, 0xcbb64068, 0x6b315ece, 0x2bce3357, 0x7c0f9e16, 0x8ee7eb4a, 0xfe1a7f9b, 0x4fe342e2};
 
+uint8_t handshake_messages[4096];
+uint16_t handshake_messages_len;
+
 void dtls_handshake(struct in6_addr *ip) {
+    handshake_messages_len = 0;
+
     uint32_t i;
     uint8_t len;
     uint8_t message[128];
@@ -49,6 +56,10 @@ void dtls_handshake(struct in6_addr *ip) {
 // --------------------------------------------------------------------------------------------
 
     len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
+
+    memcpy(handshake_messages + handshake_messages_len, message, len);
+    handshake_messages_len += len;
+
     memset(buffer, 0, 256);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
@@ -62,7 +73,16 @@ void dtls_handshake(struct in6_addr *ip) {
     if (getContentType(buffer) != server_hello) {
         printf("Erwartetes ServerHello nicht erhalten. Abbruch.\n");
         return;
-    }    
+    }
+
+    char *pointer = buffer;
+    for (i = 0; i < 3; i++) {
+        size_t len = getContentLen(pointer);
+        memcpy(handshake_messages + handshake_messages_len, pointer, len);
+        handshake_messages_len += len;
+        pointer += len;
+    }
+
     ServerHello_t *serverHello = (ServerHello_t *) (getContentData(buffer));
     printf("Step 2 done: Session-Id: %.*s\n", serverHello->session_id.len, serverHello->session_id.session_id);
 
@@ -149,9 +169,6 @@ void dtls_handshake(struct in6_addr *ip) {
 
     insertKeyBlock(ip, (KeyBlock_t *) prf_buffer);
 
-// PRF(master_secret, finished_label, Hash(handshake_messages))
-//     wobei finished_label = „client finished“ oder „server finished“
-
 // --------------------------------------------------------------------------------------------
 
     KeyExchange_t cke;
@@ -180,8 +197,36 @@ void dtls_handshake(struct in6_addr *ip) {
     memset(buffer, 0, 256);
     uint8_t paylen = 0;
     paylen += makeContent(message, client_key_exchange, &cke, sizeof(KeyExchange_t));
+
+    memcpy(handshake_messages + handshake_messages_len, message, paylen);
+    handshake_messages_len += paylen;
+
+    // Change Cipher Spec
     uint8_t changeCipherSpec = 1;
     paylen += makeContent(message + paylen, change_cipher_spec, &changeCipherSpec, 1);
+
+    // Finished Nachrichten berechnen
+    uint8_t finished_source[79];
+    uint8_t client_finished[20];
+    uint8_t server_finished[20];
+
+    memset(finished_source + 63, 0, 16);
+    aes_cmac(finished_source + 63, handshake_messages, handshake_messages_len, 1);
+    memcpy(finished_source, master_secret, 48);
+
+    memcpy(finished_source + 48, "client finished", 15);
+    prf(client_finished, 12, finished_source, 79);
+    printf("Client Finished: ");
+    for (i = 0; i < 12; i++) printf("%02X", client_finished[i]);
+    printf("\n");
+
+    memcpy(finished_source + 48, "server finished", 15);
+    prf(server_finished, 12, finished_source, 79);
+    printf("Server Finished: ");
+    for (i = 0; i < 12; i++) printf("%02X", server_finished[i]);
+    printf("\n");
+
+    // Senden
     coap_setPayload(message, paylen);
     coap_setBlock1(0, 1, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
