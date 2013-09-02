@@ -1,4 +1,4 @@
-CONTIKI_PROJECT = device
+CONTIKI_PROJECT = server
 
 CONTIKI = ../contiki
 TARGET = redbee-econotag
