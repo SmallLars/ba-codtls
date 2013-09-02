@@ -9,7 +9,8 @@ Block schon für den Redbee Econotag selbst reserviert ist.
 
 Betrieben wird der Server mit SmartAppContiki \cite{erbium}, das auf Contiki \cite{contiki} basiert, und eine Implementierung von \acr{coap}, in
 der Entwurfsversion 13 \cite{draftcoap13}, enthält. In der Standardkonfiguration benötigt SmartAppContiki, mit einer definierten \acr{coap}-Ressource,
-die ein "`Hallo Welt!"' zurückgibt, 84 KiB.
+die ein "`Hallo Welt!"' zurückgibt, \textasciitilde 84 KiB. Diese Daten teilen sich gemäß Abbildung \ref{tbl:contiki-speicher} auf. Um den benötigten
+Speicher zu optimieren wurde die Größe des "`Sys Stack"' und des "`Heap"' in der Konfigurationsdatei "`contiki/cpu/mc1322x/mc1322x.lds"' angepasst.
 
 \begin{figure}[!ht]
 \centering
@@ -35,22 +36,17 @@ die ein "`Hallo Welt!"' zurückgibt, 84 KiB.
 \label{tbl:contiki-speicher}
 \end{figure}
 
+Das wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerkzeuge. Durch Definieren von periodischen Ausgaben der benutzen Heap
+sowie Sys Stack Größe, in "`contiki/platform/redbee-econotag/contiki-mc1322x-main.c"', können die Auslastungen beobachtet werden. Um diesen Prozess
+effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die periodischen Ausgaben deaktiviert. In "`server/server.c"' lässt sich nun,
+durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
+und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des Handshakes,
+unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
+Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von \textasciitilde
+84 KiB auf \textasciitilde 81 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15 KiB zur
+Verfügung, wobei auch berücksichtig werden muss, dass auch noch die Funktionen des Geräts selbst implementiert werden müssen.
 
 
-größe in der standardkonfiguration 84KiB. durch anpassung 81KiB
-
-/home/lars/Dokumente/Bachelorarbeit/contiki/cpu/mc1322x/mc1322x.lds\\
-speicherverbrauch (tabelle) bei änderung der standardkonfiguration auf stack = 1024 -> 2048 und heap = 4096 -> 16 stehen 15 KiB zur Verfügung
-
-econotag/device.c  -> bei knopfdruck speichertabelle zur überwachung von stack und heap. anpassung in 
-
-
-contiki/platform/redbee-econotag/contiki-mc1322x-main.c\\
-\#define STACKMONITOR 1 // addet for init without periodical prints\\
-\#define HEAPMONITOR 1  // addet for init without periodical prints
-
-
-basis erbium -> redbee-econotag nutzung von original contiki problem wegen econotag
 
 gebrauch und erweiterung von er-coap-13 erwähnen (erbium)
 
