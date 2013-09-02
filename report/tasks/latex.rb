@@ -13,7 +13,7 @@ CLEAN.include %w{aux log toc lof lot}.globit
 CLEAN.include %w{snm vrb}.globit
 # biblatex auxiliary files
 CLEAN.include '**/*-blx.bib'
-CLEAN.include %w{blg bbl}.globit
+CLEAN.include %w{bcf blg bbl}.globit
 # glossaries auxiliary files (glossary, acronyms)
 CLEAN.include %w{glg gls ist glo ind ilg idx acn acr alg}.globit
 # misc (hyperref, todonotes, logreq)

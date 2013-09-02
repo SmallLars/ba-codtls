@@ -1,6 +1,43 @@
 \section{Server}
 
-contiki benutzung erwähnen
+Der Server wird auf einem Redbee Econotag \cite{econotag} realisiert. Der darauf enthaltene Mikrocontroller \glos{mc1322} \cite{mc1322} enthält,
+neben dem IEEE 802.15.4 Funkstandard und einer \acr{aes} Hardware-Engine, 128 KiB Flash-Speicher und 96 KiB RAM-Speicher. Bei Inbetriebnahme
+wird das im Flash-Speicher vorliegende Programm vollständig in den RAM-Speicher kopiert und dort ausgeführt, wodurch sich eine maximale
+Programmgröße von 96 KiB ergibt. Die zusätzlichen 32 KiB Flash-Speicher können somit für die Ablage von Daten genutzt werden, die auch nach einer
+Stromunterbrechung, oder einem Neustart des Geräts, erhalten bleiben sollen. Zu berücksichtigen ist jedoch auch noch, dass der letzte 4 KiB große
+Block schon für den Redbee Econotag selbst reserviert ist.
+
+Betrieben wird der Server mit SmartAppContiki \cite{erbium}, das auf Contiki \cite{contiki} basiert, und eine Implementierung von \acr{coap}, in
+der Entwurfsversion 13 \cite{draftcoap13}, enthält. In der Standardkonfiguration benötigt SmartAppContiki, mit einer definierten \acr{coap}-Ressource,
+die ein "`Hallo Welt!"' zurückgibt, 84 KiB.
+
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{l|r|r}
+  \hiderowcolors
+  \textbf{Beschreibung} & \textbf{Standard} & \textbf{Angepasst}\\
+  \hline
+  Programm        & ~~~~~59248 Byte    & ~~~~~59248 Byte\\
+  Irq Stack       &   256 Byte         &   256 Byte\\
+  Fiq Stack       &   256 Byte         &   256 Byte\\
+  Svc Stack       &   256 Byte         &   256 Byte\\
+  Abt Stack       &    16 Byte         &    16 Byte\\
+  Und Stack       &    16 Byte         &    16 Byte\\
+  Sys Stack       &  1024 Byte         &  2048 Byte\\
+  Datensegment    & 20872 Byte         & 20872 Byte\\
+  Heap            &  4096 Byte         &    16 Byte\\
+  \hline
+  \textbf{Gesamt} & 86040 Byte         & 82984 Byte\\
+                  & $ \approx $ 84 KiB & $ \approx $ 81 KiB\\
+  \showrowcolors
+\end{tabular}
+\caption{Speicheraufteilung von SmartAppContiki}
+\label{tbl:contiki-speicher}
+\end{figure}
+
+
+
+größe in der standardkonfiguration 84KiB. durch anpassung 81KiB
 
 /home/lars/Dokumente/Bachelorarbeit/contiki/cpu/mc1322x/mc1322x.lds\\
 speicherverbrauch (tabelle) bei änderung der standardkonfiguration auf stack = 1024 -> 2048 und heap = 4096 -> 16 stehen 15 KiB zur Verfügung
@@ -21,10 +58,14 @@ und den folgenden 3 abschnitten werden zunächst contiki apps erläutert welche 
 im 4. abschnitt folgt dtls selbst 
 
 \subsection{Contiki-App: "`flash-store"'}
+
+blaster schafft vorraussetzung für RW
+
 erwähnen dass aus gobi-projekt aber verbessert / erweitert / geändert
 
 \begin{figure}[!ht]
 \centering
+\renewcommand{\arraystretch}{1.5}
 \begin{tabular}{|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|p{1.4cm}|}
   \hiderowcolors
   \hline
@@ -38,6 +79,7 @@ erwähnen dass aus gobi-projekt aber verbessert / erweitert / geändert
   \cline{1-4}
   \showrowcolors
 \end{tabular}
+\renewcommand{\arraystretch}{1.0}
 \caption{Aufteilung des erweiterten Flash-Speichers}
 \label{tbl:2-1_2-persistent}
 \end{figure}
@@ -56,7 +98,7 @@ psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\
 kann durch uri /psk über sichere leitung abgerufen werden so dass weitere handshakes durchgeführt werden können
 
-für hello verify cookie: cbc-mac-16(client-ip + clienthello)
+für hello verify cookie: cmac(client-ip + clienthello)
 
 \subsection{Update-Funktion}
 flasher beschreiben: überschreibt den programmcode jedoch nicht die vom blaster generierten gerätedaten

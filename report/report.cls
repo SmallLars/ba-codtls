@@ -153,7 +153,7 @@
 % adjust some lengths
 \setcounter{secnumdepth}{5}%     we've got 5 heading levels that got numbered
 \setcounter{tocdepth}{4}%        show level 4 headings (paragraph) in TOC
-\renewcommand\arraystretch{1.5}% more space in tabular/longtable cells
+\renewcommand\arraystretch{1}% more space in tabular/longtable cells
 \linespread{1.12}%               enlarge linespacing
 \raggedbottom%                   ragged bottom
 \setlength\marginparpush{2pt}%   space between margin notes
@@ -210,8 +210,8 @@
 \egroup}
 
 
-\RequirePackage[toc,section,numberedsection=autolabel,nosuper,numberline,acronym,nosuper,notree]{glossaries}
-
+%\RequirePackage[toc,section,numberedsection=autolabel,nosuper,numberline,acronym,nosuper,notree]{glossaries}
+\RequirePackage[nosuper,numberline,acronym,nosuper,notree]{glossaries}
 
 % redefining ToC, LoF, LoT appearance
 \renewcommand\cfttoctitlefont{\huge\sffamily\color{Night Blue}}

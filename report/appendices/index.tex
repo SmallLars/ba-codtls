@@ -1,4 +1,25 @@
 \appendix
-\chapter{Appendix}
-\input{appendices/lists.tex}
 
+\cleardoublepage\phantomsection
+
+%\listoftables
+
+\printglossary[style=reportacr,type=acronym,title=\abbreviationsname]
+\addcontentsline{toc}{chapter}{\abbreviationsname}
+
+\cleardoublepage\phantomsection\phantomsection\phantomsection
+
+\printglossary[style=report,type=main,title=\glossaryname]
+\addcontentsline{toc}{chapter}{Glossar}
+
+\cleardoublepage\phantomsection\phantomsection\phantomsection\phantomsection\phantomsection
+
+\defbibheading{head}{\chapter*{Literaturverzeichnis}}
+\printbibliography[heading=head]
+\addcontentsline{toc}{chapter}{Literaturverzeichnis}
+
+\cleardoublepage\phantomsection\phantomsection\phantomsection\phantomsection\phantomsection\phantomsection\phantomsection
+
+\addcontentsline{toc}{chapter}{Abbildungsverzeichnis}
+\patchcmd{\listoffigures}{\section}{\chapter*}{}{}
+\listoffigures
