@@ -44,11 +44,11 @@ und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt w
 unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
 Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von \textasciitilde
 84 KiB auf \textasciitilde 81 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15 KiB zur
-Verfügung, wobei auch berücksichtig werden muss, dass auch noch die Funktionen des Geräts selbst implementiert werden müssen.
+Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des Geräts selbst implementiert werden müssen.
 
-
-
-gebrauch und erweiterung von er-coap-13 erwähnen (erbium)
+Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option
+"`Block 1"' fehlt. Diese Option wird von einem Clienten benutzt, der größere Datenmengen mit einer \acr{coap}-Anfrage versenden möchte, um diese Daten in Blöcke
+zu unteteilen, damit es nicht zu einer Fragmentierung auf IP-Ebene kommt. \TODO{fortsetzen ... lösung beschreiben}
 
 und den folgenden 3 abschnitten werden zunächst contiki apps erläutert welche für dtls erstellt wurden und von diesem genutzt werden.\\
 im 4. abschnitt folgt dtls selbst 
