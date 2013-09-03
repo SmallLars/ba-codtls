@@ -63,7 +63,7 @@ typedef struct {
     uint32_t y[8];
 } __attribute__ ((packed)) ECPoint;
 
-typedef struct { // 91 Byte groß
+typedef struct { // 2 + 16 + 3 + 66 = 87 Byte groß
     uint16_t pskHint_len;   // 16
     uint8_t pskHint[16];
     ECParameters curve_params;

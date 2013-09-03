@@ -126,6 +126,19 @@ Abschließend folgt noch ein Block der für den Redbee Econotag selbst reservier
 
 \subsection{Contiki-App: "`time"'}
 
+Im Gegensatz zu herkömmlichen Desktop-Rechnern oder Servern verfügt der Redbee Econotag über keine innere Uhr bezüglich der Realzeit.
+Angeboten wird vom \glos{mc1322} lediglich das Register "`MACA\_CLK"' welches mit einem Takt von 250 KHz erhöht wird. Um damit eine
+32 bit Unixzeit zu generieren, .. \TODO{weitermachen ..., reicht für 4,77 Stunden}
+
+Alternative: CRM\_RTC\_COUNT / CRM\_RTC\_TIMEOUT = Sekunden ... reicht für ca 60 Stunden, je nach Wert der Kalibrierung
+
+nicht so toll, reicht für die testzwecke
+
+problematisch bei stromverlust / betteriewechsel
+
+per interrupt korrekturen wegen überlauf
+
+im gobi master projekt werden eh timer zwecks schlafmodus untersucht
 
 
 \subsection{Contiki-App: "`ecc"'}

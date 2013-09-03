@@ -8,3 +8,5 @@ uint32_t getTime() {
     nvm_getVar((void *) &time, RES_FLASHTIME, LEN_FLASHTIME);
     return time + (*MACA_CLK / 250000);
 }
+
+//printf("RTC_COUNT: %u, RTC_TIMEOUT: %u, Sec: %u\n", *CRM_RTC_COUNT, *CRM_RTC_TIMEOUT, *CRM_RTC_COUNT / *CRM_RTC_TIMEOUT);
