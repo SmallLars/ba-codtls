@@ -47,11 +47,25 @@ Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese
 Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des Geräts selbst implementiert werden müssen.
 
 Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option
-"`Block 1"' fehlt. Diese Option wird von einem Clienten benutzt, der größere Datenmengen mit einer \acr{coap}-Anfrage versenden möchte, um diese Daten in Blöcke
-zu unteteilen, damit es nicht zu einer Fragmentierung auf IP-Ebene kommt. \TODO{fortsetzen ... lösung beschreiben}
+"`Block 1"' fehlt. Diese Option wird von einem Clienten benutzt, um größere Datenmengen, in einer \acr{coap}-Anfrage, in Blöcke zu unterteilen, damit es nicht
+zu einer Fragmentierung auf IP-Ebene kommt. Da diese Funktion für den \acr{dtls}-Handshake notwendig ist, wurde sie für Datenmengen bis 128 Byte nachgerüstet,
+wobei dieser Wert in der Datei "`contiki/apps/er-coap-13/er-coap-13.h"' durch Änderung von "`COAP\_BLOCK1\_BUFFER\_SIZE"' eingestellt werden kann. Übertragen
+werden mit Hilfe der Option ein ClientHello oder ClientKeyExchange + ChangeCipherSpec + Finished, wobei die Länge von letzterem mit insgesamt 112 Byte
+(87 + 3 + 22), durch die einzig definierte Ciphersuit, fest ist. Anders ist dies bei dem ClientHello, welches durch eine Vielzahl, vom Client beherrschter
+Ciphersuits, sehr viel größer als 128 Byte werden kann. Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`5.01 NOT IMPLEMENTED"' mit einem
+Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an Ciphersuits reduzieren kann, um der maximalen Größe gerecht zu werden.
 
-und den folgenden 3 abschnitten werden zunächst contiki apps erläutert welche für dtls erstellt wurden und von diesem genutzt werden.\\
-im 4. abschnitt folgt dtls selbst 
+Während bisher jede \acr{coap}-Anfrage in der \acr{coap} 13 Implementierung zu einem Aufruf des entsprechenden Ressource-Handlers geführt hat, verhält sich
+dies bei einer \acr{coap}-Anfrage mit der Block 1-Option anders. Hier werden die Daten zunächst in einem Buffer gesammelt und ein Aufruf des Ressource-Handlers
+vermieden, wobei der Empfang jedes Blocks bestätigt wird. Erst bei Eintreffen des letzten Blocks, wenn die Anfrage vollständig ist, wird der Ressource-Handler
+aufgerufen, um die Anfrage zu bearbeiten und eine Antwort zu generieren. Um an die Daten der Anfrage zu gelangen, dient die Methode "`coap\_get\_payload"'.
+Diese wurde so angepasst, dass sie bei einer Anfrage ohne Block 1-Option wie gewohnt auf die Daten des aktuellen Pakets zeigt, bei einer Anfrage mit Block 1-Option
+jedoch auf den Buffer zeigt. In diesem Moment wird der Buffer als gelesen markiert, so dass ein erneuter Aufruf von "`coap\_get\_payload"' wieder auf die Daten
+des aktuellen Pakets zeigt.
+
+Während bisher allgemeine Anpassungen von SmartAppContiki bzw. dem darin enthaltenen \acr{coap} 13 beschrieben wurden, folgt in den nächsten 3 Abschnitten
+die Erläuterung von 3 implementierten Contiki-Apps, welche für die Realisierung von \acr{dtls} notwendig sind. Die Implementierung von \acr{dtls} wird dann
+im 4. Abschnitt erläutert, wonach abschließend noch eine Update-Funktion erläutert wird, die für \acr{dtls} nicht notwendig ist, aber dessen Umfeld berücksichtigt.
 
 \subsection{Contiki-App: "`flash-store"'}
 
