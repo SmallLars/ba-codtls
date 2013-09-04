@@ -13,7 +13,7 @@
 #include "node_com.h"
 #include "ip_tools.h"
 #include "coap_client.h"
-#include "libcoap-4.0.1/dtls_handshake.h"
+#include "dtls/dtls_handshake.h"
 
 /* Private Funktionsprototypen --------------------------------------------- */
 

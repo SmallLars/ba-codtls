@@ -35,7 +35,7 @@
 #include "encode.h"
 #include "net.h"
 
-#include "dtls.h"
+#include "../dtls/dtls.h"
 
 #ifndef WITH_CONTIKI
 
