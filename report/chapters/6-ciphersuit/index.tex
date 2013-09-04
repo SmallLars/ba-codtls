@@ -41,7 +41,7 @@ verwendet werden, was außerhalb der Möglichkeiten des Mikrocontrollers liegt. 
 Diese basiert auf \acr{hmac} mit \acr{sha}2 was die größe des Programms relevant erhöht. Laut dem Internet-Entwurf "`A Hitchhiker's
 Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} von H. Tschofenig, S.S. Kumar und S. Keoh werden
 2.928 Byte für \acr{hmac} und 2.432 Byte für \acr{sha} benötigt. \acr{sha}2 ist hier leider nicht mit aufgeführt. Zu Beachten ist bei diesen Angaben
-jedoch, dass es sich hier um 64-Bit-Code handelt. Da der in dieser Arbeit benutzte Mikrocontroller jedoch mit 16-Bit Code betrieben wird, ist hier
+jedoch, dass es sich hier um 64-Bit-Code handelt. Da der in dieser Arbeit benutzte Mikrocontroller jedoch mit 16-Bit-Code betrieben wird, ist hier
 eher eine Größe von ca 1200 - 1500 Byte zu berücksichtigen, die nur für die \acr{prf} benötigt wird. Um diese Probleme zu lösen bzw. die benötigte
 Codegröße und Rechenleistung zu reduzieren wird nun ein neues Ciphersuit definiert.
 

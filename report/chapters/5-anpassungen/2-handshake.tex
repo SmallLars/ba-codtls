@@ -96,7 +96,7 @@ jedes einzelne \acr{dtls}-Paket einen vollständigen \acr{dtls}-Record-Header ha
 \end{figure}
 
 Dieser wurde abgeleitet vom Handshake-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
-enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten 6 Bits der in
+enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits der in
 \acr{tls}/\acr{dtls} definierte Wert für den Handshake-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
 Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{tls}/\acr{dtls} definierten Handshake-Typen werden die folgenden
 beiden Typen definiert: \textit{change\_cipher\_spec} (32) und \textit{alert} (33).

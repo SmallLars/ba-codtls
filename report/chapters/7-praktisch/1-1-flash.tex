@@ -42,7 +42,7 @@ zu müssen. Dieser kann nur beschrieben werden, falls die betroffene Position vo
 Um Datenverluste zu vermeiden, werden jeweils zwei 4 KiB große Blöcke benutzt, um einen 4 KiB großen Speicher zu realisieren, der sich durch virtuelle Adressen
 ansprechen lässt, welche ebenfalls in Abbildung \ref{tbl:2-1_2-persistent} aufgeführt sind. Die Daten sind immer nur in einem Block gespeichert, während der andere
 Block gelöscht ist. Kommt es zu einem Schreibvorgang, wird der Datenblock in den leeren Block kopiert, wobei die gewünschten Änderungen realisiert werden.
-Die Position der beiden RW-Blöcke befindet sich nun am Anfang, da sich so die Adressen, der jeweils zusammengehörenden Blöcke, genau um 1 Bit unterscheiden.
+Die Position der beiden RW-Blöcke befindet sich nun am Anfang, da sich so die Adressen, der jeweils zusammengehörenden Blöcke, genau um ein Bit unterscheiden.
 Das vereinfacht die Berechnung der Quell- und Ziel-Adresse erheblich, so dass durch Optimierung des Quellcodes 70 Byte an Programmgröße eingespart werden.
 
 Problemtisch ist jedoch die Dauer und der Energieverbrauch bei einem Schreibzugriff dieser Art. Um eine effizientere Ablage von Daten zu ermöglichen folgt

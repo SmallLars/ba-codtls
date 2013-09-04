@@ -9,7 +9,7 @@ Neben dem Überlauf haben beide Quellen das Problem, dass die Register bei Einsc
 keinerlei Bezug zur Realzeit haben.
 
 Contiki löst einen Teil der genannten Probleme und stellt die Funktion "`clock\_seconds"' zur Verfügung. Diese kümmert sich um den Überlauf
-und berechnet laufend die, seit dem Einschalten des Econotags, vergangenen Sekunden. Diese werden in einer 32 Bit Variablen gespeichert,
+und berechnet laufend die, seit dem Einschalten des Econotags, vergangenen Sekunden. Diese werden in einer 32-bit-Variablen gespeichert,
 wodurch ein Überlauf erst nach \textasciitilde 136 Jahren vorkommen kann.
 
 Um den Bezug zur Realzeit herzustellen, wird die aktuelle Unixzeit vom Blaster generiert und im RO-Teil des Flash-Speichers hinterlegt.

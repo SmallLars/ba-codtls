@@ -1,6 +1,23 @@
 \subsection{Contiki-App: "`ecc"'}
 
-jens und jens-quellen erwähnen\\
+Für die Berechnung von elliptischen Kurven wurde im Bachelor-Projekt GOBI von Jens Trillmann ein C-Programm implementiert.
+Dieses basiert auf einer Implementierung für einen 8-bit Mikrocontroller \cite{eccori}, wurde jedoch für 32-bit-Prozessoren optimiert.
+Getestet und benutzt wird diese Implementierung bisher nur auf Desktop-Rechnern, wobei hier die Ausführung der Berechnungen in nicht
+wahrnehmbarer Zeit erledigt wird.
+
+Um die Berechnungen auch auf dem Redbee Econotag durchzuführen, wird die Implementierung in eine eigene Contiki-App übernommen.
+Da der \glos{mc1322}-Mikrocontroller ebenfalls 32-bit-Berechnungen durchführt, ist dies zunächst direkt möglich. Im Gegensatz
+zu Prozessoren in Desktop-Systemen arbeitet der Mikrocontroller jedoch mit einer wesentlich geringen Taktfrequenz, so dass sich
+die benötigte Rechenzeit für eine Multiplikation auf elliptischen Kurven auf 13 Sekunden beläuft. In Zusammenarbeit mit Jens
+Trillmann sind deshalb zunächst die drei Grundfunktionen "`Addition"', "`Subtraktion"' und "`Right-Shift"' für große Zahlen in
+Assembler realisiert worden, um die Berechnung schneller zu machen. Weitere Optimierungen sollen in der Bachelorarbeit von Jens
+Trillmann folgen.
+
+Auf Basis des "`ARM GCC Inline Assembler Cookbook"' \cite{armasm} sind für die Addition 3 Varianten 
+
+
 assembler code erwähnen der in zusammenarbeit mit jens enstanden ist\\
 3 methoden und varianten kurz erläuterm\\
 neugierig machen auf mehr -> .asm -> carry besser nutzen
+
+auslagerung des base points und der Ordnung

@@ -20,7 +20,7 @@ komprimieren.
   \label{fig:com_handshake_header}
 \end{figure}
 
-Der RecordType (T) kann mit 2 Bit folgende 4 Zustände annehmen: \textit{8-Bit-Feld} (0), \textit{Alert} (1), \textit{Handshake} (2) und
+Der RecordType (T) kann mit zwei Bit folgende 4 Zustände annehmen: \textit{8-Bit-Feld} (0), \textit{Alert} (1), \textit{Handshake} (2) und
 \textit{Anwendungsdaten} (3). Trotz Realisierung des Handshakes über \acr{coap} ist diese Unterteilung notwendig, damit auch der DTLS-Layer über die
 Art des Inhalts informiert ist und speziell die direkt für ihn bestimmten Daten bearbeiten kann. Hierzu gehören die Daten des Alert-Protokolls,
 welche ohne \acr{coap} übertragen werden. Bei den Anwendungsdaten muss außerdem überprüft werden, dass diese nicht innerhalb der Epoche 0, ohne
@@ -30,7 +30,7 @@ diese innerhalb eines 1 Byte langen Typenfeldes an den Header gehangen werden, w
 Byte wird dann der im \acr{tls}/\acr{dtls} definierte Wert hinterlegt. So ist es auch möglich die 3 direkt definierten Werte unkomprimiert zu
 versenden. Die komprimierten Werte wurden so angeordnet, dass durch Addition von 20 die in \acr{tls}/\acr{dtls} definierten Werte ermittelt werden können.
 
-Die Version (V) kann mit 2 Bit folgende 4 Zustände annehmen von denen 3 Benutzt werden: \textit{\acr{dtls} 1.0} (0), \textit{16-Bit-Feld} (1) und
+Die Version (V) kann mit zwei Bit folgende 4 Zustände annehmen von denen 3 Benutzt werden: \textit{\acr{dtls} 1.0} (0), \textit{16-Bit-Feld} (1) und
 \textit{\acr{dtls} 1.2} (2). \acr{dtls} 1.0 und \acr{dtls} 1.2 können hier direkt definiert werden, da \acr{dtls} 1.0 weit verbreitet
  und \acr{dtls} 1.2 die aktuellste Version ist. Auf \acr{dtls} 1.1 wurde verzichtet, da Implementierungen die über \acr{dtls} 1.0 hinaus gehen im Allgemeinen auch
 \acr{dtls} 1.2 unterstützen. Auch hier ist es möglich weitere Versionen an den Header anzuhängen, in dem V auf 1 gesetzt wird wobei hier mit 2 Byte das in \acr{tls}
@@ -43,11 +43,11 @@ weitere Epochen möglich sind ohne den Header zu vergrößern. Sollten höhere W
 durch \acr{dtls} vorgebenen Bereich vollständig abdeckt. Alternativ kann durch den Wert 7 signalisiert werden, dass es sich bei der Epoche um die gleiche
 handelt, wie bei dem vorausgehenden \acr{dtls}-Paket innerhalb des gleichen \acr{udp}-Pakets.
 
-Für die Sequenz-Nummer (S) sind mit 3 Bit 8 Zustände möglich. Während mit den Werten 1 bi 6 die Länge in Byte der angehängten Sequenz-Nummer angegeben wird,
+Für die Sequenz-Nummer (S) sind mit drei Bit 8 Zustände möglich. Während mit den Werten 1 bi 6 die Länge in Byte der angehängten Sequenz-Nummer angegeben wird,
 kann durch den Wert 0 die Angabe unterbunden werden. Im Allgemeinen wird die Sequenz-Nummer in Verbindung mit der Epoche zur Berechnung des \acr{mac}s herangezogen.
 Jedoch gibt es \glospl{ciphersuit} die andere Mechanismen verwenden, so dass keine Sequenz-Nummer notwendig ist. Falls mehrere \acr{dtls}-Pakete innerhalb eines
 \acr{udp}-Pakets enthalten sind, kann die Sequenz-Nummer durch den Wert 7 auch relativ zum Vorgänger-Paket (+1) angegeben werden.
 
-Schließlich folgt noch ein 2 Bit Wert für die Länge. Falls im \acr{udp}-Paket nur ein \acr{dtls}-Paket enthalten ist, kann hier der Wert 0 gesetzt werden, wodurch
+Schließlich folgt noch ein zwei Bit Wert für die Länge. Falls im \acr{udp}-Paket nur ein \acr{dtls}-Paket enthalten ist, kann hier der Wert 0 gesetzt werden, wodurch
 keine Länge angegeben wird. Diese ist durch die Länge des \acr{udp}-Pakets implizit bekannt. Mit den Werten 1 und 2 kann die Länge in Byte der angehängten Länge
 angegeben werden, während durch den Wert 3 das letzte \acr{dtls}-Paket im \acr{udp}-Paket gekennzeichnet wird, dessen Länge wieder implizit bekannt ist.

@@ -2,29 +2,15 @@
 
 #include <string.h>
 
-#define ALGO 2
+#define ALGO 3
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
 //  1 | ASM          |   -20 | Mittel          | Funktioniert
-//  2 | ASM 1,2,4,8  |  +168 | Schnell         | Funktioniert
-//  3 | ASM nur 8    |   +96 | Schnell         | Unbrauchbar für ECC
+//  2 | 1,2,4,8,2x8  |  +168 | Schnell         | Funktioniert - Interpolation von 512-bit-Addition durch 2 bis 3 256-bit-Additionen
+//  3 | 1,2,4,8,16   |  +212 | Schnell         | Funktioniert
+//  4 | ASM nur 8    |   +96 | Schnell         | Funktioniert - Unbrauchbar für ECC da nur 256-bit-Addition nicht ausreicht
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
-
-// Unterstützung für 512 Bit Addition bei ALGO 2 und 3 -> + 84 Byte Größe
-#if ALGO == 2 || ALGO == 3
-    if (length == 16) {
-        uint8_t c1 = ecc_add(x, y, result, 8);
-        uint8_t c2 = ecc_add(x + 8, y + 8, result + 8, 8);
-        if (c1) {
-            uint32_t z[8];
-            memset(z, 0, 32);
-            z[0] = 0x0000001;
-            c2 |= ecc_add(result + 8, z, result + 8, 8);
-        }
-        return c2;
-    }
-#endif
 
 #if ALGO == 0
     uint8_t d = 0; // carry
@@ -94,6 +80,18 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
 #endif
 
 #if ALGO == 2
+    if (length == 16) {
+        uint8_t c1 = ecc_add(x, y, result, 8);
+        uint8_t c2 = ecc_add(x + 8, y + 8, result + 8, 8);
+        if (c1) {
+            uint32_t z[8];
+            memset(z, 0, 32);
+            z[0] = 0x0000001;
+            c2 |= ecc_add(result + 8, z, result + 8, 8);
+        }
+        return c2;
+    }
+
     uint32_t total;
     uint32_t toAdd;
 
@@ -194,6 +192,173 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
 #endif
 
 #if ALGO == 3
+    uint32_t total;
+    uint32_t toAdd;
+
+    asm volatile(
+            "cmp %[l], #2 \n\t"
+            "beq .add2 \n\t"
+            "bhi .add4or8or16 \n\t"
+        ".add1: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "b .foot \n\t"
+        ".add2: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+            "b .foot \n\t"
+        ".add4or8or16: \n\t"
+            "cmp %[l], #8 \n\t"
+            "beq .add8 \n\t"
+            "bhi .add16 \n\t"
+        ".add4: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+            "ldr %[t], [%[x],#8] \n\t"
+            "ldr %[s], [%[y],#8] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#8] \n\t"
+            "ldr %[t], [%[x],#12] \n\t"
+            "ldr %[s], [%[y],#12] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#12] \n\t"
+            "b .foot \n\t"
+        ".add8: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+            "ldr %[t], [%[x],#8] \n\t"
+            "ldr %[s], [%[y],#8] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#8] \n\t"
+            "ldr %[t], [%[x],#12] \n\t"
+            "ldr %[s], [%[y],#12] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#12] \n\t"
+            "ldr %[t], [%[x],#16] \n\t"
+            "ldr %[s], [%[y],#16] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#16] \n\t"
+            "ldr %[t], [%[x],#20] \n\t"
+            "ldr %[s], [%[y],#20] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#20] \n\t"
+            "ldr %[t], [%[x],#24] \n\t"
+            "ldr %[s], [%[y],#24] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#24] \n\t"
+            "ldr %[t], [%[x],#28] \n\t"
+            "ldr %[s], [%[y],#28] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#28] \n\t"
+            "b .foot \n\t"
+        ".add16: \n\t"
+            "ldr %[t], [%[x],#0] \n\t"
+            "ldr %[s], [%[y],#0] \n\t"
+            "add %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#0] \n\t"
+            "ldr %[t], [%[x],#4] \n\t"
+            "ldr %[s], [%[y],#4] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#4] \n\t"
+            "ldr %[t], [%[x],#8] \n\t"
+            "ldr %[s], [%[y],#8] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#8] \n\t"
+            "ldr %[t], [%[x],#12] \n\t"
+            "ldr %[s], [%[y],#12] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#12] \n\t"
+            "ldr %[t], [%[x],#16] \n\t"
+            "ldr %[s], [%[y],#16] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#16] \n\t"
+            "ldr %[t], [%[x],#20] \n\t"
+            "ldr %[s], [%[y],#20] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#20] \n\t"
+            "ldr %[t], [%[x],#24] \n\t"
+            "ldr %[s], [%[y],#24] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#24] \n\t"
+            "ldr %[t], [%[x],#28] \n\t"
+            "ldr %[s], [%[y],#28] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#28] \n\t"
+            "ldr %[t], [%[x],#32] \n\t"
+            "ldr %[s], [%[y],#32] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#32] \n\t"
+            "ldr %[t], [%[x],#36] \n\t"
+            "ldr %[s], [%[y],#36] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#36] \n\t"
+            "ldr %[t], [%[x],#40] \n\t"
+            "ldr %[s], [%[y],#40] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#40] \n\t"
+            "ldr %[t], [%[x],#44] \n\t"
+            "ldr %[s], [%[y],#44] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#44] \n\t"
+            "ldr %[t], [%[x],#48] \n\t"
+            "ldr %[s], [%[y],#48] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#48] \n\t"
+            "ldr %[t], [%[x],#52] \n\t"
+            "ldr %[s], [%[y],#52] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#52] \n\t"
+            "ldr %[t], [%[x],#56] \n\t"
+            "ldr %[s], [%[y],#56] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#56] \n\t"
+            "ldr %[t], [%[x],#60] \n\t"
+            "ldr %[s], [%[y],#60] \n\t"
+            "adc %[t], %[t], %[s] \n\t"
+            "str %[t], [%[r],#60] \n\t"
+        ".foot: \n\t"
+            "bcc .nocarry \n\t"
+            "mov %[t], #1 \n\t"
+            "b .end \n\t"
+        ".nocarry: \n\t"
+            "mov %[t], #0 \n\t"
+        ".end: \n\t"
+    : /* out */
+        [t] "+r" (total),
+        [s] "+r" (toAdd)
+    : /* in */
+        [x] "r" (x),
+        [y] "r" (y),
+        [r] "r" (result),
+        [l] "r" (length)
+    : /* clobber list */
+        "memory"
+    );
+
+    return total;
+#endif
+
+#if ALGO == 4
     uint32_t total;
     uint32_t toAdd;
 
