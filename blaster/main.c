@@ -195,7 +195,7 @@ int main(int nArgs, char **argv) {
     fprintf(stderr, "Model: %s\n", model);
 
 // Zeit setzen ----------------------------------------------------------------
-    time_t my_time = time(NULL) + 34;
+    time_t my_time = time(NULL) + 37;
     memcpy(output + RES_FLASHTIME, (void *) &my_time, LEN_FLASHTIME);
     struct tm *timeinfo = localtime(&my_time);
     char b[64];

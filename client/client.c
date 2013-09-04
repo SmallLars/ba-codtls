@@ -124,6 +124,15 @@ int main(int argc, char *argv[]) {
                     unknown = 0;
                 }
                 break;
+            case 9:
+                if (!memcmp("settime", cbuffer, 7)) {
+                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 8));
+                    memset(buffer, 0, 512);
+                    node_setTime(ip, buffer);
+                    printf("Zeitupdate gesendet\n");
+                    unknown = 0;
+                }
+                break;
             case 11:
                 if (!memcmp("handshake", cbuffer, 9)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 10));

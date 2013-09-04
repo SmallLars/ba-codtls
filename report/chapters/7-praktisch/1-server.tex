@@ -127,19 +127,23 @@ Abschließend folgt noch ein Block der für den Redbee Econotag selbst reservier
 \subsection{Contiki-App: "`time"'}
 
 Im Gegensatz zu herkömmlichen Desktop-Rechnern oder Servern verfügt der Redbee Econotag über keine innere Uhr bezüglich der Realzeit.
-Angeboten wird vom \glos{mc1322} lediglich das Register "`MACA\_CLK"' welches mit einem Takt von 250 KHz erhöht wird. Um damit eine
-32 bit Unixzeit zu generieren, .. \TODO{weitermachen ..., reicht für 4,77 Stunden}
+Angeboten wird vom \glos{mc1322} das Register "`MACA\_CLK"' welches mit einem Takt von 250 KHz erhöht wird. Dieses läuft, bedingt durch
+seine Breite von 32 Bit, jedoch alle 4,77 Stunden über, so dass ohne weitere Eingriffe keine direkte Berechnung der Zeit möglich ist.
+Ähnlich verhält es sich mit dem Register "`CRM\_RTC\_COUNT"' welches im Takt von "`CRM\_RTC\_TIMEOUT"' Hz erhöht wird.
+Dieser Wert wird von Contiki eingestellt und liegt bei \textasciitilde 20 KHz. Dadurch erfolgt hier ein Überlauf nach ungefähr 60 Stunden.
+Neben dem Überlauf haben beide Quellen das Problem, dass die Register bei Einschalten des Econotags bei 0 anfangen, und die Werte somit
+keinerlei Bezug zur Realzeit haben.
 
-Alternative: CRM\_RTC\_COUNT / CRM\_RTC\_TIMEOUT = Sekunden ... reicht für ca 60 Stunden, je nach Wert der Kalibrierung
+Contiki löst einen Teil der genannten Probleme und stellt die Funktion "`clock\_seconds"' zur Verfügung. Diese kümmert sich um den Überlauf
+und berechnet laufend die, seit dem Einschalten des Econotags, vergangenen Sekunden. Diese werden in einer 32 Bit Variablen gespeichert,
+wodurch ein Überlauf erst nach \textasciitilde 136 Jahren vorkommen kann.
 
-nicht so toll, reicht für die testzwecke
-
-problematisch bei stromverlust / betteriewechsel
-
-per interrupt korrekturen wegen überlauf
-
-im gobi master projekt werden eh timer zwecks schlafmodus untersucht
-
+Um den Bezug zur Realzeit herzustellen, wird die aktuelle Unixzeit vom Blaster generiert und im RO-Teil des Flash-Speichers hinterlegt.
+Diese Zeit spiegelt somit den Herstellungszeitpunkt wieder. Wird die aktuelle Zeit benötigt, kann diese durch Addition der von Contiki
+ermittelten Sekunden und der Unixzeit berechnet werden. Das funktioniert natürlich nur so lange, wie der Redbee Econotag nach dem Flashen
+ununterbrochen mit Strom versorgt wird. Um eine Korrektur zu ermöglichen, bietet die App eine Methode an, um die aktuelle Uhrzeit zu setzen.
+Diese wird mit der alten Zeit vergleichen um einen Korrekturwert zu ermitteln der in einer globalen Variablen hinterlegt wird. Hier macht es
+keinen Sinn diesen im Flash-Speicher abzulegen, da er nach einem Batteriewechsel direkt wieder veraltert wäre.
 
 \subsection{Contiki-App: "`ecc"'}
 jens und jens-quellen erwähnen\\

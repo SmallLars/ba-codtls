@@ -34,6 +34,7 @@ PROCESS_THREAD(server_firmware, ev, data) {
     rest_init_engine();
 
     rest_activate_resource(&resource_device);
+    rest_activate_resource(&resource_time);
     rest_activate_resource(&resource_flasher);
 
 	while(1) {

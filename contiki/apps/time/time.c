@@ -1,13 +1,15 @@
 #include "time.h"
 
-// #include "mc1322x.h"
 #include "flash-store.h"
+
+uint32_t correction = 0;
 
 uint32_t getTime() {
     uint32_t time;
     nvm_getVar((void *) &time, RES_FLASHTIME, LEN_FLASHTIME);
-    return time + clock_seconds();
+    return time + correction + clock_seconds();
 }
 
-// + (*MACA_CLK / 250000)
-// + (*CRM_RTC_COUNT / *CRM_RTC_TIMEOUT);
+void setTime(uint32_t time) {
+    correction += (time - getTime());
+}

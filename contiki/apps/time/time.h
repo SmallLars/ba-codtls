@@ -5,4 +5,6 @@
 
 uint32_t getTime();
 
+void setTime(uint32_t time);
+
 #endif /* TIME_H_ */

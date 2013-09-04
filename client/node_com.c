@@ -49,6 +49,13 @@ void node_getPSK(struct in6_addr *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/psk", target);
 }
 
+void node_setTime(struct in6_addr *ip, char *target) {
+    time_t my_time = time(NULL);
+    my_time = htonl(my_time);
+    coap_setPayload(&my_time, 4);
+    coap_request(ip, COAP_REQUEST_POST, "time", target);
+}
+
 #define BLOCKSIZE 46
 
 void node_firmware(struct in6_addr *ip, char *file) {
