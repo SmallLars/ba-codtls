@@ -1,0 +1,3 @@
+http://www.wireshark.org/docs/wsdg_html_chunked/ChDissectAdd.html
+
+http://www.sniffer.wislab.cz/how-to-make-a-dissector/
