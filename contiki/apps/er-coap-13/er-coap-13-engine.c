@@ -545,7 +545,7 @@ well_known_core_handler(void* request, void* response, uint8_t *buffer, uint16_t
 /* The dtls-handshake resource is automatically included for CoAP
    and definied in er-13-dtls/er-dtls-13-resource.c. */
 #ifdef WITH_DTLS
-  RESOURCE(dtls, METHOD_POST | HAS_SUB_RESOURCES, "dtls", "rt=\"handshake\";if=\"core.lb\";ct=42");
+  RESOURCE(dtls, METHOD_POST | HAS_SUB_RESOURCES, "dtls", "rt=\"dtls.handshake\";if=\"core.lb\";ct=42");
 #endif
 
 /*----------------------------------------------------------------------------*/

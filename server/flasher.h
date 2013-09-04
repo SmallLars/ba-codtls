@@ -4,6 +4,6 @@
 
 #include "erbium.h"
 
-RESOURCE(flasher, METHOD_POST, "f","rt=\"device information\";if=\"core.rp\";ct=42");
+RESOURCE(flasher, METHOD_POST, "f","rt=\"os.update\";if=\"core.b\";ct=0");
 
 #endif /* __FLASHER_H__ */

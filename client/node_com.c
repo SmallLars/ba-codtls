@@ -23,6 +23,10 @@
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
+void node_getCore(struct in6_addr *ip, char *target) {
+    coap_request(ip, COAP_REQUEST_GET, ".well-known/core", target);
+}
+
 void node_getName(struct in6_addr *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/name", target);
 }

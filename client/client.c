@@ -64,6 +64,15 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 6:
+                if (!memcmp("core", cbuffer, 4)) {
+                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    memset(buffer, 0, 512);
+                    node_getCore(ip, buffer);
+                    int i;
+                    for (i = 0; i < 512; i++) if (buffer[i] == ',') buffer[i] = '\n';
+                    printf("Core:\n%s\n", buffer);
+                    unknown = 0;
+                }
                 if (!memcmp("name", cbuffer, 4)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
                     memset(buffer, 0, 512);
@@ -102,7 +111,7 @@ int main(int argc, char *argv[]) {
                 }
                 if (!memcmp("flash", cbuffer, 5)) {
                     struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 6));
-                    node_firmware(ip, "device_redbee-econotag.bin");
+                    node_firmware(ip, "server_redbee-econotag.bin");
                     printf("Flash erfolgreich. Gerät wird neu gestartet ");
                     fflush(stdout);
                     int i;
