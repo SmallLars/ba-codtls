@@ -1,0 +1,10 @@
+\section{Testumgebung}
+
+flashen zunächst generell an ttyUSB1
+
+border-router per "`make border"' an ttyUSB1
+
+sniffer per "`make listen2"' an ttyUSB3\\
+"`make listen"' würde direkt in wireshark pipen. funktioniert nicht
+
+server nach initialem flash -> update per client über coap

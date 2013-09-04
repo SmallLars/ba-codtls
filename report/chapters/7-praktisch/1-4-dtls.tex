@@ -1,0 +1,12 @@
+\subsection{Contiki-App: "`er-13-dtls"'}
+
+es kann nur ein handshake zur zeit stattfinden\\
+psk wird nur benötigt bis pre master secret berechnet\\
+am ende des handshakes wird alter psk vernichtet und neuer generiert\\
+kann durch uri /psk über sichere leitung abgerufen werden so dass weitere handshakes durchgeführt werden können
+
+für hello verify cookie: cmac(client-ip + clienthello)
+
+verschlüsselung von finish mit seq\_num 0. erste app daten beginnen also bei seq\_num 1.\\
+seq\_num wird im ram gehalten da bei flash update bei jedem paket hoher verschleiß.\\
+sollte seq\_num je 0 sein, wird sie mit der seq\_num der anfrage "`wiederhergestellt"' (erläuterung: ist nicht exakt)

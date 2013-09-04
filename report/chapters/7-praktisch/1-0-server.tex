@@ -1,0 +1,74 @@
+\section{Server}
+
+Der Server wird auf einem Redbee Econotag \cite{econotag} realisiert. Der darauf enthaltene Mikrocontroller \glos{mc1322} \cite{mc1322} enthält,
+neben dem IEEE 802.15.4 Funkstandard und einer \acr{aes} Hardware-Engine, 128 KiB Flash-Speicher und 96 KiB RAM-Speicher. Bei Inbetriebnahme
+wird das im Flash-Speicher vorliegende Programm vollständig in den RAM-Speicher kopiert und dort ausgeführt, wodurch sich eine maximale
+Programmgröße von 96 KiB ergibt. Die zusätzlichen 32 KiB Flash-Speicher können somit für die Ablage von Daten genutzt werden, die auch nach einer
+Stromunterbrechung, oder einem Neustart des Geräts, erhalten bleiben sollen. Zu berücksichtigen ist jedoch auch noch, dass der letzte 4 KiB große
+Block schon für den Redbee Econotag selbst reserviert ist.
+
+Betrieben wird der Server mit SmartAppContiki \cite{erbium}, das auf Contiki \cite{contiki} basiert, und eine Implementierung von \acr{coap}, in
+der Entwurfsversion 13 \cite{draftcoap13}, enthält. In der Standardkonfiguration benötigt SmartAppContiki, mit einer definierten \acr{coap}-Ressource,
+die ein "`Hallo Welt!"' zurückgibt, \textasciitilde 84 KiB. Diese Daten teilen sich gemäß Abbildung \ref{tbl:contiki-speicher} auf. Um den benötigten
+Speicher zu optimieren wurde die Größe des "`Sys Stack"' und des "`Heap"' in der Konfigurationsdatei "`contiki/cpu/mc1322x/mc1322x.lds"' angepasst.
+
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{l|r|r}
+  \hiderowcolors
+  \textbf{Beschreibung} & \textbf{Standard} & \textbf{Angepasst}\\
+  \hline
+  Programm        & ~~~~~59248 Byte    & ~~~~~59248 Byte\\
+  Irq Stack       &   256 Byte         &   256 Byte\\
+  Fiq Stack       &   256 Byte         &   256 Byte\\
+  Svc Stack       &   256 Byte         &   256 Byte\\
+  Abt Stack       &    16 Byte         &    16 Byte\\
+  Und Stack       &    16 Byte         &    16 Byte\\
+  Sys Stack       &  1024 Byte         &  2048 Byte\\
+  Datensegment    & 20872 Byte         & 20872 Byte\\
+  Heap            &  4096 Byte         &    16 Byte\\
+  \hline
+  \textbf{Gesamt} & 86040 Byte         & 82984 Byte\\
+                  & $ \approx $ 84 KiB & $ \approx $ 81 KiB\\
+  \showrowcolors
+\end{tabular}
+\caption{Speicheraufteilung von SmartAppContiki}
+\label{tbl:contiki-speicher}
+\end{figure}
+
+Das wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerkzeuge. Durch Definieren von periodischen Ausgaben der benutzen Heap
+sowie Sys Stack Größe, in "`contiki/platform/redbee-econotag/contiki-mc1322x-main.c"', können die Auslastungen beobachtet werden. Um diesen Prozess
+effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die periodischen Ausgaben deaktiviert. In "`server/server.c"' lässt sich nun,
+durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
+und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des Handshakes,
+unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
+Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von \textasciitilde
+84 KiB auf \textasciitilde 81 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15 KiB zur
+Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des Geräts selbst implementiert werden müssen.
+
+Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option
+"`Block 1"' fehlt. Diese Option wird von einem Clienten benutzt, um größere Datenmengen, in einer \acr{coap}-Anfrage, in Blöcke zu unterteilen, damit es nicht
+zu einer Fragmentierung auf IP-Ebene kommt. Da diese Funktion für den \acr{dtls}-Handshake notwendig ist, wurde sie für Datenmengen bis 128 Byte nachgerüstet,
+wobei dieser Wert in der Datei "`contiki/apps/er-coap-13/er-coap-13.h"' durch Änderung von "`COAP\_BLOCK1\_BUFFER\_SIZE"' eingestellt werden kann. Übertragen
+werden mit Hilfe der Option ein ClientHello oder ClientKeyExchange + ChangeCipherSpec + Finished, wobei die Länge von letzterem mit insgesamt 112 Byte
+(87 + 3 + 22), durch die einzig definierte Ciphersuit, fest ist. Anders ist dies bei dem ClientHello, welches durch eine Vielzahl, vom Client beherrschter
+Ciphersuits, sehr viel größer als 128 Byte werden kann. Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`5.01 NOT IMPLEMENTED"' mit einem
+Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an Ciphersuits reduzieren kann, um der maximalen Größe gerecht zu werden.
+
+Während bisher jede \acr{coap}-Anfrage in der \acr{coap} 13 Implementierung zu einem Aufruf des entsprechenden Ressource-Handlers geführt hat, verhält sich
+dies bei einer \acr{coap}-Anfrage mit der Block 1-Option anders. Hier werden die Daten zunächst in einem Buffer gesammelt und ein Aufruf des Ressource-Handlers
+vermieden, wobei der Empfang jedes Blocks bestätigt wird. Erst bei Eintreffen des letzten Blocks, wenn die Anfrage vollständig ist, wird der Ressource-Handler
+aufgerufen, um die Anfrage zu bearbeiten und eine Antwort zu generieren. Um an die Daten der Anfrage zu gelangen, dient die Methode "`coap\_get\_payload"'.
+Diese wurde so angepasst, dass sie bei einer Anfrage ohne Block 1-Option wie gewohnt auf die Daten des aktuellen Pakets zeigt, bei einer Anfrage mit Block 1-Option
+jedoch auf den Buffer zeigt. In diesem Moment wird der Buffer als gelesen markiert, so dass ein erneuter Aufruf von "`coap\_get\_payload"' wieder auf die Daten
+des aktuellen Pakets zeigt.
+
+Während bisher allgemeine Anpassungen von SmartAppContiki bzw. dem darin enthaltenen \acr{coap} 13 beschrieben wurden, folgt in den nächsten 3 Abschnitten
+die Erläuterung von 3 implementierten Contiki-Apps, welche für die Realisierung von \acr{dtls} notwendig sind. Die Implementierung von \acr{dtls} wird dann
+im 4. Abschnitt erläutert, wonach abschließend noch eine Update-Funktion erläutert wird, die für \acr{dtls} nicht notwendig ist, aber dessen Umfeld berücksichtigt.
+
+\input{chapters/7-praktisch/1-1-flash.tex}
+\input{chapters/7-praktisch/1-2-time.tex}
+\input{chapters/7-praktisch/1-3-ecc.tex}
+\input{chapters/7-praktisch/1-4-dtls.tex}
+\input{chapters/7-praktisch/1-5-update.tex}
