@@ -12,7 +12,7 @@
 
 #include "node_com.h"
 #include "ip_tools.h"
-#include "libcoap-4.0.1/coap_client.h"
+#include "coap_client.h"
 #include "libcoap-4.0.1/dtls_handshake.h"
 
 /* Private Funktionsprototypen --------------------------------------------- */

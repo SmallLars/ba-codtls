@@ -7,7 +7,7 @@
  */
 #include "coap_client.h"
 
-#include "config.h"
+#include "libcoap-4.0.1/config.h"
 
 #include <string.h>
 #include <stdlib.h>

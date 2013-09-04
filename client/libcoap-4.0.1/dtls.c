@@ -7,7 +7,6 @@
 #include "dtls_random.h"
 #include "dtls_aes.h"
 #include "dtls_data.h"
-#include "coap_client.h"
 
 /*---------------------------------------------------------------------------*/
 
