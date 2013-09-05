@@ -4,20 +4,91 @@
 
 #define COAPS_PORT 5684
 
-static int proto_coaps = -1;
+static int proto_coaps = -1;            // speichert den index des eigenen protokolls
+static dissector_handle_t coap_handle;  // coap handle für den aufruf des coap dissectors bei epoch 0
 
-static dissector_handle_t coap_handle;
+static gint ett_coaps = -1;             // speichert den zustand des unterbaums mit den headerdetails (auf/zu)
 
-static int hf_coaps_pdu_type = -1;
 
-static gint ett_coaps = -1;
+static int hf_coaps_recordtype = -1;
+static int hf_coaps_version = -1;
+static int hf_coaps_epoch = -1;
+static int hf_coaps_sequenceno = -1;
+static int hf_coaps_length = -1;
+
+static const value_string recordtypenames[] = {
+    { 0, "8-Bit-Field" },
+    { 1, "Alert" },
+    { 2, "Handshake" },
+    { 3, "Application Data" }
+};
+
+static const value_string recordversionnames[] = {
+    { 0, "DTLS 1.0" },
+    { 1, "16-Bit-Field" },
+    { 2, "DTLS 1.2" },
+    { 3, "Future Use" }
+};
+
+static const value_string recordepochnames[] = {
+    { 0, "0" },
+    { 1, "1" },
+    { 2, "2" },
+    { 3, "3" },
+    { 4, "4" },
+    { 5, "8-Bit-Field" },
+    { 6, "16-Bit-Field" },
+    { 7, "Implicit" }
+};
+
+static const value_string recordsequencenonames[] = {
+    { 0, "No Value" },
+    { 1, "8-Bit-Field" },
+    { 2, "16-Bit-Field" },
+    { 3, "24-Bit-Field" },
+    { 4, "32-Bit-Field" },
+    { 5, "40-Bit-Field" },
+    { 6, "48-Bit-Field" },
+    { 7, "Last Num + 1" }
+};
+
+static const value_string recordlengthnames[] = {
+    { 0, "0" },
+    { 1, "8-Bit-Field" },
+    { 2, "16-Bit-Field" },
+    { 3, "Last Record in Datagram" }
+};
 
 void proto_register_coaps(void) {
     static hf_register_info hf[] = {
-        { &hf_coaps_pdu_type,
-            { "CoAPs PDU Type", "coaps.type",
+        { &hf_coaps_recordtype,
+            { "Record Type", "coaps.record.type",
             FT_UINT8, BASE_DEC,
-            NULL, 0x0,
+            VALS(recordtypenames), 0x60,
+            NULL, HFILL }
+        },
+        { &hf_coaps_version,
+            { "Record Version", "coaps.record.version",
+            FT_UINT8, BASE_DEC,
+            VALS(recordversionnames), 0x18,
+            NULL, HFILL }
+        },
+        { &hf_coaps_epoch,
+            { "Record Epoch", "coaps.record.epoch",
+            FT_UINT8, BASE_DEC,
+            VALS(recordepochnames), 0x07,
+            NULL, HFILL }
+        },
+        { &hf_coaps_sequenceno,
+            { "Record Sequencno", "coaps.record.sequenceno",
+            FT_UINT8, BASE_DEC,
+            VALS(recordsequencenonames), 0x1C,
+            NULL, HFILL }
+        },
+        { &hf_coaps_length,
+            { "Record Length", "coaps.record.length",
+            FT_UINT8, BASE_DEC,
+            VALS(recordlengthnames), 0x03,
             NULL, HFILL }
         }
     };
@@ -38,6 +109,8 @@ void proto_register_coaps(void) {
 }
 
 static void dissect_coaps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
+    gint offset = 0;
+
     if (tree) {
         proto_item *ti = NULL;
         proto_tree *coaps_tree = NULL;
@@ -45,16 +118,22 @@ static void dissect_coaps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
 
         ti = proto_tree_add_item(tree, proto_coaps, tvb, 0, 3, ENC_NA);
         coaps_tree = proto_item_add_subtree(ti, ett_coaps);
-        proto_tree_add_item(coaps_tree, hf_coaps_pdu_type, tvb, 0, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_recordtype, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_version, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_epoch, tvb, offset, 1, ENC_BIG_ENDIAN);
+        offset += 1;
+        proto_tree_add_item(coaps_tree, hf_coaps_sequenceno, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_length, tvb, offset, 1, ENC_BIG_ENDIAN);
+        offset += 1;
 
         coap_tvb = tvb_new_subset(tvb, 3, tvb_length(tvb) - 3, tvb_reported_length(tvb) - 3);
         call_dissector(coap_handle, coap_tvb, pinfo, coaps_tree);
-
-        // Informationen in der Tabelle am Ende setzten,
-        // da diese bei der CoAP-Auswertung überschrieben werden
-        col_set_str(pinfo->cinfo, COL_PROTOCOL, "CoAPs");
-        col_clear(pinfo->cinfo, COL_INFO); // Info-Spalte löschen
     }
+
+    // Informationen in der Tabelle am Ende setzten,
+    // da diese bei der CoAP-Auswertung überschrieben werden
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "CoAPs");
+    col_clear(pinfo->cinfo, COL_INFO); // Info-Spalte löschen
 }
 
 void proto_reg_handoff_coaps(void) {
