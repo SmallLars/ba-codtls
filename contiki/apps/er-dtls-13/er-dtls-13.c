@@ -125,7 +125,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
         uint8_t packet[sizeof(DTLSRecord_t) + 1 + len];
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
         record->u1 = 0;
-        record->type = application_data;
+        record->type = handshake;
         record->version= dtls_1_2;
         record->epoch = 0;
         record->snr = snr_8_bit;

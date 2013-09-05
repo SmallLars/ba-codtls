@@ -64,7 +64,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 1 + len);
     memset(record, 0, sizeof(DTLSRecord_t) + 1 + len);
     record->u1 = 0;
-    record->type = application_data;
+    record->type = handshake;
     record->version= dtls_1_2;
     record->epoch = 0;
     record->snr = snr_8_bit;

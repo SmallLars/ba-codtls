@@ -46,6 +46,9 @@ static int hf_coaps_a_epoch = -1;
 static int hf_coaps_a_sequenceno = -1;
 static int hf_coaps_a_length = -1;
 
+static int hf_coaps_alert_level = -1;
+static int hf_coaps_alert_description = -1;
+
 static int hf_coaps_appdata = -1;
 
 static const value_string recordtypenames[] = {
@@ -96,6 +99,39 @@ static const value_string recordlengthnames[] = {
     { 1, "8-Bit-Field" },
     { 2, "16-Bit-Field" },
     { 3, "Last Record in Datagram" }
+};
+
+static const value_string alertlevelnames[] = {
+    { 1, "Warning" },
+    { 2, "Fatal" }
+};
+
+static const value_string alertdescriptionnames[] = {
+    {   0, "Close Notify" },
+    {  10, "Unexpected Message" },
+    {  20, "Bad Record MAC" },
+    {  21, "Decryption Failed (RESERVED)" },
+    {  22, "Record Overflow" },
+    {  23, "Decompression Failure" },
+    {  40, "Handshake Failure" },
+    {  41, "No Certificate (RESERVED)" },
+    {  42, "Bad Certificate" },
+    {  43, "Unsupported Certificate" },
+    {  44, "Certificate Revoked" },
+    {  45, "Certificate Expired" },
+    {  46, "Certificate Unknown" },
+    {  47, "Illegal Parameter" },
+    {  48, "Unknown CA" },
+    {  49, "Access Denied" },
+    {  50, "Decode Error" },
+    {  51, "Decrypt Error" },
+    {  60, "Export Restriction (RESERVED)" },
+    {  70, "Protocol Version" },
+    {  71, "Insufficient Security" },
+    {  80, "Internal Error" },
+    {  90, "User Canceled" },
+    { 100, "No Renegotiation" },
+    { 110, "Unsupported Extension" }
 };
 
 void proto_register_coaps(void) {
@@ -164,6 +200,18 @@ void proto_register_coaps(void) {
             { "Record Length", "coaps.record.a.length",
             FT_UINT16, BASE_DEC,
             NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_coaps_alert_level,
+            { "Alert Level", "coaps.alert.level",
+            FT_UINT8, BASE_DEC,
+            VALS(alertlevelnames), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_coaps_alert_description,
+            { "Alert Description", "coaps.alert.description",
+            FT_UINT8, BASE_DEC,
+            VALS(alertdescriptionnames), 0x00,
             NULL, HFILL }
         },
         { &hf_coaps_appdata,
@@ -251,9 +299,14 @@ static void dissect_coaps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
             offset += hlen_le;
         }
 
-        if (epoch == 0) {
+        if (epoch == 0 && type == 22) { // Handshake Data without Encryption
             coap_tvb = tvb_new_subset(tvb, offset, tvb_length(tvb) - offset, tvb_reported_length(tvb) - offset);
             call_dissector(coap_handle, coap_tvb, pinfo, coaps_tree);
+        } else if (epoch == 0 && type == 21) { // Alert without Encryption
+            proto_tree_add_item(coaps_tree, hf_coaps_alert_level, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset += 1;
+            proto_tree_add_item(coaps_tree, hf_coaps_alert_description, tvb, offset, 1, ENC_BIG_ENDIAN);
+            offset += 1;
         } else {
             proto_tree_add_item(coaps_tree, hf_coaps_appdata, tvb, offset, tvb_length(tvb) - offset, ENC_NA);
         }
