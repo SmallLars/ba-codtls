@@ -55,10 +55,10 @@ typedef struct {
     Epoch epoch:3;
     Version version:2;
     RecordType type:2;
-    uint8_t :1;
+    uint8_t u1:1; // unbenutzt
     RecordLength length:2;
     SequenceNumber snr:3;
-    uint8_t :3;
+    uint8_t u2:3; // unbenutzt
     uint8_t payload[0];
 } __attribute__ ((packed)) DTLSRecord_t;
 

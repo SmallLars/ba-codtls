@@ -63,32 +63,32 @@ void proto_register_coaps(void) {
     static hf_register_info hf[] = {
         { &hf_coaps_recordtype,
             { "Record Type", "coaps.record.type",
-            FT_UINT8, BASE_DEC,
-            VALS(recordtypenames), 0x60,
+            FT_UINT16, BASE_DEC,
+            VALS(recordtypenames), 0x6000,
             NULL, HFILL }
         },
         { &hf_coaps_version,
             { "Record Version", "coaps.record.version",
-            FT_UINT8, BASE_DEC,
-            VALS(recordversionnames), 0x18,
+            FT_UINT16, BASE_DEC,
+            VALS(recordversionnames), 0x1800,
             NULL, HFILL }
         },
         { &hf_coaps_epoch,
             { "Record Epoch", "coaps.record.epoch",
-            FT_UINT8, BASE_DEC,
-            VALS(recordepochnames), 0x07,
+            FT_UINT16, BASE_DEC,
+            VALS(recordepochnames), 0x0700,
             NULL, HFILL }
         },
         { &hf_coaps_sequenceno,
             { "Record Sequencno", "coaps.record.sequenceno",
-            FT_UINT8, BASE_DEC,
-            VALS(recordsequencenonames), 0x1C,
+            FT_UINT16, BASE_DEC,
+            VALS(recordsequencenonames), 0x001C,
             NULL, HFILL }
         },
         { &hf_coaps_length,
             { "Record Length", "coaps.record.length",
-            FT_UINT8, BASE_DEC,
-            VALS(recordlengthnames), 0x03,
+            FT_UINT16, BASE_DEC,
+            VALS(recordlengthnames), 0x0003,
             NULL, HFILL }
         }
     };
@@ -118,13 +118,12 @@ static void dissect_coaps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
 
         ti = proto_tree_add_item(tree, proto_coaps, tvb, 0, 3, ENC_NA);
         coaps_tree = proto_item_add_subtree(ti, ett_coaps);
-        proto_tree_add_item(coaps_tree, hf_coaps_recordtype, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(coaps_tree, hf_coaps_version, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(coaps_tree, hf_coaps_epoch, tvb, offset, 1, ENC_BIG_ENDIAN);
-        offset += 1;
-        proto_tree_add_item(coaps_tree, hf_coaps_sequenceno, tvb, offset, 1, ENC_BIG_ENDIAN);
-        proto_tree_add_item(coaps_tree, hf_coaps_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-        offset += 1;
+        proto_tree_add_item(coaps_tree, hf_coaps_recordtype, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_version, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_epoch, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_sequenceno, tvb, offset, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(coaps_tree, hf_coaps_length, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
 
         coap_tvb = tvb_new_subset(tvb, 3, tvb_length(tvb) - 3, tvb_reported_length(tvb) - 3);
         call_dissector(coap_handle, coap_tvb, pinfo, coaps_tree);

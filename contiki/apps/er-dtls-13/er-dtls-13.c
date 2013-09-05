@@ -102,10 +102,12 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
         uint8_t headerAdd = 0;
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
+        record->u1 = 0;
         record->type = application_data;
         record->version= dtls_1_2;
         record->epoch = 1;
         record->snr = snr_8_bit;
+        record->u2 = 6;
         record->payload[0] = 5;
         headerAdd++;
         record->length = rec_length_implicit;
@@ -122,10 +124,12 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
         PRINTF("Unverschlüsselter Paketversand!\n");
         uint8_t packet[sizeof(DTLSRecord_t) + 1 + len];
         DTLSRecord_t *record = (DTLSRecord_t *) packet;
+        record->u1 = 0;
         record->type = application_data;
         record->version= dtls_1_2;
         record->epoch = 0;
         record->snr = snr_8_bit;
+        record->u2 = 6;
         record->payload[0] = 5;
         record->length = rec_length_implicit;
 
