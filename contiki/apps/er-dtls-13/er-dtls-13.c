@@ -16,6 +16,8 @@
     #define PRINTF(...)
 #endif
 
+uint8_t isHandshakeMessage = 0;
+
 /* Private Funktionsprototypen --------------------------------------------- */
 
 /* Öffentliche Funktionen -------------------------------------------------- */
@@ -25,6 +27,8 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
     uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 0};
+
+    isHandshakeMessage = (record->type == handshake ? 1 : 0);
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -86,57 +90,47 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         // TODO Alert-Auswertung
         coapdata->valid = 0;
     }
+
+    // TODO für fehler -> struct uip_udp_conn *uip_udp_new(const uip_ipaddr_t *ripaddr, uint16_t rport)
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
 
-    uint16_t epoch = 0;
-    getSessionData((uint8_t *) &epoch, conn->ripaddr.u8, session_epoch);
+    uint8_t nonce[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    PRINTF("Senden mit Epoch: %i\n", epoch);
+    getSessionData(nonce + 4, conn->ripaddr.u8, session_epoch);
 
     uint32_t key_block;
-    if ((key_block = getKeyBlock(conn->ripaddr.u8, epoch, 0))) {
+    key_block = getKeyBlock(conn->ripaddr.u8, nonce[5], 0); // TODO 8 bit support
+
+    getSessionData(nonce + 6, conn->ripaddr.u8, session_num_write);
+
+    uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
+
+    uint8_t headerAdd = 0;
+    DTLSRecord_t *record = (DTLSRecord_t *) packet;
+    record->u1 = 0;
+    record->type = (isHandshakeMessage ? handshake : application_data);
+    record->version= dtls_1_2;
+    record->epoch = nonce[5]; // TODO 8 bit support
+    record->snr = snr_8_bit;
+    record->u2 = 6;
+    record->payload[0] = nonce[11]; // TODO more byte support
+    headerAdd++;
+    record->length = rec_length_implicit;
+
+    memcpy(record->payload + headerAdd, data, len);
+
+    if (key_block) {
         PRINTF("Verschlüsselter Paketversand\n");
-        uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
-
-        uint8_t headerAdd = 0;
-        DTLSRecord_t *record = (DTLSRecord_t *) packet;
-        record->u1 = 0;
-        record->type = application_data;
-        record->version= dtls_1_2;
-        record->epoch = 1;
-        record->snr = snr_8_bit;
-        record->u2 = 6;
-        record->payload[0] = 5;
-        headerAdd++;
-        record->length = rec_length_implicit;
-        memcpy(record->payload + headerAdd, data, len);
-
         uint8_t key[16];
-        uint8_t nonce[12] = {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 5};
         nvm_getVar(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
         nvm_getVar(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
         aes_crypt(record->payload + headerAdd, len, key, nonce, 0);
-
-        uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len + MAC_LEN);
-    } else {
-        PRINTF("Unverschlüsselter Paketversand!\n");
-        uint8_t packet[sizeof(DTLSRecord_t) + 1 + len];
-        DTLSRecord_t *record = (DTLSRecord_t *) packet;
-        record->u1 = 0;
-        record->type = handshake;
-        record->version= dtls_1_2;
-        record->epoch = 0;
-        record->snr = snr_8_bit;
-        record->u2 = 6;
-        record->payload[0] = 5;
-        record->length = rec_length_implicit;
-
-        memcpy(record->payload + 1, data, len);
-
-        uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + 1 + len);
+        headerAdd += MAC_LEN;
     }
+
+    uip_udp_packet_send(conn, packet, sizeof(DTLSRecord_t) + headerAdd + len);
 }
 
 /* Private Funktionen ------------------------------------------------------ */

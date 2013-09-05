@@ -19,6 +19,8 @@
     #define PRINTSESSION(i)
 #endif
 
+uint32_t seq_num[20];
+
 /* Private Funktionsprototypen --------------------------------------------- */
 
 int8_t getIndexOf(uint8_t *ip);
@@ -52,6 +54,9 @@ int8_t createSession(uint32_t *buf, uint8_t ip[16]) {
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));
 
+    seq_num[2 * list_len] = 1;
+    seq_num[(2 * list_len) + 1] = 1;
+
     list_len++;
     nvm_setVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
 
@@ -68,17 +73,26 @@ int8_t getSessionData(uint8_t *dst, uint8_t ip[16], SessionDataType type) {
         return -1;
     }
 
+    uint16_t epo_buf;
+    uint32_t num_buf;
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     switch (type) {
         case session_id:
             nvm_getVar(dst, (uint32_t) &s[i].session, 8);
             return 8;
         case session_epoch:
-            nvm_getVar(dst, (uint32_t) &s[i].epoch, 2);
+            nvm_getVar(&epo_buf, (uint32_t) &s[i].epoch, 2);
+            epo_buf = uip_htons(epo_buf);
+            memcpy(dst, &epo_buf, 2);
             return 2;
         case session_key:
             nvm_getVar(dst, (uint32_t) &s[i].private_key, 32);
             return 32;
+        case session_num_write:
+            num_buf = uip_htonl(seq_num[2 * i]);
+            memcpy(dst + 2, &num_buf, 4);
+            seq_num[2 * i]++;
+            return 6;
     }
 }
 
@@ -149,6 +163,9 @@ void checkEpochIncrease(uint8_t index, uint16_t epoch) {
         nvm_getVar(buf, (uint32_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
         memset(buf + sizeof(KeyBlock_t), 0, sizeof(KeyBlock_t));
         nvm_setVar(buf, (uint32_t) &kb[2 * index], 2 * sizeof(KeyBlock_t));
+
+        seq_num[2 * index] = seq_num[(2 * index) + 1];
+        seq_num[(2 * index) + 1] = 1;
 
         PRINTF("Daten nach Epoch-Increase:\n");
         PRINTSESSION(index);

@@ -32,7 +32,8 @@ typedef union {
 typedef enum {
     session_id = 0,
     session_epoch = 1,
-    session_key = 2
+    session_key = 2,
+    session_num_write = 3
 } SessionDataType;
 
 // ----------------------------------------------------------------------------
