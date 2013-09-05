@@ -62,7 +62,7 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     return send;
   } else {
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 1 + len);
-    memset(record, 0, sizeof(DTLSRecord_t) + len);
+    memset(record, 0, sizeof(DTLSRecord_t) + 1 + len);
     record->u1 = 0;
     record->type = application_data;
     record->version= dtls_1_2;
