@@ -19,12 +19,12 @@
     #define PRINTSESSION(i)
 #endif
 
-uint32_t seq_num[20];
+uint32_t seq_num[10];
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
 int8_t getIndexOf(uint8_t *ip);
-void checkEpochIncrease(uint8_t index, uint16_t epoch);
+__attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uint16_t epoch);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
@@ -54,8 +54,7 @@ int8_t createSession(uint32_t *buf, uint8_t ip[16]) {
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));
 
-    seq_num[2 * list_len] = 1;
-    seq_num[(2 * list_len) + 1] = 1;
+    seq_num[list_len] = 1;
 
     list_len++;
     nvm_setVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
@@ -89,9 +88,9 @@ int8_t getSessionData(uint8_t *dst, uint8_t ip[16], SessionDataType type) {
             nvm_getVar(dst, (uint32_t) &s[i].private_key, 32);
             return 32;
         case session_num_write:
-            num_buf = uip_htonl(seq_num[2 * i]);
+            num_buf = uip_htonl(seq_num[i]);
             memcpy(dst + 2, &num_buf, 4);
-            seq_num[2 * i]++;
+            seq_num[i]++;
             return 6;
     }
 }
@@ -147,7 +146,7 @@ int8_t getIndexOf(uint8_t *ip) {
     return -1;
 }
 
-void checkEpochIncrease(uint8_t index, uint16_t epoch) {
+__attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uint16_t epoch) {
     epoch--;
     Session_t *s = (Session_t *) RES_SESSION_LIST;
 
@@ -164,8 +163,7 @@ void checkEpochIncrease(uint8_t index, uint16_t epoch) {
         memset(buf + sizeof(KeyBlock_t), 0, sizeof(KeyBlock_t));
         nvm_setVar(buf, (uint32_t) &kb[2 * index], 2 * sizeof(KeyBlock_t));
 
-        seq_num[2 * index] = seq_num[(2 * index) + 1];
-        seq_num[(2 * index) + 1] = 1;
+        seq_num[index] = 1;
 
         PRINTF("Daten nach Epoch-Increase:\n");
         PRINTSESSION(index);
@@ -180,18 +178,19 @@ void checkEpochIncrease(uint8_t index, uint16_t epoch) {
         Session_t *session = (Session_t *) buffer;
         Session_t *s = (Session_t *) RES_SESSION_LIST;
         nvm_getVar(buffer, (uint32_t) &s[index], sizeof(Session_t));
-        PRINTF("    Index: %u \n    Session-ID: %.*s\n    IP: ",index, 8, session->session);
-        for (i = 0; i < 16; i++) PRINTF("%02X", session->ip[i]);
-        PRINTF("\n    Epoch: %u\n    Private-Key: ", session->epoch);
-        for (i = 0; i < 8; i++) PRINTF("%08X", uip_htonl(session->private_key[i]));
+        printf("    Index: %u \n    Session-ID: %.*s\n    IP: ",index, 8, session->session);
+        for (i = 0; i < 16; i++) printf("%02X", session->ip[i]);
+        printf("\n    Epoch: %u\n    Private-Key: ", session->epoch);
+        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(session->private_key[i]));
+        printf("\n    Sequenznummer: %u", seq_num[index]);
 
         KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
         nvm_getVar(buffer, (uint32_t) &kb[2 * index], sizeof(KeyBlock_t));
-        PRINTF("\n        Key-Block 1: ");
-        for (i = 0; i < sizeof(KeyBlock_t); i++) PRINTF("%02X", buffer[i]);
+        printf("\n        Key-Block 1: ");
+        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
         nvm_getVar(buffer, (uint32_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
-        PRINTF("\n        Key-Block 2: ");
-        for (i = 0; i < sizeof(KeyBlock_t); i++) PRINTF("%02X", buffer[i]);
-        PRINTF("\n");
+        printf("\n        Key-Block 2: ");
+        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
+        printf("\n");
     }
 #endif
