@@ -24,8 +24,12 @@ uint32_t base_y[8] = {0x37bf51f5, 0xcbb64068, 0x6b315ece, 0x2bce3357, 0x7c0f9e16
 uint8_t handshake_messages[4096];
 uint16_t handshake_messages_len;
 
+extern uint8_t isHandshakeMessage;
+
 void dtls_handshake(struct in6_addr *ip) {
     handshake_messages_len = 0;
+
+    isHandshakeMessage = 1;
 
     uint32_t i;
     uint8_t len;
@@ -238,4 +242,6 @@ void dtls_handshake(struct in6_addr *ip) {
     printf("Step 3 done.\n");
 
     increaseEpoch(ip);
+
+    isHandshakeMessage = 0;
 }

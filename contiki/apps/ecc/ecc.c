@@ -37,6 +37,9 @@
  */
 
 #include "ecc.h"
+
+#include <string.h>
+
 #include "ecc_add.h"
 #include "ecc_sub.h"
 #include "ecc_rshift.h"
@@ -54,9 +57,11 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
 void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
 
 //simple functions to work with the big numbers
-void ecc_setZero(uint32_t *A, const int length);
+#define ecc_setZero(target, length) memset(target, 0, 4 * length)
+//void ecc_setZero(uint32_t *A, const int length);
+#define ecc_copy(src, dst, length)  memcpy(dst, src, 4 * length)
+//static void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 int ecc_isOne(const uint32_t* A);
-void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
 
 //finite field functions
 //FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
@@ -86,7 +91,7 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 //const uint32_t ecc_g_point_y[8] = { 0x37BF51F5, 0xCBB64068, 0x6B315ECE, 0x2BCE3357,
 //                    0x7C0F9E16, 0x8EE7EB4A, 0xFE1A7F9B, 0x4FE342E2};
 
-
+/*
 void ecc_setZero(uint32_t *A, const int length){
     int i;
 
@@ -95,17 +100,20 @@ void ecc_setZero(uint32_t *A, const int length){
         A[i] = 0;
     }
 }
+*/
 
 /*
  * copy one array to another
  */
-static void copy(const uint32_t *from, uint32_t *to, uint8_t length){
+/*
+static void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length){
     int i;
     for (i = 0; i < length; ++i)
     {
         to[i] = from[i];
     }
 }
+*/
 
 int ecc_isSame(const uint32_t *A, const uint32_t *B, uint8_t length){
     int i;
@@ -135,7 +143,7 @@ int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, 
     if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
         uint32_t temp[8];
         ecc_add(result, reducer, temp, arrayLength);
-        copy(temp, result, 8);
+        ecc_copy(temp, result, 8);
     }
     return 0;
 }
@@ -144,7 +152,7 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     if(ecc_sub(x, y, result, arrayLength)){ //add modulus if carry is set
         uint32_t temp[8];
         ecc_add(result, modulus, temp, arrayLength);
-        copy(temp, result, 8);
+        ecc_copy(temp, result, 8);
     }
     return 0;
 }
@@ -187,7 +195,7 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
 //          tempResult2[0] = tempResult2[0]<<16;
 //          ecc_add(tempResult, tempResult2, tempResult3, 2);
 //          ecc_setZero(tempResult, length * 2);
-//          copy(tempResult3, &tempResult[n+k], 2);
+//          ecc_copy(tempResult3, &tempResult[n+k], 2);
 //          ecc_add(&tempResult[n+k], &result[n+k], &result[n+k],(length * 2) - (n + k));
 
 //          ecc_setZero(tempResult, length * 2);
@@ -235,104 +243,56 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_
     return 0;
 }
 
-/*
-void hyperopt(uint32_t *dst, const uint32_t *src, const uint32_t pattern) {
-    uint8_t i;
-    uint8_t value;
-    for (i = 0; i < 8; i++) {
-        value = (pattern >> (i << 2)) & 0x0000000F;
-        dst[i] = (value ? src[value] : 0);
-    }
-}*/
-
-#define hyperopt(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
+#define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
 
 //TODO: maximum:
 //fffffffe00000002fffffffe0000000100000001fffffffe00000001fffffffe00000001fffffffefffffffffffffffffffffffe000000000000000000000001_16
 void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm[8];
     uint32_t tempm2[8];
-    //uint8_t n;
     /* A = T */ 
-    copy(B,A,arrayLength);
+    ecc_copy(B,A,arrayLength);
 
     /* Form S1 */
-    //hyperopt(tempm, B, 0xFEDCB000);
-    hyperopt(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);
-    //for(n=0;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<8;n++) tempm[n]=B[n+8];
+    SETARRAY(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);
 
     /* tempm2=T+S1 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* A=T+S1+S1 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
     /* Form S2 */
-    //hyperopt(tempm, B, 0x0FEDC000);
-    hyperopt(tempm, 0, 0, 0, B[12], B[13], B[14], B[15], 0);
-    //for(n=0;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<7;n++) tempm[n]=B[n+9]; 
-    //for(n=7;n<8;n++) tempm[n]=0;
+    SETARRAY(tempm, 0, 0, 0, B[12], B[13], B[14], B[15], 0);
     /* tempm2=T+S1+S1+S2 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* A=T+S1+S1+S2+S2 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
     /* Form S3 */
-    //hyperopt(tempm, B, 0xFE000A98);
-    hyperopt(tempm, B[8], B[9], B[10], 0, 0, 0, B[14], B[15]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+8]; 
-    //for(n=3;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<8;n++) tempm[n]=B[n+8];
+    SETARRAY(tempm, B[8], B[9], B[10], 0, 0, 0, B[14], B[15]);
     /* tempm2=T+S1+S1+S2+S2+S3 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* Form S4 */
-    //hyperopt(tempm, B, 0x8DFEDBA9);
-    hyperopt(tempm, B[9], B[10], B[11], B[13], B[14], B[15], B[13], B[8]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+9]; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+10]; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+7]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+1];
+    SETARRAY(tempm, B[9], B[10], B[11], B[13], B[14], B[15], B[13], B[8]);
     /* A=T+S1+S1+S2+S2+S3+S4 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
     /* Form D1 */ 
-    //hyperopt(tempm, B, 0xA8000DCB);
-    hyperopt(tempm, B[11], B[12], B[13], 0, 0, 0, B[8], B[10]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+11]; 
-    //for(n=3;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+2]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+3];
+    SETARRAY(tempm, B[11], B[12], B[13], 0, 0, 0, B[8], B[10]);
     /* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
     ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
     /* Form D2 */ 
-    //hyperopt(tempm, B, 0xB900FEDC);
-    hyperopt(tempm, B[12], B[13], B[14], B[15], 0, 0, B[9], B[11]);
-    //for(n=0;n<4;n++) tempm[n]=B[n+12]; 
-    //for(n=4;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+3]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+4];
+    SETARRAY(tempm, B[12], B[13], B[14], B[15], 0, 0, B[9], B[11]);
     /* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
     /* Form D3 */ 
-    //hyperopt(tempm, B, 0xC0A98FED);
-    hyperopt(tempm, B[13], B[14], B[15], B[8], B[9], B[10], 0, B[12]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+13]; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+5]; 
-    //for(n=6;n<7;n++) tempm[n]=0; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+5];
+    SETARRAY(tempm, B[13], B[14], B[15], B[8], B[9], B[10], 0, B[12]);
     /* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
     ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
     /* Form D4 */ 
-    //hyperopt(tempm, B, 0xD0BA90FE);
-    hyperopt(tempm, B[14], B[15], 0, B[9], B[10], B[11], 0, B[13]);
-    //for(n=0;n<2;n++) tempm[n]=B[n+14]; 
-    //for(n=2;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+6]; 
-    //for(n=6;n<7;n++) tempm[n]=0; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+6];
+    SETARRAY(tempm, B[14], B[15], 0, B[9], B[10], B[11], 0, B[13]);
     /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
     if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
-        copy(tempm, A, arrayLength);
+        ecc_copy(tempm, A, arrayLength);
     }
 }
 
@@ -366,7 +326,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
             ecc_add(result, reducer, tempas, 8);
-            copy(tempas, result, arrayLength);
+            ecc_copy(tempas, result, arrayLength);
         }
         
     }
@@ -384,8 +344,8 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
     ecc_setZero(v, 8);
 
     uint8_t t;
-    copy(A,u,arrayLength); 
-    copy(modulus,v,arrayLength); 
+    ecc_copy(A,u,arrayLength); 
+    ecc_copy(modulus,v,arrayLength); 
     ecc_setZero(x1, 8);
     ecc_setZero(B, 8);
     x1[0]=1; 
@@ -397,7 +357,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
                 ecc_rshift(x1);                 /* Divide by 2 */
             else {
                 ecc_fieldAddAndDivide(x1,modulus,reducer,tempm); /* tempm=(x1+p)/2 */
-                copy(tempm,x1,arrayLength);         /* x1=tempm */
+                ecc_copy(tempm,x1,arrayLength);         /* x1=tempm */
             }
         } 
         while(!(v[0]&1)) {                  /* While v is even */
@@ -407,24 +367,24 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
             else
             {
                 ecc_fieldAddAndDivide(B,modulus,reducer,tempm); /* tempm=(x2+p)/2 */
-                copy(tempm,B,arrayLength);          /* x2=tempm */ 
+                ecc_copy(tempm,B,arrayLength);          /* x2=tempm */ 
             }
             
         } 
         t=ecc_sub(u,v,tempm,arrayLength);               /* tempm=u-v */
         if (t==0) {                         /* If u > 0 */
-            copy(tempm,u,arrayLength);                  /* u=u-v */
+            ecc_copy(tempm,u,arrayLength);                  /* u=u-v */
             ecc_fieldSub(x1,B,modulus,tempm);           /* tempm=x1-x2 */
-            copy(tempm,x1,arrayLength);                 /* x1=x1-x2 */
+            ecc_copy(tempm,x1,arrayLength);                 /* x1=x1-x2 */
         } else {
             ecc_sub(v,u,tempm,arrayLength);             /* tempm=v-u */
-            copy(tempm,v,arrayLength);                  /* v=v-u */
+            ecc_copy(tempm,v,arrayLength);                  /* v=v-u */
             ecc_fieldSub(B,x1,modulus,tempm);           /* tempm=x2-x1 */
-            copy(tempm,B,arrayLength);                  /* x2=x2-x1 */
+            ecc_copy(tempm,B,arrayLength);                  /* x2=x2-x1 */
         }
     } 
     if (ecc_isOne(u)) {
-        copy(x1,B,arrayLength); 
+        ecc_copy(x1,B,arrayLength); 
     }
 }
 
@@ -434,12 +394,12 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        copy(qx, Sx,arrayLength);
-        copy(qy, Sy,arrayLength);
+        ecc_copy(qx, Sx,arrayLength);
+        ecc_copy(qy, Sy,arrayLength);
         return;
     } else if(ecc_isZero(qx) && ecc_isZero(qy)) {
-        copy(px, Sx,arrayLength);
-        copy(py, Sy,arrayLength);
+        ecc_copy(px, Sx,arrayLength);
+        ecc_copy(py, Sy,arrayLength);
         return;
     }
 
@@ -477,8 +437,8 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        copy(px, Dx,arrayLength);
-        copy(py, Dy,arrayLength);
+        ecc_copy(px, Dx,arrayLength);
+        ecc_copy(py, Dy,arrayLength);
         return;
     }
 
@@ -515,14 +475,14 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     int i;
     for (i = 256;i--;){
         ecc_ec_double(Qx, Qy, resultx, resulty);
-        copy(resultx, Qx, arrayLength);
-        copy(resulty, Qy, arrayLength);
+        ecc_copy(resultx, Qx, arrayLength);
+        ecc_copy(resulty, Qy, arrayLength);
         if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
             ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
-            copy(resultx, Qx, arrayLength);
-            copy(resulty, Qy, arrayLength);
+            ecc_copy(resultx, Qx, arrayLength);
+            ecc_copy(resulty, Qy, arrayLength);
         }
     }
-    copy(Qx, resultx, arrayLength);
-    copy(Qy, resulty, arrayLength);
+    ecc_copy(Qx, resultx, arrayLength);
+    ecc_copy(Qy, resulty, arrayLength);
 }
