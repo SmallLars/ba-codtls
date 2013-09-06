@@ -25,64 +25,55 @@ uint8_t isHandshakeMessage = 0;
 /*---------------------------------------------------------------------------*/
 
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen) {
+    uint8_t *ip = ((struct sockaddr_in6 *) dest_addr)->sin6_addr.s6_addr;
 
-  uint8_t *ip = ((struct sockaddr_in6 *) dest_addr)->sin6_addr.s6_addr;
+    uint8_t nonce[12];
 
-  // Bei Bedarf verschlüsseln
-  uint16_t epoch = getEpoch(ip);
-  if (epoch) {
-    uint8_t payload_length = len + MAC_LEN;
+    uint16_t epoch = getEpoch(ip);
+    nonce[4] = (epoch & 0xFF00) >> 8;
+    nonce[5] = (epoch & 0x00FF) >> 0;
 
-    DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 13 + payload_length); // 13 = maximaler Header-Anhang
-    memset(record, 0, sizeof(DTLSRecord_t) + payload_length);
-    record->u1 = 0;
-    record->type = (isHandshakeMessage ? handshake : application_data);
-    record->version= dtls_1_2;
-    record->epoch = 1;
-    record->snr = snr_8_bit;
-    record->u2 = 6;
-    record->payload[0] = 5;
-    record->length = rec_length_implicit;
-
-    memcpy(record->payload + 1, buf, len);
+    uint32_t seq_num = getSeqNum(ip);
+    nonce[6]  = 0;
+    nonce[7]  = 0;
+    nonce[8]  = (seq_num & 0xFF000000) >> 24;
+    nonce[9]  = (seq_num & 0x00FF0000) >> 16;
+    nonce[10] = (seq_num & 0x0000FF00) >>  8;
+    nonce[11] = (seq_num & 0x000000FF) >>  0;
 
     uint8_t *key_block = getKeyBlock(ip, epoch);
-
-    uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 5};
     memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
 
-    uint8_t key[16];
-    memcpy(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+    DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 13 + len + MAC_LEN); // 13 = maximaler Header-Anhang
 
-    aes_encrypt(record->payload + 1, len, key, nonce);
-
-    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + 1 + payload_length, flags, dest_addr, addrlen);
-    send -= (sizeof(DTLSRecord_t) + 1 + MAC_LEN);
-
-    free(record);
-
-    return send;
-  } else {
-    DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 1 + len);
-    memset(record, 0, sizeof(DTLSRecord_t) + 1 + len);
+    uint32_t headerAdd = 0;
     record->u1 = 0;
     record->type = (isHandshakeMessage ? handshake : application_data);
     record->version= dtls_1_2;
-    record->epoch = 0;
+    record->epoch = nonce[5]; // TODO
     record->snr = snr_8_bit;
     record->u2 = 6;
-    record->payload[0] = 5;
+    record->payload[0] = nonce[11]; // TODO
+    headerAdd++;
     record->length = rec_length_implicit;
 
-    memcpy(record->payload + 1, buf, len);
+    memcpy(record->payload + headerAdd, buf, len);
 
-    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + 1 + len, flags, dest_addr, addrlen);
-    send -= (sizeof(DTLSRecord_t) + 1);
+    // Bei Bedarf verschlüsseln
+    if (epoch) {
+        uint8_t key[16];
+        memcpy(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+
+        aes_encrypt(record->payload + headerAdd, len, key, nonce);
+        headerAdd += MAC_LEN;
+    }
+
+    ssize_t send = sendto(sockfd, record, sizeof(DTLSRecord_t) + headerAdd + len, flags, dest_addr, addrlen);
+    send -= (sizeof(DTLSRecord_t) + headerAdd);
 
     free(record);
 
     return send;
-  }
 }
 
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct sockaddr *src_addr, socklen_t *addrlen) {

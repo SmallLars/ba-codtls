@@ -25,6 +25,7 @@ typedef struct { // 16 + 8 + 2 + 32 = 58
     uint8_t ip[16];
     uint8_t id[8];
     uint16_t epoch;
+    uint32_t seq_num;
     KeyBlock_t key_block;
     KeyBlock_t key_block_new;
 } __attribute__ ((packed)) Session_t;
@@ -38,6 +39,8 @@ int getPSK(uint8_t dst[16], uint8_t uuid[16]);
 void createSession(uint8_t ip[16], uint8_t id[8]);
 
 uint16_t getEpoch(uint8_t ip[16]);
+
+uint32_t getSeqNum(uint8_t ip[16]);
 
 /*---------------------------------------------------------------------------*/
 

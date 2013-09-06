@@ -39,12 +39,17 @@ void createSession(uint8_t ip[16], uint8_t id[8]) {
     memcpy(session[0].ip, ip, 16);
     memcpy(session[0].id, id, 8);
     session[0].epoch = 0;
+    session[0].seq_num = 1;
     memset(session[0].key_block.key_block, 0, sizeof(KeyBlock_t));
     memset(session[0].key_block_new.key_block, 0, sizeof(KeyBlock_t));
 }
 
 uint16_t getEpoch(uint8_t ip[16]) {
     return session[0].epoch;
+}
+
+uint32_t getSeqNum(uint8_t ip[16]) {
+    return session[0].seq_num++;
 }
 
 int insertKeyBlock(uint8_t ip[16], KeyBlock_t *key_block) {
@@ -66,6 +71,7 @@ void increaseEpoch(uint8_t ip[16]) {
     memcpy(session[0].key_block.key_block, session[0].key_block_new.key_block, 40);
     memset(session[0].key_block_new.key_block, 0, 40);
     session[0].epoch++;
+    session[0].seq_num = 1;
 }
 
 /* Private Funktionen ------------------------------------------------------ */
