@@ -13,11 +13,35 @@ Trillmann sind deshalb zunächst die drei Grundfunktionen "`Addition"', "`Subtra
 Assembler realisiert worden, um die Berechnung schneller zu machen. Weitere Optimierungen sollen in der Bachelorarbeit von Jens
 Trillmann folgen.
 
-Auf Basis des "`ARM GCC Inline Assembler Cookbook"' \cite{armasm} sind für die Addition 3 Varianten 
+Auf Basis des "`ARM GCC Inline Assembler Cookbook"' \cite{armasm} sind für die drei Grundfunktionen einige Varianten entstanden.
+Welche davon jeweils genutzt wird, lässt sich in den einzelnen Quellcode-Dateien einstellen. Generell bietet sich eine Umsetzung
+in Assembler an, da sich das sogenannte "`Carry-Bit"' nutzen lässt. In diesem wird bei einer Rechenoperation ein möglicher Überlauf
+gespeichert. Für die gängigen Rechenoperationen gibt es zwei unterschiedliche Befehle, wobei nur bei einem das Carry-Bit genutzt wird.
+Dieses Potentzial zu nutzen, hat sich jedoch als schwierig herausgestellt, da Contiki das Thumb-Instruktion-Set des \glos{mc1322} nutzt.
+Im Gegensatz zum ARM-Instruktion-Set, dass 32-bit-Operationen nutzt, sind es im Thumb-Instruktion-Set nur 16 Bit. Jede Thumb-Instruktion
+wird bei Ausführung automatisch in die entsprechende ARM-Instruktion umgewandelt und ausgeführt. Durch die begrenzte Größe stehen jedoch
+nicht alle ARM-Instruktionen zur Verfügung und die Anzahl der nutzbaren Register ist auf 8 reduziert. Der Vorteil liegt jedoch in der
+geringen Programmgröße, so dass Contiki überhaupt erst auf dem \glos{mc1322} betrieben werden kann.
 
+Alle drei Grundfunktionen sind zunächst ohne Einschränkung, der auch in C implementierten Funktionalität, umgesetzt. Insbesondere sind somit
+die Längen der Ein- und Ausgabewerte variabel, was sich nur mit einer Schleife realisieren lässt. Eine Schleife bedeutet jedoch auch, dass
+ein Zähler erhöht und verglichen werden muss. Da der Block mit dem Carry-Bit im Thumb-Instruktion-Set durch alle Operationen aktualisiert wird,
+geht das Carry-Bit der Hauptoperation vom einen zum nächsten Schleifendurchlauf verloren, muss manuell zwischengespeichert, und bei Bedarf
+berücksichtigt werden. Ein Sichern und Wiederherstellen des Blocks mit dem Carry-Bit ist nur im ARM-Instruktion-Set möglich.
+Die Optimierung besteht bei dieser Umsetzung somit nur darin, dass es einfach möglich ist, einen Überlauf zu erkennen.
+Während dies bei der Addition und Subtraktion jeweils \textasciitilde 20 Byte Programmgröße einspart, bringt es bei Right-Shift
+keinen Größenvorteil. Jedoch ist die Berechnung aufgrund der eingesparten Vergleiche bei allen Operationen schneller.
 
-assembler code erwähnen der in zusammenarbeit mit jens enstanden ist\\
-3 methoden und varianten kurz erläuterm\\
-neugierig machen auf mehr -> .asm -> carry besser nutzen
+Da im Thumb-Instruktion-Set für einen Right-Shift keine Funktion zur Verfügung steht, die das Carry-Bit direkt benutzt, ist hier keine weitere Optimierung möglich.
+Für die Addition und Subtraktion sind weitere Varianten verfügbar. Da die Subtraktion ausschließlich für die Berechnung von 256-bit-Zahlen benutzt wird,
+was acht 32-bit-Blöcken entspricht, ist es möglich, die acht Subtraktionen direkt hintereinander auszuführen, so dass das Carry-Bit ohne weitere
+Eingriffe direkt berücksichtigt wird. Die Programmgröße nimmt dabei, im Vergleich zum C-Code, um \textasciitilde 12 Byte zu, wobei die
+Berechnungsgeschwindigkeit jedoch wesentlich zunimmt. Anders verhält es sich bei der Addition, da Werte unterschiedlicher Größe addiert werden.
+Notwendig sind hier 32, 64, 128, 256 und 512 Bit. Für jede dieser Größen ist nun ein eigener Additionsblock vorhanden. Bei Aufruf der Funktion wird
+die Größe überprüft und der richtige Block ausgewählt. Dies bietet eine maximale Geschwindigkeit, erhöht jedoch die Größe des Programms um \textasciitilde 212 Byte.
+Eine weitere Alternative ist es, die 512-bit-Addition durch zwei bis drei 256-Bit-Additionen zu realisieren, wobei hier, das dabei entstehende Carry-Bit, manuell
+berücksichtigt werden muss. Im Vergleich zum C-Code ist diese Variante 168 Byte größer.
+
+neugierig machen auf mehr -> .asm -> carry besser nutzen -> jens arbeit
 
 auslagerung des base points und der Ordnung
