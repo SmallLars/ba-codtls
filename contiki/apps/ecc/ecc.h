@@ -45,7 +45,6 @@
 #define arrayLength 8
 
 //simple functions to work with the big numbers
-int ecc_isSame(const uint32_t *A, const uint32_t *B, uint8_t length);
 int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty);
 

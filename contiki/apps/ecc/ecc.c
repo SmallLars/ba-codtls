@@ -57,76 +57,194 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
 void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
 
 //simple functions to work with the big numbers
-#define ecc_setZero(target, length) memset(target, 0, 4 * length)
-//void ecc_setZero(uint32_t *A, const int length);
-#define ecc_copy(src, dst, length)  memcpy(dst, src, 4 * length)
-//static void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length);
-int ecc_isOne(const uint32_t* A);
 
-//finite field functions
-//FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
-const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000,
-                    0x00000000, 0x00000000, 0x00000001, 0xffffffff};
 
-                            
+// #define ecc_setZero(target, length) memset(target, 0, 4 * length)
+static void ecc_setZero(uint32_t *A, const int length);
+static void ecc_copy(const uint32_t *from, uint32_t *to);
+__attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B);
+__attribute__((always_inline)) static int ecc_isOne(const uint32_t* A);
+__attribute__((always_inline)) static int ecc_isZero(const uint32_t* A);
+
+//finite field functions FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
+const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xffffffff};
+
 /* This is added after an static byte addition if the answer has a carry in MSB*/
-const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
-                    0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
+const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
 
-// ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551
-//static const uint32_t ecc_order_m[8] = {0xFC632551, 0xF3B9CAC2, 0xA7179E84, 0xBCE6FAAD,
-//                    0xFFFFFFFF, 0xFFFFFFFF, 0x00000000, 0xFFFFFFFF};
+// ----------------------------------------------------------------------------
 
-//static const uint32_t ecc_order_r[8] = {0x039CDAAF, 0x0C46353D, 0x58E8617B, 0x43190552,
-//                    0x00000000, 0x00000000, 0xFFFFFFFF, 0x00000000};
-
-//static const uint32_t ecc_order_mu[9] = {0xEEDF9BFE, 0x012FFD85, 0xDF1A6C21, 0x43190552, //wofür wird die gebraucht?
-//                   0xFFFFFFFF, 0xFFFFFFFE, 0xFFFFFFFF, 0x00000000,
-//                   0x00000001};
-
-//static const uint8_t ecc_order_k = 8;
-
-//const uint32_t ecc_g_point_x[8] = { 0xD898C296, 0xF4A13945, 0x2DEB33A0, 0x77037D81,
-//                    0x63A440F2, 0xF8BCE6E5, 0xE12C4247, 0x6B17D1F2};
-//const uint32_t ecc_g_point_y[8] = { 0x37BF51F5, 0xCBB64068, 0x6B315ECE, 0x2BCE3357,
-//                    0x7C0F9E16, 0x8EE7EB4A, 0xFE1A7F9B, 0x4FE342E2};
-
+static void ecc_setZero(uint32_t *A, const int length) {
 /*
-void ecc_setZero(uint32_t *A, const int length){
     int i;
 
     for (i = 0; i < length; ++i)
     {
         A[i] = 0;
     }
-}
 */
+    asm volatile(
+            "mov r2, $0 \n\t"
+            "stm %[a], {r2} \n\t"
+            "cmp %[l], #1 \n\t"
+            "beq .endZero \n\t"
+            "stm %[a], {r2} \n\t"
+            "cmp %[l], #2 \n\t"
+            "beq .endZero \n\t"
+            "mov r3, $0 \n\t"
+            "stm %[a], {r2, r3} \n\t"
+            "cmp %[l], #4 \n\t"
+            "beq .endZero \n\t"
+            "stm %[a], {r2-r3} \n\t"
+            "stm %[a], {r2-r3} \n\t"
+        ".endZero: \n\t"
+    : /* out */
+    : /* in */
+        [a] "r" (A),
+        [l] "r" (length)
+    : /* clobber list */
+        "r2", "r3", "memory"
+    );
+}
 
 /*
  * copy one array to another
  */
-/*
-static void ecc_copy(const uint32_t *from, uint32_t *to, uint8_t length){
-    int i;
-    for (i = 0; i < length; ++i)
-    {
-        to[i] = from[i];
-    }
+static void ecc_copy(const uint32_t *from, uint32_t *to) {
+    asm volatile(
+        "ldm %[s], {r2-r5} \n\t"
+        "stm %[d], {r2-r5} \n\t"
+        "ldm %[s], {r2-r5} \n\t"
+        "stm %[d], {r2-r5} \n\t"
+    : /* out */
+        [s] "+r" (from),
+        [d] "+r" (to)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "memory"
+    );
 }
-*/
 
-int ecc_isSame(const uint32_t *A, const uint32_t *B, uint8_t length){
+__attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B) {
     int i;
 
-    for(i = 0; i < length; i++){
+    for(i = 0; i < 8; i++){
         if (A[i] != B[i])
             return 0;
     }
+
+    return 1;
+
+/*
+    uint8_t result;
+    
+    asm volatile(
+            "ldm %[a], {r3,r4} \n\t"
+            "ldm %[b], {r5,r6} \n\t"
+            "cmp r3, r5 \n\t"
+            "bne .falseSame \n\t"
+            "cmp r4, r6 \n\t"
+            "bne .falseSame \n\t"
+            "ldm %[a], {r3,r4} \n\t"
+            "ldm %[b], {r5,r6} \n\t"
+            "cmp r3, r5 \n\t"
+            "bne .falseSame \n\t"
+            "cmp r4, r6 \n\t"
+            "bne .falseSame \n\t"
+            "ldm %[a], {r3,r4} \n\t"
+            "ldm %[b], {r5,r6} \n\t"
+            "cmp r3, r5 \n\t"
+            "bne .falseSame \n\t"
+            "cmp r4, r6 \n\t"
+            "bne .falseSame \n\t"
+            "ldm %[a], {r3,r4} \n\t"
+            "ldm %[b], {r5,r6} \n\t"
+            "cmp r3, r5 \n\t"
+            "bne .falseSame \n\t"
+            "cmp r4, r6 \n\t"
+            "bne .falseSame \n\t"
+            "mov %[r], #1 \n\t"
+            "b .endSame \n\t"
+        ".falseSame: \n\t"
+            "mov %[r], #0 \n\t"
+        ".endSame: \n\t"
+    : /* out *
+        [a] "+r" (A),
+        [b] "+r" (B),
+        [r] "=r" (result)
+    : /* in *
+    : /* clobber list *
+        "r3", "r4", "r5", "r6", "memory"
+    );
+
+    return result;
+*/
+}
+
+__attribute__((always_inline)) static int ecc_isOne(const uint32_t* A) {
+    if (A[0] != 1) return 0;
+
+    uint8_t n; 
+    for (n = 1; n < 8; n++) 
+        if (A[n] != 0) 
+            return 0;
+
+    return 1;
+
+/*
+    uint8_t result;
+
+    asm volatile(
+            "ldm %[a], {r2-r5} \n\t"
+            "cmp r2, #1 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r3, #0 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r4, #0 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r5, #0 \n\t"
+            "bne .falseOne \n\t"
+            "ldm %[a], {r2-r5} \n\t"
+            "cmp r2, #0 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r3, #0 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r4, #0 \n\t"
+            "bne .falseOne \n\t"
+            "cmp r5, #0 \n\t"
+            "bne .falseOne \n\t"
+            "mov %[r], #1 \n\t"
+            "bne .endOne \n\t"
+        ".falseOne: \n\t"
+            "mov %[r], #0 \n\t"
+        ".endOne: \n\t"
+    : /* out *
+        [a] "+r" (A),
+        [r] "=r" (result)
+    : /* in *
+    : /* clobber list *
+        "r2", "r3", "r4", "r5", "memory"
+    );
+
+    return result;
+*/
+}
+
+__attribute__((always_inline)) static int ecc_isZero(const uint32_t* A) {
+    uint8_t n; 
+    for (n = 0; n < 8; n++) 
+        if (A[n] != 0) 
+            return 0;
+
     return 1;
 }
 
+// ----------------------------------------------------------------------------
+
 //is A greater than B?
-int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length){
+int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
+    if (length != 8) printf("GRRRR greater: %u\n", length);
+
     int i;
     for (i = length-1; i >= 0; --i)
     {
@@ -138,12 +256,11 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length){
     return 0;
 }
 
-
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result){
     if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
         uint32_t temp[8];
         ecc_add(result, reducer, temp, arrayLength);
-        ecc_copy(temp, result, 8);
+        ecc_copy(temp, result);
     }
     return 0;
 }
@@ -152,57 +269,10 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     if(ecc_sub(x, y, result, arrayLength)){ //add modulus if carry is set
         uint32_t temp[8];
         ecc_add(result, modulus, temp, arrayLength);
-        ecc_copy(temp, result, 8);
+        ecc_copy(temp, result);
     }
     return 0;
 }
-
-// finite Field multiplication
-// 32bit * 32bit = 64bit
-// int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-//  uint32_t temp[length * 2];
-//  ecc_setZero(temp, length * 2);
-//  ecc_setZero(result, length * 2);
-//  uint8_t k, n;
-//  uint64_t l;
-//  for (k = 0; k < length; k++){
-//      for (n = 0; n < length; n++){ 
-//          l = (uint64_t)x[n]*(uint64_t)y[k];
-//          temp[n+k] = l&0xFFFFFFFF;
-//          temp[n+k+1] = l>>32;
-//          ecc_add(&temp[n+k], &result[n+k], &result[n+k], (length * 2) - (n + k));
-
-//          ecc_setZero(temp, length * 2);
-//      }
-//  }
-//  return 0;
-// }
-
-// int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-//  uint8_t k, n, carry;
-//  uint32_t tempResult[length * 2];
-//  uint32_t tempResult2[2];
-//  uint32_t tempResult3[2];
-//  ecc_setZero(result, length*2);
-//  for (k = 0 ; k < length ; k++){
-//      for ( n = 0; n < length; n++){
-//          tempResult[0] = (x[n]&0x0000FFFF)*(y[k]&0x0000FFFF);
-//          tempResult[1] = (x[n]>>16)*(y[k]>>16);
-//          tempResult2[0] = (x[n]>>16)*(y[k]&0x0000FFFF);
-//          tempResult2[1] = (x[n]&0x0000FFFF)*(y[k]>>16);
-//          carry = ecc_add(&tempResult2[0], &tempResult2[1], tempResult2, 1);
-//          tempResult2[1] = carry<<16 | tempResult2[0]>>16;
-//          tempResult2[0] = tempResult2[0]<<16;
-//          ecc_add(tempResult, tempResult2, tempResult3, 2);
-//          ecc_setZero(tempResult, length * 2);
-//          ecc_copy(tempResult3, &tempResult[n+k], 2);
-//          ecc_add(&tempResult[n+k], &result[n+k], &result[n+k],(length * 2) - (n + k));
-
-//          ecc_setZero(tempResult, length * 2);
-//      }
-//  }
-//  return 0;
-// }
 
 void ecc_lshift(uint32_t *x, int length, int shiftSize){
     uint32_t temp[shiftSize];
@@ -251,7 +321,7 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm[8];
     uint32_t tempm2[8];
     /* A = T */ 
-    ecc_copy(B,A,arrayLength);
+    ecc_copy(B,A);
 
     /* Form S1 */
     SETARRAY(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);
@@ -292,28 +362,8 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
     if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
-        ecc_copy(tempm, A, arrayLength);
+        ecc_copy(tempm, A);
     }
-}
-
-int ecc_isOne(const uint32_t* A){
-    uint8_t n; 
-    for(n=1;n<8;n++) 
-        if (A[n]!=0) 
-            return 0;
-
-    if ((n==8)&&(A[0]==1)) 
-        return 1;
-    else 
-        return 0;
-}
-
-static int ecc_isZero(const uint32_t* A){
-    uint8_t n;
-    for(n=0;n<8;n++){
-        if (A[n] != 0) return 0;
-    }
-    return 1;
 }
 
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result){
@@ -326,7 +376,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
             ecc_add(result, reducer, tempas, 8);
-            ecc_copy(tempas, result, arrayLength);
+            ecc_copy(tempas, result);
         }
         
     }
@@ -344,8 +394,8 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
     ecc_setZero(v, 8);
 
     uint8_t t;
-    ecc_copy(A,u,arrayLength); 
-    ecc_copy(modulus,v,arrayLength); 
+    ecc_copy(A,u); 
+    ecc_copy(modulus,v); 
     ecc_setZero(x1, 8);
     ecc_setZero(B, 8);
     x1[0]=1; 
@@ -357,7 +407,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
                 ecc_rshift(x1);                 /* Divide by 2 */
             else {
                 ecc_fieldAddAndDivide(x1,modulus,reducer,tempm); /* tempm=(x1+p)/2 */
-                ecc_copy(tempm,x1,arrayLength);         /* x1=tempm */
+                ecc_copy(tempm,x1);         /* x1=tempm */
             }
         } 
         while(!(v[0]&1)) {                  /* While v is even */
@@ -367,24 +417,24 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
             else
             {
                 ecc_fieldAddAndDivide(B,modulus,reducer,tempm); /* tempm=(x2+p)/2 */
-                ecc_copy(tempm,B,arrayLength);          /* x2=tempm */ 
+                ecc_copy(tempm,B);          /* x2=tempm */ 
             }
             
         } 
         t=ecc_sub(u,v,tempm,arrayLength);               /* tempm=u-v */
         if (t==0) {                         /* If u > 0 */
-            ecc_copy(tempm,u,arrayLength);                  /* u=u-v */
+            ecc_copy(tempm,u);                  /* u=u-v */
             ecc_fieldSub(x1,B,modulus,tempm);           /* tempm=x1-x2 */
-            ecc_copy(tempm,x1,arrayLength);                 /* x1=x1-x2 */
+            ecc_copy(tempm,x1);                 /* x1=x1-x2 */
         } else {
             ecc_sub(v,u,tempm,arrayLength);             /* tempm=v-u */
-            ecc_copy(tempm,v,arrayLength);                  /* v=v-u */
+            ecc_copy(tempm,v);                  /* v=v-u */
             ecc_fieldSub(B,x1,modulus,tempm);           /* tempm=x2-x1 */
-            ecc_copy(tempm,B,arrayLength);                  /* x2=x2-x1 */
+            ecc_copy(tempm,B);                  /* x2=x2-x1 */
         }
     } 
     if (ecc_isOne(u)) {
-        ecc_copy(x1,B,arrayLength); 
+        ecc_copy(x1,B); 
     }
 }
 
@@ -394,17 +444,17 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        ecc_copy(qx, Sx,arrayLength);
-        ecc_copy(qy, Sy,arrayLength);
+        ecc_copy(qx, Sx);
+        ecc_copy(qy, Sy);
         return;
     } else if(ecc_isZero(qx) && ecc_isZero(qy)) {
-        ecc_copy(px, Sx,arrayLength);
-        ecc_copy(py, Sy,arrayLength);
+        ecc_copy(px, Sx);
+        ecc_copy(py, Sy);
         return;
     }
 
-    if(ecc_isSame(px, qx, arrayLength)){
-        if(!ecc_isSame(py, qy, arrayLength)){
+    if(ecc_isSame(px, qx)){
+        if(!ecc_isSame(py, qy)){
             ecc_setZero(Sx, 8);
             ecc_setZero(Sy, 8);
             return;
@@ -437,8 +487,8 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        ecc_copy(px, Dx,arrayLength);
-        ecc_copy(py, Dy,arrayLength);
+        ecc_copy(px, Dx);
+        ecc_copy(py, Dy);
         return;
     }
 
@@ -475,14 +525,14 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     int i;
     for (i = 256;i--;){
         ecc_ec_double(Qx, Qy, resultx, resulty);
-        ecc_copy(resultx, Qx, arrayLength);
-        ecc_copy(resulty, Qy, arrayLength);
+        ecc_copy(resultx, Qx);
+        ecc_copy(resulty, Qy);
         if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
             ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
-            ecc_copy(resultx, Qx, arrayLength);
-            ecc_copy(resulty, Qy, arrayLength);
+            ecc_copy(resultx, Qx);
+            ecc_copy(resulty, Qy);
         }
     }
-    ecc_copy(Qx, resultx, arrayLength);
-    ecc_copy(Qy, resulty, arrayLength);
+    ecc_copy(Qx, resultx);
+    ecc_copy(Qy, resulty);
 }
