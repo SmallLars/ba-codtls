@@ -57,14 +57,22 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
 void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
 
 //simple functions to work with the big numbers
-
-
 // #define ecc_setZero(target, length) memset(target, 0, 4 * length)
 static void ecc_setZero(uint32_t *A, const int length);
 static void ecc_copy(const uint32_t *from, uint32_t *to);
 __attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B);
 __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A);
 __attribute__((always_inline)) static int ecc_isZero(const uint32_t* A);
+
+//optimierung
+__attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src);
+__attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src);
 
 //finite field functions FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
 const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xffffffff};
@@ -256,6 +264,44 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
     return 0;
 }
 
+// ----------------------------------------------------------------------------
+
+#define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
+
+__attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, 0, 0, 0, src[11], src[12], src[13], src[14], src[15]);
+}
+
+__attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, 0, 0, 0, src[12], src[13], src[14], src[15], 0);
+}
+
+__attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[8], src[9], src[10], 0, 0, 0, src[14], src[15]);
+}
+
+__attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]);
+}
+
+__attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[11], src[12], src[13], 0, 0, 0, src[8], src[10]);
+}
+
+__attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]);
+}
+
+__attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]);
+}
+
+__attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src) {
+    SETARRAY(dst, src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]);
+}
+
+// ----------------------------------------------------------------------------
+
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result){
     if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
         uint32_t temp[8];
@@ -313,8 +359,6 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_
     return 0;
 }
 
-#define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
-
 //TODO: maximum:
 //fffffffe00000002fffffffe0000000100000001fffffffe00000001fffffffe00000001fffffffefffffffffffffffffffffffe000000000000000000000001_16
 void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
@@ -322,42 +366,40 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm2[8];
     /* A = T */ 
     ecc_copy(B,A);
-
     /* Form S1 */
-    SETARRAY(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);
-
+    ecc_form_s1(tempm, B);
     /* tempm2=T+S1 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* A=T+S1+S1 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
     /* Form S2 */
-    SETARRAY(tempm, 0, 0, 0, B[12], B[13], B[14], B[15], 0);
+    ecc_form_s2(tempm, B);
     /* tempm2=T+S1+S1+S2 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* A=T+S1+S1+S2+S2 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
     /* Form S3 */
-    SETARRAY(tempm, B[8], B[9], B[10], 0, 0, 0, B[14], B[15]);
+    ecc_form_s3(tempm, B);
     /* tempm2=T+S1+S1+S2+S2+S3 */ 
     ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
     /* Form S4 */
-    SETARRAY(tempm, B[9], B[10], B[11], B[13], B[14], B[15], B[13], B[8]);
+    ecc_form_s4(tempm, B);
     /* A=T+S1+S1+S2+S2+S3+S4 */ 
     ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form D1 */ 
-    SETARRAY(tempm, B[11], B[12], B[13], 0, 0, 0, B[8], B[10]);
+    /* Form D1 */
+    ecc_form_d1(tempm, B);
     /* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
     ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D2 */ 
-    SETARRAY(tempm, B[12], B[13], B[14], B[15], 0, 0, B[9], B[11]);
+    /* Form D2 */
+    ecc_form_d2(tempm, B);
     /* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
-    /* Form D3 */ 
-    SETARRAY(tempm, B[13], B[14], B[15], B[8], B[9], B[10], 0, B[12]);
+    /* Form D3 */
+    ecc_form_d3(tempm, B);
     /* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
     ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D4 */ 
-    SETARRAY(tempm, B[14], B[15], 0, B[9], B[10], B[11], 0, B[13]);
+    /* Form D4 */
+    ecc_form_d4(tempm, B);
     /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
     if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
