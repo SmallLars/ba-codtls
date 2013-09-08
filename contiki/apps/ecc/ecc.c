@@ -269,35 +269,187 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
 #define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
 
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, 0, 0, 0, src[11], src[12], src[13], src[14], src[15]);
+    // 0, 0, 0, src[11], src[12], src[13], src[14], src[15]
+
+    //SETARRAY(dst, 0, 0, 0, src[11], src[12], src[13], src[14], src[15]);
+
+    asm volatile(
+        "mov r2, #0 \n\t"
+        "mov r3, #0 \n\t"
+        "mov r4, #0 \n\t"
+        "stm %[d], {r2-r4} \n\t"
+        "add %[s], %[s], #44 \n\t"
+        "ldm %[s], {r2-r6} \n\t"
+        "stm %[d], {r2-r6} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "r6", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, 0, 0, 0, src[12], src[13], src[14], src[15], 0);
+    // 0, 0, 0, src[12], src[13], src[14], src[15], 0
+
+    //SETARRAY(dst, 0, 0, 0, src[12], src[13], src[14], src[15], 0);
+
+    asm volatile(
+        "mov r2, #0 \n\t"
+        "mov r3, #0 \n\t"
+        "mov r4, #0 \n\t"
+        "stm %[d], {r2-r4} \n\t"
+        "add %[s], %[s], #48 \n\t"
+        "ldm %[s], {r2-r5} \n\t"
+        "stm %[d], {r2-r5} \n\t"
+        "mov r2, #0 \n\t"
+        "stm %[d], {r2} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[8], src[9], src[10], 0, 0, 0, src[14], src[15]);
+    // src[8], src[9], src[10], 0, 0, 0, src[14], src[15]
+
+    //SETARRAY(dst, src[8], src[9], src[10], 0, 0, 0, src[14], src[15]);
+
+    asm volatile(
+        "add %[s], %[s], #32 \n\t"
+        "ldm %[s], {r2-r4} \n\t"
+        "mov r5, #0 \n\t"
+        "stm %[d], {r2-r5} \n\t"
+        "mov r2, #0 \n\t"
+        "mov r3, #0 \n\t"
+        "add %[s], %[s], #12 \n\t"
+        "ldm %[s], {r4,r5} \n\t"
+        "stm %[d], {r2-r5} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]);
+    // src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]
+
+    //SETARRAY(dst, src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]);
+
+    asm volatile(
+        "add %[s], %[s], #32 \n\t"
+        "ldm %[s], {r2-r5} \n\t"
+        "stm %[d], {r3-r5} \n\t"
+        "add %[s], %[s], #4 \n\t"
+        "ldm %[s], {r3-r5} \n\t"
+        "stm %[d], {r3-r5} \n\t"
+        "mov r4, r2 \n\t"
+        "stm %[d], {r3,r4} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[11], src[12], src[13], 0, 0, 0, src[8], src[10]);
+    // src[11], src[12], src[13], 0, 0, 0, src[8], src[10]
+
+    //SETARRAY(dst, src[11], src[12], src[13], 0, 0, 0, src[8], src[10]);
+
+    asm volatile(
+        "add %[s], %[s], #32 \n\t"
+        "ldm %[s], {r2-r7} \n\t"
+        "stm %[d], {r5-r7} \n\t"
+        "mov r3, #0 \n\t"
+        "mov r5, #0 \n\t"
+        "mov r6, #0 \n\t"
+        "stm %[d], {r3,r5,r6} \n\t"
+        "stm %[d], {r2,r4} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "r6", "r7", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]);
+    // src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]
+
+    //SETARRAY(dst, src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]);
+
+    asm volatile(
+        "add %[s], %[s], #48 \n\t"
+        "ldm %[s], {r2-r5} \n\t"
+        "stm %[d], {r2-r5} \n\t"
+        "sub %[s], %[s], #28 \n\t"
+        "ldm %[s], {r4-r6} \n\t"
+        "mov r2, #0 \n\t"
+        "mov r3, #0 \n\t"
+        "stm %[d], {r2-r4,r6} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "r6", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]);
+    // src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]
+
+    //SETARRAY(dst, src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]);
+
+    asm volatile(
+        "add %[s], %[s], #52 \n\t"
+        "ldm %[s], {r2-r4} \n\t"
+        "stm %[d], {r2-r4} \n\t"
+        "sub %[s], %[s], #32 \n\t"
+        "ldm %[s], {r2-r6} \n\t"
+        "mov r5, #0 \n\t"
+        "stm %[d], {r2-r6} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "r6", "memory"
+    );
 }
 
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src) {
-    SETARRAY(dst, src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]);
+    // src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]
+
+    //SETARRAY(dst, src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]);
+
+    asm volatile(
+        "add %[s], %[s], #56 \n\t"
+        "ldm %[s], {r2,r3} \n\t"
+        "mov r4, #0 \n\t"
+        "stm %[d], {r2-r4} \n\t"
+        "sub %[s], %[s], #28 \n\t"
+        "ldm %[s], {r2-r6} \n\t"
+        "mov r5, #0 \n\t"
+        "stm %[d], {r2-r6} \n\t"
+    : /* out */
+        [d] "+l" (dst),
+        [s] "+l" (src)
+    : /* in */
+    : /* clobber list */
+        "r2", "r3", "r4", "r5", "r6", "memory"
+    );
 }
 
 // ----------------------------------------------------------------------------
@@ -558,7 +710,7 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     ecc_fieldSub(tempC, py, ecc_prime_m, Dy); //Dy = lambda * (qx-dx) - px
 }
 
-void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty){
+void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
     uint32_t Qx[8];
     uint32_t Qy[8];
     ecc_setZero(Qx, 8);
