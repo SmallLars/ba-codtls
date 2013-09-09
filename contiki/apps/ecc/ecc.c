@@ -46,6 +46,9 @@
 
 /*---------------------------------------------------------------------------*/
 
+#define keyLengthInBytes 32
+#define arrayLength 8
+
 //finite field functions FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
 const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xffffffff};
 
@@ -86,17 +89,11 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-//is A greater than B?
-int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
-    if (length != 8) printf("GRRRR greater: %u\n", length);
-
+int ecc_compare(const uint32_t *A, const uint32_t *B) {
     int i;
-    for (i = length-1; i >= 0; --i)
-    {
-        if(A[i] > B[i])
-            return 1;
-        if(A[i] < B[i])
-            return -1;
+    for (i = 7; i >= 0; i--) {
+        if (A[i] > B[i]) return 1; 
+        if (A[i] < B[i]) return -1;
     }
     return 0;
 }
@@ -233,30 +230,30 @@ __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A) {
     asm volatile(
             "ldm %[a], {r2-r5} \n\t"
             "cmp r2, #1 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r3, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r4, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r5, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "ldm %[a], {r2-r5} \n\t"
             "cmp r2, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r3, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r4, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "cmp r5, #0 \n\t"
-            "bne .falseOne \n\t"
+            "bne 0f \n\t"
             "mov %[r], #1 \n\t"
-            "bne .endOne \n\t"
-        ".falseOne: \n\t"
+            "bne 1f \n\t"
+        "0: \n\t"
             "mov %[r], #0 \n\t"
-        ".endOne: \n\t"
+        "1: \n\t"
     : /* out *
-        [a] "+r" (A),
-        [r] "=r" (result)
+        [a] "+l" (A),
+        [r] "=l" (result)
     : /* in *
     : /* clobber list *
         "r2", "r3", "r4", "r5", "memory"
@@ -522,7 +519,7 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     ecc_form_d4(tempm, B);                      // Form D4
     ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);   // A = T + S1 + S1 + S2 + S2 + S3 + S4 - D1 - D2 - D3 - D4
 
-    if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
+    if (ecc_compare(A, ecc_prime_m) >= 0) {
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
         ecc_copy(A, tempm);
     }
@@ -531,10 +528,9 @@ void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result){
     uint32_t n = ecc_add(x, modulus, result, arrayLength);
     ecc_rshift(result);
-    if(n){ //add prime if carry is still set!
+    if (n) { //add prime if carry is still set!
         result[7] |= 0x80000000;//add the carry
-        if (ecc_isGreater(result, modulus, arrayLength) == 1)
-        {
+        if (ecc_compare(result, modulus) == 1) {
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
             ecc_add(result, reducer, tempas, 8);

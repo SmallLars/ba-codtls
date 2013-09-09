@@ -41,14 +41,10 @@
 
 #include <stdint.h>
 
-#define keyLengthInBytes 32
-#define arrayLength 8
-
-//simple functions to work with the big numbers
-int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length);
+int ecc_compare(const uint32_t *A, const uint32_t *B);
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty);
 
-#define ecc_is_valid_key(key, order) (ecc_isGreater(order, key, arrayLength) == 1)
+#define ecc_is_valid_key(key, order) (ecc_compare(order, key) == 1)
 #define ecc_ecdh(px, py, secret, resultx, resulty) ecc_ec_mult(px, py, secret, resultx, resulty)
 
 #endif /* ECC_H_ */

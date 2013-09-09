@@ -44,6 +44,7 @@ Carry-Bit, manuell berücksichtigt werden muss. Im Vergleich zum C-Code ist dies
 
 Um weitere 96 Byte einzusparen, sind 3 benötigte Konstanten im Flash-Speicher hinterlegt. Dazu gehören die X- und Y- Koordinate des Basis-Punkts, der für
 den Diffie-Hellman-Schlüsselaustausch verwendet wird, und die Ordnung der verwendeten elliptischen Kurve. Die Ordnung wird nur verwendet, um zu überprüfen,
-ob der zufällig generierte private Schlüssel sich für die Benutzung eignet. Bei Bedarf werden die Werte aus dem Flash-Speicher geladen 
+ob der zufällig generierte private Schlüssel sich für die Benutzung eignet. Bei Bedarf werden die Werte aus dem Flash-Speicher geladen und nur so lange
+im Stack abgelegt, wie sie benötigt werden.
 
 Weitere Optimierungen bezüglich der Programmgröße und Berechnungsgeschwindigkeit sollen in der Bachelorarbeit von Jens Trillmann folgen.
