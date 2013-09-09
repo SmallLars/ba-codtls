@@ -150,8 +150,8 @@ static void ecc_setZero(uint32_t *A, const int length) {
         ".endZero: \n\t"
     : /* out */
     : /* in */
-        [a] "r" (A),
-        [l] "r" (length)
+        [a] "l" (A),
+        [l] "l" (length)
     : /* clobber list */
         "r2", "r3", "memory"
     );
