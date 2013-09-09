@@ -184,47 +184,33 @@ __attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, cons
     }
 
     return 1;
-
 /*
     uint8_t result;
     
     asm volatile(
+        "1: \n\t"
+            "mov r7, #0 \n\t"
             "ldm %[a], {r3,r4} \n\t"
             "ldm %[b], {r5,r6} \n\t"
             "cmp r3, r5 \n\t"
-            "bne .falseSame \n\t"
+            "bne 0f \n\t"
             "cmp r4, r6 \n\t"
-            "bne .falseSame \n\t"
-            "ldm %[a], {r3,r4} \n\t"
-            "ldm %[b], {r5,r6} \n\t"
-            "cmp r3, r5 \n\t"
-            "bne .falseSame \n\t"
-            "cmp r4, r6 \n\t"
-            "bne .falseSame \n\t"
-            "ldm %[a], {r3,r4} \n\t"
-            "ldm %[b], {r5,r6} \n\t"
-            "cmp r3, r5 \n\t"
-            "bne .falseSame \n\t"
-            "cmp r4, r6 \n\t"
-            "bne .falseSame \n\t"
-            "ldm %[a], {r3,r4} \n\t"
-            "ldm %[b], {r5,r6} \n\t"
-            "cmp r3, r5 \n\t"
-            "bne .falseSame \n\t"
-            "cmp r4, r6 \n\t"
-            "bne .falseSame \n\t"
+            "bne 0f \n\t"
+            "add r7, r7, #1 \n\t"
+            "cmp r7, #4 \n\t"
+            "bne 1b \n\t"
             "mov %[r], #1 \n\t"
-            "b .endSame \n\t"
-        ".falseSame: \n\t"
+            "b 1f \n\t"
+        "0: \n\t"
             "mov %[r], #0 \n\t"
-        ".endSame: \n\t"
+        "1: \n\t"
     : /* out *
-        [a] "+r" (A),
-        [b] "+r" (B),
-        [r] "=r" (result)
+        [a] "+l" (A),
+        [b] "+l" (B),
+        [r] "=l" (result)
     : /* in *
     : /* clobber list *
-        "r3", "r4", "r5", "r6", "memory"
+        "r3", "r4", "r5", "r6", "r7", "memory"
     );
 
     return result;
