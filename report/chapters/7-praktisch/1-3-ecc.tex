@@ -17,7 +17,7 @@ Auf Basis des "`ARM GCC Inline Assembler Cookbook"' \cite{armasm} sind für die 
 Welche davon jeweils genutzt wird, lässt sich in den einzelnen Quellcode-Dateien einstellen. Generell bietet sich eine Umsetzung
 in Assembler an, da sich das sogenannte "`Carry-Bit"' nutzen lässt. In diesem wird bei einer Rechenoperation ein möglicher Überlauf
 gespeichert. Für die gängigen Rechenoperationen gibt es zwei unterschiedliche Befehle, wobei nur bei einem das Carry-Bit genutzt wird.
-Dieses Potentzial zu nutzen, hat sich jedoch als schwierig herausgestellt, da Contiki das Thumb-Instruktion-Set des \glos{mc1322} nutzt.
+Dieses Potenzial zu nutzen, hat sich jedoch als schwierig herausgestellt, da Contiki das Thumb-Instruktion-Set des \glos{mc1322} nutzt.
 Im Gegensatz zum ARM-Instruktion-Set, dass 32-bit-Operationen nutzt, sind es im Thumb-Instruktion-Set nur 16 Bit. Jede Thumb-Instruktion
 wird bei Ausführung automatisch in die entsprechende ARM-Instruktion umgewandelt und ausgeführt. Durch die begrenzte Größe stehen jedoch
 nicht alle ARM-Instruktionen zur Verfügung und die Anzahl der nutzbaren Register ist auf 8 reduziert. Der Vorteil liegt jedoch in der

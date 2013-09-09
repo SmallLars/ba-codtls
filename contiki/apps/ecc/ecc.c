@@ -44,27 +44,24 @@
 #include "ecc_sub.h"
 #include "ecc_rshift.h"
 
-//field functions for big numbers
-int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
-int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
-int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);
-void ecc_fieldModP(uint32_t *A, const uint32_t *B);
-void ecc_fieldModO(const uint32_t *A, uint32_t *result, uint8_t length);
-void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B);
+/*---------------------------------------------------------------------------*/
 
-//ec Functions
-void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy);
-void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
+//finite field functions FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
+const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xffffffff};
+
+/* This is added after an static byte addition if the answer has a carry in MSB*/
+const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
+
+/* Private Funktionsprototypen --------------------------------------------- */
 
 //simple functions to work with the big numbers
-// #define ecc_setZero(target, length) memset(target, 0, 4 * length)
 static void ecc_setZero(uint32_t *A, const int length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B);
 __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A);
 __attribute__((always_inline)) static int ecc_isZero(const uint32_t* A);
 
-//optimierung
+//ecc_fieldModP-Helper
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src);
@@ -74,13 +71,58 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src);
 
-//finite field functions FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF
-const uint32_t ecc_prime_m[8] = {0xffffffff, 0xffffffff, 0xffffffff, 0x00000000, 0x00000000, 0x00000000, 0x00000001, 0xffffffff};
+//field functions for big numbers
+int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
+int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
+void ecc_lshift(uint32_t *x, int length, int shiftSize);
+int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);
+void ecc_fieldModP(uint32_t *A, const uint32_t *B);
+static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result);
+void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B);
 
-/* This is added after an static byte addition if the answer has a carry in MSB*/
-const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff, 0xffffffff, 0xffffffff, 0xfffffffe, 0x00000000};
+//ec Functions
+void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy);
+void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
 
-// ----------------------------------------------------------------------------
+/* Öffentliche Funktionen -------------------------------------------------- */
+
+//is A greater than B?
+int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
+    if (length != 8) printf("GRRRR greater: %u\n", length);
+
+    int i;
+    for (i = length-1; i >= 0; --i)
+    {
+        if(A[i] > B[i])
+            return 1;
+        if(A[i] < B[i])
+            return -1;
+    }
+    return 0;
+}
+
+void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
+    uint32_t Qx[8];
+    uint32_t Qy[8];
+    ecc_setZero(Qx, 8);
+    ecc_setZero(Qy, 8);
+
+    int i;
+    for (i = 256;i--;){
+        ecc_ec_double(Qx, Qy, resultx, resulty);
+        ecc_copy(Qx, resultx);
+        ecc_copy(Qy, resulty);
+        if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
+            ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
+            ecc_copy(Qx, resultx);
+            ecc_copy(Qy, resulty);
+        }
+    }
+    ecc_copy(resultx, Qx);
+    ecc_copy(resulty, Qy);
+}
+
+/* Private Funktionen ------------------------------------------------------ */
 
 static void ecc_setZero(uint32_t *A, const int length) {
 /*
@@ -247,24 +289,7 @@ __attribute__((always_inline)) static int ecc_isZero(const uint32_t* A) {
     return 1;
 }
 
-// ----------------------------------------------------------------------------
-
-//is A greater than B?
-int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
-    if (length != 8) printf("GRRRR greater: %u\n", length);
-
-    int i;
-    for (i = length-1; i >= 0; --i)
-    {
-        if(A[i] > B[i])
-            return 1;
-        if(A[i] < B[i])
-            return -1;
-    }
-    return 0;
-}
-
-// ----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src) {
     // 0, 0, 0, src[11], src[12], src[13], src[14], src[15]
@@ -426,7 +451,7 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
     );
 }
 
-// ----------------------------------------------------------------------------
+/*---------------------------------------------------------------------------*/
 
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result){
     if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
@@ -446,7 +471,7 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     return 0;
 }
 
-void ecc_lshift(uint32_t *x, int length, int shiftSize){
+void ecc_lshift(uint32_t *x, int length, int shiftSize) {
     uint32_t temp[shiftSize];
     uint32_t oldTemp[shiftSize];
     ecc_setZero(&oldTemp[0], shiftSize);
@@ -665,25 +690,4 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     ecc_fieldMult(tempB, Dy, tempD, arrayLength); //tempC = lambda * (qx-dx)
     ecc_fieldModP(tempC, tempD);
     ecc_fieldSub(tempC, py, ecc_prime_m, Dy); //Dy = lambda * (qx-dx) - px
-}
-
-void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
-    uint32_t Qx[8];
-    uint32_t Qy[8];
-    ecc_setZero(Qx, 8);
-    ecc_setZero(Qy, 8);
-
-    int i;
-    for (i = 256;i--;){
-        ecc_ec_double(Qx, Qy, resultx, resulty);
-        ecc_copy(Qx, resultx);
-        ecc_copy(Qy, resulty);
-        if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
-            ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
-            ecc_copy(Qx, resultx);
-            ecc_copy(Qy, resulty);
-        }
-    }
-    ecc_copy(resultx, Qx);
-    ecc_copy(resulty, Qy);
 }
