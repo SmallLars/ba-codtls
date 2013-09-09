@@ -59,7 +59,7 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
 //simple functions to work with the big numbers
 // #define ecc_setZero(target, length) memset(target, 0, 4 * length)
 static void ecc_setZero(uint32_t *A, const int length);
-static void ecc_copy(const uint32_t *from, uint32_t *to);
+static void ecc_copy(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B);
 __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A);
 __attribute__((always_inline)) static int ecc_isZero(const uint32_t* A);
@@ -118,16 +118,16 @@ static void ecc_setZero(uint32_t *A, const int length) {
 /*
  * copy one array to another
  */
-static void ecc_copy(const uint32_t *from, uint32_t *to) {
+static void ecc_copy(uint32_t *dst, const uint32_t *src) {
     asm volatile(
         "ldm %[s], {r2-r5} \n\t"
         "stm %[d], {r2-r5} \n\t"
         "ldm %[s], {r2-r5} \n\t"
         "stm %[d], {r2-r5} \n\t"
     : /* out */
-        [s] "+r" (from),
-        [d] "+r" (to)
     : /* in */
+        [d] "l" (dst),
+        [s] "l" (src)
     : /* clobber list */
         "r2", "r3", "r4", "r5", "memory"
     );
@@ -266,13 +266,8 @@ int ecc_isGreater(const uint32_t *A, const uint32_t *B, uint8_t length) {
 
 // ----------------------------------------------------------------------------
 
-#define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
-
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src) {
     // 0, 0, 0, src[11], src[12], src[13], src[14], src[15]
-
-    //SETARRAY(dst, 0, 0, 0, src[11], src[12], src[13], src[14], src[15]);
-
     asm volatile(
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
@@ -292,9 +287,6 @@ __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src) {
     // 0, 0, 0, src[12], src[13], src[14], src[15], 0
-
-    //SETARRAY(dst, 0, 0, 0, src[12], src[13], src[14], src[15], 0);
-
     asm volatile(
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
@@ -316,9 +308,6 @@ __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src) {
     // src[8], src[9], src[10], 0, 0, 0, src[14], src[15]
-
-    //SETARRAY(dst, src[8], src[9], src[10], 0, 0, 0, src[14], src[15]);
-
     asm volatile(
         "add %[s], %[s], #32 \n\t"
         "ldm %[s], {r2-r4} \n\t"
@@ -340,9 +329,6 @@ __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint32_t *src) {
     // src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]
-
-    //SETARRAY(dst, src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]);
-
     asm volatile(
         "add %[s], %[s], #32 \n\t"
         "ldm %[s], {r2-r5} \n\t"
@@ -363,9 +349,6 @@ __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint32_t *src) {
     // src[11], src[12], src[13], 0, 0, 0, src[8], src[10]
-
-    //SETARRAY(dst, src[11], src[12], src[13], 0, 0, 0, src[8], src[10]);
-
     asm volatile(
         "add %[s], %[s], #32 \n\t"
         "ldm %[s], {r2-r7} \n\t"
@@ -386,9 +369,6 @@ __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint32_t *src) {
     // src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]
-
-    //SETARRAY(dst, src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]);
-
     asm volatile(
         "add %[s], %[s], #48 \n\t"
         "ldm %[s], {r2-r5} \n\t"
@@ -409,9 +389,6 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src) {
     // src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]
-
-    //SETARRAY(dst, src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]);
-
     asm volatile(
         "add %[s], %[s], #52 \n\t"
         "ldm %[s], {r2-r4} \n\t"
@@ -431,9 +408,6 @@ __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint
 
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src) {
     // src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]
-
-    //SETARRAY(dst, src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]);
-
     asm volatile(
         "add %[s], %[s], #56 \n\t"
         "ldm %[s], {r2,r3} \n\t"
@@ -458,7 +432,7 @@ int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, 
     if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
         uint32_t temp[8];
         ecc_add(result, reducer, temp, arrayLength);
-        ecc_copy(temp, result);
+        ecc_copy(result, temp);
     }
     return 0;
 }
@@ -467,7 +441,7 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     if(ecc_sub(x, y, result, arrayLength)){ //add modulus if carry is set
         uint32_t temp[8];
         ecc_add(result, modulus, temp, arrayLength);
-        ecc_copy(temp, result);
+        ecc_copy(result, temp);
     }
     return 0;
 }
@@ -516,47 +490,30 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_
 void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm[8];
     uint32_t tempm2[8];
-    /* A = T */ 
-    ecc_copy(B,A);
-    /* Form S1 */
-    ecc_form_s1(tempm, B);
-    /* tempm2=T+S1 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* A=T+S1+S1 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form S2 */
-    ecc_form_s2(tempm, B);
-    /* tempm2=T+S1+S1+S2 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* A=T+S1+S1+S2+S2 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form S3 */
-    ecc_form_s3(tempm, B);
-    /* tempm2=T+S1+S1+S2+S2+S3 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* Form S4 */
-    ecc_form_s4(tempm, B);
-    /* A=T+S1+S1+S2+S2+S3+S4 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form D1 */
-    ecc_form_d1(tempm, B);
-    /* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
-    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D2 */
-    ecc_form_d2(tempm, B);
-    /* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
-    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
-    /* Form D3 */
-    ecc_form_d3(tempm, B);
-    /* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
-    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D4 */
-    ecc_form_d4(tempm, B);
-    /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
-    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
+
+    ecc_copy(A, B);                             // A = T
+    ecc_form_s1(tempm, B);                      // Form S1
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);   // tempm2 = T + S1
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);   // A = T + S1 + S1
+    ecc_form_s2(tempm, B);                      // Form S2
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);   // tempm2 = T + S1 + S1 + S2
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);   // A = T + S1 + S1 + S2 + S2
+    ecc_form_s3(tempm, B);                      // Form S3
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);   // tempm2 = T + S1 + S1 + S2 + S2 + S3
+    ecc_form_s4(tempm, B);                      // Form S4
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);   // A = T + S1 + S1 + S2 + S2 + S3 + S4
+    ecc_form_d1(tempm, B);                      // Form D1
+    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);   // tempm2 = T + S1 + S1 + S2 + S2 + S3 + S4 - D1
+    ecc_form_d2(tempm, B);                      // Form D2
+    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);   // A = T + S1 + S1 + S2 + S2 + S3 + S4 - D1 - D2
+    ecc_form_d3(tempm, B);                      // Form D3 
+    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);   // tempm2 = T + S1 + S1 + S2 + S2 + S3 + S4 - D1 - D2 - D3
+    ecc_form_d4(tempm, B);                      // Form D4
+    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);   // A = T + S1 + S1 + S2 + S2 + S3 + S4 - D1 - D2 - D3 - D4
+
     if(ecc_isGreater(A, ecc_prime_m, arrayLength) >= 0){
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
-        ecc_copy(tempm, A);
+        ecc_copy(A, tempm);
     }
 }
 
@@ -570,7 +527,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
             ecc_add(result, reducer, tempas, 8);
-            ecc_copy(tempas, result);
+            ecc_copy(result, tempas);
         }
         
     }
@@ -588,8 +545,8 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
     ecc_setZero(v, 8);
 
     uint8_t t;
-    ecc_copy(A,u); 
-    ecc_copy(modulus,v); 
+    ecc_copy(u, A); 
+    ecc_copy(v, modulus); 
     ecc_setZero(x1, 8);
     ecc_setZero(B, 8);
     x1[0]=1; 
@@ -601,7 +558,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
                 ecc_rshift(x1);                 /* Divide by 2 */
             else {
                 ecc_fieldAddAndDivide(x1,modulus,reducer,tempm); /* tempm=(x1+p)/2 */
-                ecc_copy(tempm,x1);         /* x1=tempm */
+                ecc_copy(x1, tempm);         /* x1=tempm */
             }
         } 
         while(!(v[0]&1)) {                  /* While v is even */
@@ -611,24 +568,24 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
             else
             {
                 ecc_fieldAddAndDivide(B,modulus,reducer,tempm); /* tempm=(x2+p)/2 */
-                ecc_copy(tempm,B);          /* x2=tempm */ 
+                ecc_copy(B, tempm);          /* x2=tempm */ 
             }
             
         } 
         t=ecc_sub(u,v,tempm,arrayLength);               /* tempm=u-v */
         if (t==0) {                         /* If u > 0 */
-            ecc_copy(tempm,u);                  /* u=u-v */
+            ecc_copy(u, tempm);                  /* u=u-v */
             ecc_fieldSub(x1,B,modulus,tempm);           /* tempm=x1-x2 */
-            ecc_copy(tempm,x1);                 /* x1=x1-x2 */
+            ecc_copy(x1, tempm);                 /* x1=x1-x2 */
         } else {
             ecc_sub(v,u,tempm,arrayLength);             /* tempm=v-u */
-            ecc_copy(tempm,v);                  /* v=v-u */
+            ecc_copy(v, tempm);                  /* v=v-u */
             ecc_fieldSub(B,x1,modulus,tempm);           /* tempm=x2-x1 */
-            ecc_copy(tempm,B);                  /* x2=x2-x1 */
+            ecc_copy(B, tempm);                  /* x2=x2-x1 */
         }
     } 
     if (ecc_isOne(u)) {
-        ecc_copy(x1,B); 
+        ecc_copy(B, x1); 
     }
 }
 
@@ -638,12 +595,12 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        ecc_copy(qx, Sx);
-        ecc_copy(qy, Sy);
+        ecc_copy(Sx, qx);
+        ecc_copy(Sy, qy);
         return;
     } else if(ecc_isZero(qx) && ecc_isZero(qy)) {
-        ecc_copy(px, Sx);
-        ecc_copy(py, Sy);
+        ecc_copy(Sx, px);
+        ecc_copy(Sy, py);
         return;
     }
 
@@ -681,8 +638,8 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     uint32_t tempD[16];
 
     if(ecc_isZero(px) && ecc_isZero(py)){
-        ecc_copy(px, Dx);
-        ecc_copy(py, Dy);
+        ecc_copy(Dx, px);
+        ecc_copy(Dy, py);
         return;
     }
 
@@ -719,14 +676,14 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     int i;
     for (i = 256;i--;){
         ecc_ec_double(Qx, Qy, resultx, resulty);
-        ecc_copy(resultx, Qx);
-        ecc_copy(resulty, Qy);
+        ecc_copy(Qx, resultx);
+        ecc_copy(Qy, resulty);
         if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
             ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
-            ecc_copy(resultx, Qx);
-            ecc_copy(resulty, Qy);
+            ecc_copy(Qx, resultx);
+            ecc_copy(Qy, resulty);
         }
     }
-    ecc_copy(Qx, resultx);
-    ecc_copy(Qy, resulty);
+    ecc_copy(resultx, Qx);
+    ecc_copy(resulty, Qy);
 }
