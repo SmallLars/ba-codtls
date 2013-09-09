@@ -23,14 +23,14 @@ client kompilieren:
 
 border-router und econotag:
     Der border-router ist mit der MAC 62:B1:60:B1:60:B1:00:22 konfiguriert.
-    Der econotag ist mit der MAC 62:B1:60:B1:60:B1:00:19 konfiguriert.
+    Der server ist mit der MAC 62:B1:60:B1:60:B1:00:19 konfiguriert.
 
     Kompilieren:   make
     Bereinigen:    make clean
     Flashen:       make upload
     Flash löschen: make clear
 
-    Nur bei econotag: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
+    Nur bei server: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
     Nur bei border-router: "make border" zur Aktivierung von Tunslip über /dev/ttyUSB3
 
     make clear löscht in beiden Fällen das Gerät an Index 0
