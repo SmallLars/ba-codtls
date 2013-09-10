@@ -41,7 +41,7 @@
 
 #include <stdint.h>
 
-int ecc_compare(const uint32_t *A, const uint32_t *B);
+signed int ecc_compare(const uint32_t *A, const uint32_t *B);
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty);
 
 #define ecc_is_valid_key(key, order) (ecc_compare(order, key) == 1)

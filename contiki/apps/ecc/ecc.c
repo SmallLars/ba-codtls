@@ -58,11 +58,9 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 /* Private Funktionsprototypen --------------------------------------------- */
 
 //simple functions to work with the big numbers
-static void ecc_setZero(uint32_t *A, const int length);
+static void ecc_setZero(uint32_t *A, const unsigned int length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
-__attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B);
-__attribute__((always_inline)) static int ecc_isOne(const uint32_t* A);
-__attribute__((always_inline)) static int ecc_isZero(const uint32_t* A);
+static unsigned int ecc_isX(const uint32_t* A, uint32_t X);
 
 //ecc_fieldModP-Helper
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src);
@@ -89,7 +87,7 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-int ecc_compare(const uint32_t *A, const uint32_t *B) {
+signed int ecc_compare(const uint32_t *A, const uint32_t *B) {
     int i;
     for (i = 7; i >= 0; i--) {
         if (A[i] > B[i]) return 1; 
@@ -121,7 +119,7 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
 
 /* Private Funktionen ------------------------------------------------------ */
 
-static void ecc_setZero(uint32_t *A, const int length) {
+static void ecc_setZero(uint32_t *A, const unsigned int length) {
 /*
     int i;
 
@@ -145,11 +143,11 @@ static void ecc_setZero(uint32_t *A, const int length) {
             "stm %[a], {r2-r3} \n\t"
             "stm %[a], {r2-r3} \n\t"
         ".endZero: \n\t"
-    : /* out */
-    : /* in */
+    : // out
+    : // in
         [a] "l" (A),
         [l] "l" (length)
-    : /* clobber list */
+    : // clobber list
         "r2", "r3", "memory"
     );
 }
@@ -163,59 +161,17 @@ static void ecc_copy(uint32_t *dst, const uint32_t *src) {
         "stm %[d], {r2-r5} \n\t"
         "ldm %[s], {r2-r5} \n\t"
         "stm %[d], {r2-r5} \n\t"
-    : /* out */
-    : /* in */
+    : // out
+    : // in
         [d] "l" (dst),
         [s] "l" (src)
-    : /* clobber list */
+    : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
 }
 
-__attribute__((always_inline)) static uint8_t ecc_isSame(const uint32_t *A, const uint32_t *B) {
-    int i;
-
-    for(i = 0; i < 8; i++){
-        if (A[i] != B[i])
-            return 0;
-    }
-
-    return 1;
-/*
-    uint8_t result;
-    
-    asm volatile(
-        "1: \n\t"
-            "mov r7, #0 \n\t"
-            "ldm %[a], {r3,r4} \n\t"
-            "ldm %[b], {r5,r6} \n\t"
-            "cmp r3, r5 \n\t"
-            "bne 0f \n\t"
-            "cmp r4, r6 \n\t"
-            "bne 0f \n\t"
-            "add r7, r7, #1 \n\t"
-            "cmp r7, #4 \n\t"
-            "bne 1b \n\t"
-            "mov %[r], #1 \n\t"
-            "b 1f \n\t"
-        "0: \n\t"
-            "mov %[r], #0 \n\t"
-        "1: \n\t"
-    : /* out *
-        [a] "+l" (A),
-        [b] "+l" (B),
-        [r] "=l" (result)
-    : /* in *
-    : /* clobber list *
-        "r3", "r4", "r5", "r6", "r7", "memory"
-    );
-
-    return result;
-*/
-}
-
-__attribute__((always_inline)) static int ecc_isOne(const uint32_t* A) {
-    if (A[0] != 1) return 0;
+static unsigned int ecc_isX(const uint32_t* A, uint32_t X) {
+    if (A[0] != X) return 0;
 
     uint8_t n; 
     for (n = 1; n < 8; n++) 
@@ -229,7 +185,7 @@ __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A) {
 
     asm volatile(
             "ldm %[a], {r2-r5} \n\t"
-            "cmp r2, #1 \n\t"
+            "cmp r2, %[x] \n\t"
             "bne 0f \n\t"
             "cmp r3, #0 \n\t"
             "bne 0f \n\t"
@@ -251,25 +207,17 @@ __attribute__((always_inline)) static int ecc_isOne(const uint32_t* A) {
         "0: \n\t"
             "mov %[r], #0 \n\t"
         "1: \n\t"
-    : /* out *
-        [a] "+l" (A),
+    : // out
         [r] "=l" (result)
-    : /* in *
-    : /* clobber list *
+    : // in
+        [a] "l" (A),
+        [x] "l" (X)
+    : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
 
     return result;
 */
-}
-
-__attribute__((always_inline)) static int ecc_isZero(const uint32_t* A) {
-    uint8_t n; 
-    for (n = 0; n < 8; n++) 
-        if (A[n] != 0) 
-            return 0;
-
-    return 1;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -284,11 +232,11 @@ __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint
         "add %[s], %[s], #44 \n\t"
         "ldm %[s], {r2-r6} \n\t"
         "stm %[d], {r2-r6} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "r6", "memory"
     );
 }
@@ -305,11 +253,11 @@ __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint
         "stm %[d], {r2-r5} \n\t"
         "mov r2, #0 \n\t"
         "stm %[d], {r2} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
 }
@@ -326,11 +274,11 @@ __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint
         "add %[s], %[s], #12 \n\t"
         "ldm %[s], {r4,r5} \n\t"
         "stm %[d], {r2-r5} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
 }
@@ -346,11 +294,11 @@ __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint
         "stm %[d], {r3-r5} \n\t"
         "mov r4, r2 \n\t"
         "stm %[d], {r3,r4} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
 }
@@ -366,11 +314,11 @@ __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint
         "mov r6, #0 \n\t"
         "stm %[d], {r3,r5,r6} \n\t"
         "stm %[d], {r2,r4} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "r6", "r7", "memory"
     );
 }
@@ -386,11 +334,11 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
         "stm %[d], {r2-r4,r6} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "r6", "memory"
     );
 }
@@ -405,11 +353,11 @@ __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint
         "ldm %[s], {r2-r6} \n\t"
         "mov r5, #0 \n\t"
         "stm %[d], {r2-r6} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "r6", "memory"
     );
 }
@@ -425,11 +373,11 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
         "ldm %[s], {r2-r6} \n\t"
         "mov r5, #0 \n\t"
         "stm %[d], {r2-r6} \n\t"
-    : /* out */
+    : // out
         [d] "+l" (dst),
         [s] "+l" (src)
-    : /* in */
-    : /* clobber list */
+    : // in
+    : // clobber list
         "r2", "r3", "r4", "r5", "r6", "memory"
     );
 }
@@ -558,7 +506,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
     ecc_setZero(B, 8);
     x1[0]=1; 
     /* While u !=1 and v !=1 */ 
-    while ((ecc_isOne(u) || ecc_isOne(v))==0) {
+    while ((ecc_isX(u, 1) || ecc_isX(v, 1))==0) {
         while(!(u[0]&1)) {                  /* While u is even */
             ecc_rshift(u);                      /* divide by 2 */
             if (!(x1[0]&1))                 /*ifx1iseven*/
@@ -591,7 +539,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
             ecc_copy(B, tempm);                  /* x2=x2-x1 */
         }
     } 
-    if (ecc_isOne(u)) {
+    if (ecc_isX(u, 1)) {
         ecc_copy(B, x1); 
     }
 }
@@ -601,18 +549,18 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
     uint32_t tempC[8];
     uint32_t tempD[16];
 
-    if(ecc_isZero(px) && ecc_isZero(py)){
+    if(ecc_isX(px, 0) && ecc_isX(py, 0)){
         ecc_copy(Sx, qx);
         ecc_copy(Sy, qy);
         return;
-    } else if(ecc_isZero(qx) && ecc_isZero(qy)) {
+    } else if(ecc_isX(qx, 0) && ecc_isX(qy, 0)) {
         ecc_copy(Sx, px);
         ecc_copy(Sy, py);
         return;
     }
 
-    if(ecc_isSame(px, qx)){
-        if(!ecc_isSame(py, qy)){
+    if(!ecc_compare(px, qx)){
+        if(ecc_compare(py, qy)){
             ecc_setZero(Sx, 8);
             ecc_setZero(Sy, 8);
             return;
@@ -644,7 +592,7 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
     uint32_t tempC[8];
     uint32_t tempD[16];
 
-    if(ecc_isZero(px) && ecc_isZero(py)){
+    if(ecc_isX(px, 0) && ecc_isX(py, 0)){
         ecc_copy(Dx, px);
         ecc_copy(Dy, py);
         return;
