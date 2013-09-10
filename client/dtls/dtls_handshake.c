@@ -18,6 +18,24 @@
 
 #include "../coap_client.h"
 
+/*
+#define DEBUG 1
+#define DEBUG_COOKIE 0
+#define DEBUG_ECC 0
+#define DEBUG_PRF 1
+
+#if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
+    #include <stdio.h>
+    #include "mc1322x.h"
+#endif
+
+#if DEBUG
+    #define PRINTF(...) printf(__VA_ARGS__)
+#else
+    #define PRINTF(...)
+#endif
+*/
+
 uint32_t base_x[8] = {0xd898c296, 0xf4a13945, 0x2deb33a0, 0x77037d81, 0x63a440f2, 0xf8bce6e5, 0xe12c4247, 0x6b17d1f2};
 uint32_t base_y[8] = {0x37bf51f5, 0xcbb64068, 0x6b315ece, 0x2bce3357, 0x7c0f9e16, 0x8ee7eb4a, 0xfe1a7f9b, 0x4fe342e2};
 

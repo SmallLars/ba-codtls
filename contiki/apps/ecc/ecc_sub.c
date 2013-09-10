@@ -3,9 +3,9 @@
 #define ALGO 3
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
-//  1 | ASM          |   -20 | Mittel          | Funktioniert
-//  2 | ASM 1,2,4,8  |   +84 | Schnell         | Funktioniert
-//  3 | ASM nur 8    |   +12 | Schnell         | Funktioniert
+//  1 | ASM          |   -32 | Mittel          | Funktioniert
+//  2 | ASM 1,2,4,8  |   +72 | Schnell         | Funktioniert
+//  3 | ASM nur 8    |   -32 | Extrem Schnell  | Funktioniert
 
 uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
 
@@ -61,15 +61,15 @@ uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
             "cmp %[i], %[l] \n\t"           // index == length
             "bne .loop \n\t"                // != ? next loop
     : /* out */
-        [i] "+r" (index),
-        [c] "+r" (carry),
-        [t] "+r" (total),
-        [s] "+r" (toSub)
+        [i] "+l" (index),
+        [c] "+l" (carry),
+        [t] "+l" (total),
+        [s] "+l" (toSub)
     : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result),
+        [l] "l" (length)
     : /* clobber list */
         "memory"
     );
@@ -162,13 +162,13 @@ uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
             "mov %[t], #0 \n\t"
         ".end: \n\t"
     : /* out */
-        [t] "+r" (total),
-        [s] "+r" (toSub)
+        [t] "+l" (total),
+        [s] "+l" (toSub)
     : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result),
+        [l] "l" (length)
     : /* clobber list */
         "memory"
     );
@@ -177,62 +177,47 @@ uint8_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
 #endif
 
 #if ALGO == 3
-    uint32_t total;
-    uint32_t toSub;
+    uint32_t carry;
 
     asm volatile(
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "sub %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "ldr %[t], [%[x],#4] \n\t"
-            "ldr %[s], [%[y],#4] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#4] \n\t"
-            "ldr %[t], [%[x],#8] \n\t"
-            "ldr %[s], [%[y],#8] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#8] \n\t"
-            "ldr %[t], [%[x],#12] \n\t"
-            "ldr %[s], [%[y],#12] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#12] \n\t"
-            "ldr %[t], [%[x],#16] \n\t"
-            "ldr %[s], [%[y],#16] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#16] \n\t"
-            "ldr %[t], [%[x],#20] \n\t"
-            "ldr %[s], [%[y],#20] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#20] \n\t"
-            "ldr %[t], [%[x],#24] \n\t"
-            "ldr %[s], [%[y],#24] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#24] \n\t"
-            "ldr %[t], [%[x],#28] \n\t"
-            "ldr %[s], [%[y],#28] \n\t"
-            "sbc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#28] \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "sub r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
         ".foot: \n\t"
             "bcs .nocarry \n\t"
-            "mov %[t], #1 \n\t"
+            "mov %[c], #1 \n\t"
             "b .end \n\t"
         ".nocarry: \n\t"
-            "mov %[t], #0 \n\t"
+            "mov %[c], #0 \n\t"
         ".end: \n\t"
     : /* out */
-        [t] "+r" (total),
-        [s] "+r" (toSub)
+        [c] "=l" (carry)
     : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result)
     : /* clobber list */
-        "memory"
+        "r4", "r5", "r6", "r7", "memory"
     );
 
-    return total;
+    return carry;
 #endif
 
 }
