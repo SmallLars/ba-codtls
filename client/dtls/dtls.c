@@ -50,12 +50,20 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     record->u1 = 0;
     record->type = (isHandshakeMessage ? handshake : application_data);
     record->version= dtls_1_2;
-    record->epoch = nonce[5]; // TODO
-    record->snr = snr_8_bit;
+    record->epoch = (epoch > 4 ? (epoch > 0xFF ? epoch_16_bit : epoch_8_bit) : epoch);
     record->u2 = 6;
-    record->payload[0] = nonce[11]; // TODO
-    headerAdd++;
+    record->snr = snr_8_bit; // TODO
     record->length = rec_length_implicit;
+    if (epoch > 4) {
+        if (epoch > 0xFF) {
+            record->payload[headerAdd] = nonce[4];
+            headerAdd++;
+        }
+        record->payload[headerAdd] = nonce[5];
+        headerAdd++;
+    }
+    record->payload[headerAdd] = nonce[11]; // TODO
+    headerAdd++;
 
     memcpy(record->payload + headerAdd, buf, len);
 
