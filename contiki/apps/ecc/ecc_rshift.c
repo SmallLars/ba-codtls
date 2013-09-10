@@ -48,12 +48,12 @@ void ecc_rshift(uint32_t *A) {
             "cmp %[i], #0 \n\t"             // index == 0
             "bne .loop \n\t"                // != ? next loop
     : /* out */
-        [i] "+r" (index),
-        [c] "+r" (carry),
-        [v] "+r" (value),
-        [r] "+r" (result)
+        [c] "+l" (carry)
     : /* in */
-        [a] "r" (A)
+        [a] "l" (A),
+        [i] "l" (index),
+        [v] "l" (value),
+        [r] "l" (result)
     : /* clobber list */
         "memory"
     );
