@@ -56,13 +56,6 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         payload += record->length;
     }
 
-    #if DEBUG
-        uint32_t i;
-        PRINTF("Bei Paketempfang berechnete Nonce:");
-        for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\n");
-    #endif
-
     // Bei Bedarf entschlüsseln
     uint32_t key_block;
     if ((key_block = getKeyBlock(ip, record->epoch, 1))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
@@ -72,6 +65,12 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         uint8_t key[16];
         nvm_getVar(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
         nvm_getVar(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+        #if DEBUG
+            uint32_t i;
+            PRINTF("Bei Paketempfang berechnete Nonce:");
+            for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+            PRINTF("\n");
+        #endif
         aes_crypt(payload, len, key, nonce, 0);
         aes_crypt(payload, len, key, nonce, 1);
         uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
@@ -101,7 +100,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     getSessionData(nonce + 4, conn->ripaddr.u8, session_epoch);
 
     uint32_t key_block;
-    key_block = getKeyBlock(conn->ripaddr.u8, nonce[5], 0); // TODO 8 bit support
+    key_block = getKeyBlock(conn->ripaddr.u8, (nonce[4] << 8) + nonce[5], 0);
 
     getSessionData(nonce + 6, conn->ripaddr.u8, session_num_write);
 
@@ -112,20 +111,35 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     record->u1 = 0;
     record->type = (isHandshakeMessage ? handshake : application_data);
     record->version= dtls_1_2;
-    record->epoch = nonce[5]; // TODO 8 bit support
-    record->snr = snr_8_bit;
+    if (nonce[4] || nonce[5] > 4) {
+        if (nonce[4]) {
+            record->payload[headerAdd] = nonce[4];
+            headerAdd++;
+        }
+        record->payload[headerAdd] = nonce[5];
+        headerAdd++;
+        record->epoch = 4 + headerAdd;
+    } else {
+        record->epoch = nonce[5];
+    }
     record->u2 = 6;
-    record->payload[0] = nonce[11]; // TODO more byte support
+    record->snr = snr_8_bit;           // TODO
+    record->payload[headerAdd] = nonce[11]; // TODO
     headerAdd++;
     record->length = rec_length_implicit;
 
     memcpy(record->payload + headerAdd, data, len);
 
     if (key_block) {
-        PRINTF("Verschlüsselter Paketversand\n");
         uint8_t key[16];
         nvm_getVar(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
         nvm_getVar(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
+        #if DEBUG
+            uint32_t i;
+            PRINTF("Bei Paketversand berechnete Nonce:");
+            for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+            PRINTF("\n");
+        #endif
         aes_crypt(record->payload + headerAdd, len, key, nonce, 0);
         headerAdd += MAC_LEN;
     }

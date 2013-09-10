@@ -50,10 +50,6 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     record->u1 = 0;
     record->type = (isHandshakeMessage ? handshake : application_data);
     record->version= dtls_1_2;
-    record->epoch = (epoch > 4 ? (epoch > 0xFF ? epoch_16_bit : epoch_8_bit) : epoch);
-    record->u2 = 6;
-    record->snr = snr_8_bit; // TODO
-    record->length = rec_length_implicit;
     if (epoch > 4) {
         if (epoch > 0xFF) {
             record->payload[headerAdd] = nonce[4];
@@ -61,9 +57,15 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
         }
         record->payload[headerAdd] = nonce[5];
         headerAdd++;
+        record->epoch = 4 + headerAdd;
+    } else {
+        record->epoch = epoch;
     }
+    record->u2 = 6;
+    record->snr = snr_8_bit; // TODO
     record->payload[headerAdd] = nonce[11]; // TODO
     headerAdd++;
+    record->length = rec_length_implicit;
 
     memcpy(record->payload + headerAdd, buf, len);
 
@@ -71,6 +73,13 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     if (epoch) {
         uint8_t key[16];
         memcpy(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+
+        #if DEBUG
+            uint32_t i;
+            PRINTF("Bei Paketversand berechnete Nonce:");
+            for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+            PRINTF("\n");
+        #endif
 
         aes_encrypt(record->payload + headerAdd, len, key, nonce);
         headerAdd += MAC_LEN;
@@ -123,13 +132,6 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         payload += record->length;
     }
 
-    #if DEBUG
-        uint32_t i;
-        PRINTF("Nonce:");
-        for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
-        PRINTF("\nEpoch: %u\n", ntohs(*((uint16_t *) (nonce + 4))));
-    #endif
-
     // Bei Bedarf entschlüsseln
     if (record->epoch) {
         len -= MAC_LEN;
@@ -142,6 +144,13 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
 
         uint8_t key[16];
         memcpy(key, key_block + KEY_BLOCK_SERVER_KEY, 16);
+
+        #if DEBUG
+            uint32_t i;
+            PRINTF("Bei Paketempfang berechnete Nonce:");
+            for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+            PRINTF("\n");
+        #endif
         
         aes_decrypt(payload, len, key, nonce);
 
