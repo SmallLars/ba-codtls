@@ -1,0 +1,287 @@
+\documentclass{beamer}
+%\documentclass[hyperref={pdfpagelabels=false}]{beamer}
+
+\mode<presentation>
+{
+\usetheme{Tzi}
+%\setbeamercovered{transparent}
+}
+\setbeamertemplate{navigation symbols}{}
+
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{times}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{color}
+\graphicspath{{pic/}{../pic/}}
+
+\title[Anpassungen von DTLS]%Short Title
+{% Long title
+  Anpassungen von DTLS zur sicheren Kommunikation in eingeschränkten Umgebungen
+}
+
+\author[Lars Schmertmann]%Short Author
+{
+{Lars Schmertmann}\\
+\vspace{.2cm}
+{\scriptsize lars@tzi.org}
+}
+\institute{TZI, Universit\"{a}t Bremen, Deutschland}
+
+\date[09.2013]%short
+{{Kolloquium zur Bachelorarbeit\\
+12.09.2013}}%long
+
+\begin{document}
+
+\setbeamercolor{postit}{fg=black,bg=yellow}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Gliederung}
+  \begin{itemize}
+    \item Motivation
+    \item Hardware \& Umgebung
+    \item DTLS
+      \begin{itemize}
+        \item Handshake
+        \item Ausgewählte DTLS-Header
+      \end{itemize}
+    \item Mögliche Lösungen
+    \begin{itemize}
+      \item Handshake über CoAP
+      \item Stateless Header Compression
+    \end{itemize}
+    \item Geeignete Ciphersuit
+    \item Praktische Umsetzung
+    \item Zeitplan
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Motivation}
+  \begin{itemize}
+    \item Projekt GOBI
+    \begin{itemize}
+      \item Sicherheit ist auch in eingeschränkten \newline Umgebungen notwendig
+      \item Mikro-DTLS (eher Mikro-Sicherheit)
+    \end{itemize}
+    \item TLS und DTLS sind bewährte Standards
+    \item DTLS komplexer als TLS
+    \item Problematisch in eingeschränkten Umgebungen
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Hardware \& Umgebung}
+  \begin{itemize}
+    \item Econotag: mc13224v Development-Board
+    \begin{itemize}
+      \item Freescale MC13224v ARM7TDMI-S Microcontroller
+      \item IEEE 802.15.4 Funkstandard
+      \item AES Hardware-Engine
+      \item 128 KiB Flash-Speicher
+      \item 96 KiB RAM
+    \end{itemize}
+    \item IEEE 802.15.4 MTU: 127 Byte
+    \begin{itemize}
+      \item - 48 Byte 6LoWPAN-Header
+      \item - 8 Byte UDP-Header
+      \item = 71 Byte Nutzdaten
+    \end{itemize}
+    \item SmartAppContiki = Contiki + Erbium + CoAP 13
+    \begin{itemize}
+      \item 81 KiB (bei angepasster Konfiguration)
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{DTLS}{Handshake}
+  \begin{scriptsize}
+  \tt ~~~~~~~~~~~~~~~~Client~~~~~~~~~~~~~Server\\
+  \tt ~~~~~~~~~~~~~~~~---------~~~~~~~~~~~~~---------\\
+  \tt ~~~~~~~~~~~ClientHello~~--0-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--0--~~HelloVerifyRequest~($ \supset $~cookie)\\
+  \tt ClientHello~(+~cookie)~~--1-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--1--~~ServerHello\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--2--~*Certificate\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--3--~*ServerKeyExchange\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--4--~*CertificateRequest\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--5--~~ServerHelloDone\\
+  \tt ~~~~~~~~~~~Certificate*~--2-->\\
+  \tt ~~~~~ClientKeyExchange~~--3-->\\
+  \tt ~~~~~CertificateVerify*~--4-->\\
+  \tt ~~~~[ChangeCipherSpec]~~---->\\
+  \tt ~~~~~~~~~~~~~~Finished~~--5-->\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<----~~[ChangeCipherSpec]\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~<--6--~~Finished\\
+  \tt ~~~~~~Application~Data~~<----------->~~Application~Data
+  \end{scriptsize}
+\end{frame}
+
+\begin{frame}{DTLS}{Ausgewählte DTLS-Header}
+  \begin{columns}
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad ContentType type;\\
+      \qquad ProtocolVersion version;\\
+      \qquad \textcolor{blue}{uint16 epoch;}\\
+      \qquad \textcolor{blue}{uint48 sequence\_number;}\\
+      \qquad uint16 length;\\
+      \qquad uint8 ~~payload[length];\\
+      \} DTLS\_Record;\\
+      ~\\
+      = 13 Byte
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad HandshakeType msg\_type;\\
+      \qquad uint24 length;\\
+      \qquad \textcolor{blue}{uint16 message\_seq;}\\
+      \qquad \textcolor{blue}{uint24 fragment\_offset;}\\
+      \qquad \textcolor{blue}{uint24 fragment\_length;}\\
+      \qquad uint8 ~~payload[f.\_length];\\
+      \} Handshake;\\
+      ~\\
+      = 12 Byte
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}
+  Vorschläge im Entwurf von K. Hartke und O. Bergmann:\\
+  http://tools.ietf.org/html/draft-hartke-core-codtls-02\\
+  \begin{itemize}
+    \item Handshake über CoAP
+    \item Stateless Header Compression
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}{Handshake über CoAP - Teil 1}
+  \tt ~~~~~~POST /dtls ---->\\
+  \tt ~ClientHello\\
+  \tt ~~~~~~~~~~~~~~~~~<---- 4.01 Unauthorized\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~HelloVerifyRequest\\
+  \tt ~~~~~~POST /dtls ---->\\
+  \tt ~ClientHello\\
+  \tt (mit cookie)\\
+  \tt ~~~~~~~~~~~~~~~~~<---- 2.01 Created\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~ServerHello (S=X)\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~*Certificate\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~*ServerKeyExchange\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~*CertificateRequest\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~ServerHelloDone
+\end{frame}
+\begin{frame}{Mögliche Lösungen}{Handshake über CoAP - Teil 2}
+  \tt ~~~~~~~POST /dtls/X ---->\\
+  \tt ~~~~~~Certificate*\\
+  \tt ClientKeyExchange\\
+  \tt CertificateVerify*\\
+  \tt ~ChangeCipherSpec\\
+  \tt ~~~~~~~~~Finished\\
+  ~\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~<---- 2.04 Changed\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ChangeCipherSpec\\
+  \tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Finished\\
+  ~\\
+  \tt ~~~~~Application Data <---> Application Data
+\end{frame}
+
+\begin{frame}{Mögliche Lösungen}{Stateless Header Compression}
+  \begin{columns}
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad uint8 ~~:1;\\
+      \qquad RecordType type:2;\\
+      \qquad Version version:2;\\
+      \qquad Epoch epoch:3;\\
+      \qquad uint8 ~~:3;\\
+      \qquad SequenceNumber snr:3;\\
+      \qquad RecordLength length:2;\\
+      \qquad uint8 ~~payload[0];\\
+      \} DTLSRecord\_t;\\
+      ~\\
+      = 2 - 15 Byte
+    \column{.5\textwidth}
+      struct \{\\
+      \qquad ContentType type:6;\\
+      \qquad ContentLength len:2;\\
+      \qquad uint8 ~~payload[0];\\
+      \} Content\_t;\\
+      ~\\
+      ~\\
+      ~\\
+      ~\\
+      ~\\
+      ~\\
+      = 1 - 4 Byte
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Geeignete Ciphersuit}
+  \begin{itemize}
+    \item TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
+  \end{itemize}
+  Eigenschaften:
+  \begin{itemize}
+    \item Durch CCM wird keine Hash-Funktion \newline für den MAC benötigt
+    \item Durch den Einsatz von CMAC mit PSK kann \newline auf HMAC mit SHA-256 verzichtet werden
+  \end{itemize}
+  Auswirkungen auf die Programmgröße:
+  \begin{itemize}
+    \item Einsparung durch AES in Hardware: \textasciitilde 1.5KiB
+    \item Einsparung durch CMAC mit PSK: \textasciitilde 1.5KiB
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Praktische Umsetzung}
+  \begin{itemize}
+    \item Ein Handshake zur Zeit
+    \item Stack mit Push und Clear im Flash-Speicher für "`Finished"'
+    \item Wechsel des Pre-shared Key nach Handshake
+    \item Ablage der Session-Daten im Flash-Speicher
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Zeitplan}
+  \begin{itemize}
+    \item Es verbleiben 4 Wochen bis zum Vorlesungsbeginn
+    \begin{itemize}
+      \item 2 Wochen für Kapitel "`Praktische Umsetzung"'
+      \item 1 Woche für Kapitel "`Vergleich"' und "`Fazit"'
+      \item 1 Woche Feintuning
+    \end{itemize}
+    \item 14.10.2013 Abgabe der Arbeit
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{}
+  \begin{center}
+    \begin{LARGE}
+      Vielen Dank für\\
+      eure Aufmerksamkeit\\
+      ~\\
+      \includegraphics[scale=0.2]{pic/smilie.png}
+    \end{LARGE}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Fragen}
+  \begin{center}
+    \begin{LARGE}
+      \begin{tabular}{ccccc}
+         & \textbf{?} & \textbf{?} & \textbf{?} & \\
+        \textbf{?} & \textbf{?} &  & \textbf{?} & \textbf{?}\\
+         &  &  & \textbf{?} & \textbf{?}\\
+         &  & \textbf{?} & \textbf{?} & \\
+         & \textbf{?} & \textbf{?} &  & \\
+         &  &  &  & \\
+         & \textbf{?} & \textbf{?} &  & \\
+         & \textbf{?} & \textbf{?} &  & 
+      \end{tabular}
+    \end{LARGE}
+  \end{center}
+\end{frame}
+
+\end{document}
