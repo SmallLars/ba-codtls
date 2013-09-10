@@ -863,7 +863,7 @@ get_context(const char *node, const char *port) {
   return ctx;
 }
 
-void coap_request(struct in6_addr *ip, method_t my_method, char *my_res, char *target) {
+void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
   static char addr[INET6_ADDRSTRLEN];

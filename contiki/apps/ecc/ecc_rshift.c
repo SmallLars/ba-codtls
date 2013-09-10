@@ -4,7 +4,7 @@
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Mittel          | Funktioniert
 //  1 | C-Code       |    -4 | Mittel          | Funktioniert
-//  2 | ASM          |    -4 | Schnell         | Funktioniert
+//  2 | ASM          |   -12 | Schnell         | Funktioniert
 
 void ecc_rshift(uint32_t *A) {
 
@@ -29,33 +29,24 @@ void ecc_rshift(uint32_t *A) {
 #endif
 
 #if ALGO == 2
-    uint32_t index;
-    uint32_t carry;
-    uint32_t value;
-    uint32_t result;
-
     asm volatile(
-            "mov %[i], #32 \n\t"            // index = 32
-            "mov %[c], #0 \n\t"             // carry = 0
+            "mov r1, #32 \n\t"          // index = 32
+            "mov r2, #0 \n\t"           // carry = 0
         ".loop: \n\t"
-            "sub %[i], %[i], #4 \n\t"       // index -= 4
-            "mov %[r], %[c] \n\t"           // result = carry
-            "ldr %[v], [%[a],%[i]] \n\t"    // value = a[index]
-            "lsl %[c], %[v], #31 \n\t"      // carry = value << 31
-            "lsr %[v], %[v], #1 \n\t"       // value >>= 1
-            "orr %[r], %[r], %[v] \n\t"     // result |= value
-            "str %[r], [%[a],%[i]] \n\t"    // a[index] = result
-            "cmp %[i], #0 \n\t"             // index == 0
-            "bne .loop \n\t"                // != ? next loop
+            "sub r1, r1, #4 \n\t"       // index -= 4
+            "mov r4, r2 \n\t"           // result = carry
+            "ldr r3, [%[a],r1] \n\t"    // value = a[index]
+            "lsl r2, r3, #31 \n\t"      // carry = value << 31
+            "lsr r3, r3, #1 \n\t"       // value >>= 1
+            "orr r4, r4, r3 \n\t"       // result |= value
+            "str r4, [%[a],r1] \n\t"    // a[index] = result
+            "cmp r1, #0 \n\t"           // index == 0
+            "bne .loop \n\t"            // != ? next loop
     : /* out */
-        [c] "+l" (carry)
     : /* in */
-        [a] "l" (A),
-        [i] "l" (index),
-        [v] "l" (value),
-        [r] "l" (result)
+        [a] "l" (A)
     : /* clobber list */
-        "memory"
+        "r1", "r2", "r3", "r4", "memory"
     );
 #endif
 

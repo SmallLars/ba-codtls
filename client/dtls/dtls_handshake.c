@@ -44,7 +44,7 @@ uint16_t handshake_messages_len;
 
 extern uint8_t isHandshakeMessage;
 
-void dtls_handshake(struct in6_addr *ip) {
+void dtls_handshake(uint8_t ip[16]) {
     handshake_messages_len = 0;
 
     isHandshakeMessage = 1;

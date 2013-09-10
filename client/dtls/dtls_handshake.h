@@ -4,6 +4,6 @@
 
 #include <netinet/in.h>
 
-void dtls_handshake(struct in6_addr *ip);
+void dtls_handshake(uint8_t ip[16]);
 
 #endif /* __DTLS_HANDSHAKE_H__ */
