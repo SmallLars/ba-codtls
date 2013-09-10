@@ -122,11 +122,13 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     } else {
         record->epoch = nonce[5];
     }
-    record->u2 = 6;
-    record->snr = snr_8_bit;           // TODO
-    record->payload[headerAdd] = nonce[11]; // TODO
-    headerAdd++;
+    uint32_t leading_zero = 6;
+    while (leading_zero < 11 && nonce[leading_zero] == 0) leading_zero++;
+    record->snr = 12 - leading_zero;
+    memcpy(record->payload + headerAdd, nonce + leading_zero, record->snr);
+    headerAdd += record->snr;
     record->length = rec_length_implicit;
+    record->u2 = 6;
 
     memcpy(record->payload + headerAdd, data, len);
 

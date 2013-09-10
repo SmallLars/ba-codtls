@@ -61,11 +61,13 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     } else {
         record->epoch = epoch;
     }
-    record->u2 = 6;
-    record->snr = snr_8_bit; // TODO
-    record->payload[headerAdd] = nonce[11]; // TODO
-    headerAdd++;
+    uint32_t leading_zero = 6;
+    while (leading_zero < 11 && nonce[leading_zero] == 0) leading_zero++;
+    record->snr = 12 - leading_zero;
+    memcpy(record->payload + headerAdd, nonce + leading_zero, record->snr);
+    headerAdd += record->snr;
     record->length = rec_length_implicit;
+    record->u2 = 6;
 
     memcpy(record->payload + headerAdd, buf, len);
 
