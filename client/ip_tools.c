@@ -3,12 +3,12 @@
 
 #include "ip_tools.h"
 
-void print_ip(const struct in6_addr *addr) {
+void print_ip(const uint8_t ip[16]) {
     uint16_t a;
     unsigned int i;
     int f;
-    for(i = 0, f = 0; i < sizeof(struct in6_addr); i += 2) {
-        a = (addr->s6_addr[i] << 8) + addr->s6_addr[i + 1];
+    for(i = 0, f = 0; i < 16; i += 2) {
+        a = (ip[i] << 8) + ip[i + 1];
         if(a == 0 && f >= 0) {
             if(f++ == 0) {
                 printf("::");
@@ -24,6 +24,6 @@ void print_ip(const struct in6_addr *addr) {
     }
 }
 
-int ipcmp(const struct in6_addr *addr1, const struct in6_addr *addr2) {
-    return memcmp(addr1, addr2, sizeof(struct in6_addr));
+int ipcmp(const uint8_t ip1[16], const uint8_t ip2[16]) {
+    return memcmp(ip1, ip2, 16);
 }

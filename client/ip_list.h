@@ -2,11 +2,11 @@
 #ifndef __IP_LISTE_H__
 #define __IP_LISTE_H__
 
-#include <netinet/in.h>
+#include <stdint.h>
 
 struct ip_list {
-    struct in6_addr ip;
-    struct in6_addr *via;
+    uint8_t ip[16];
+    uint8_t *via;
     struct ip_list *next;
 };
 
@@ -30,7 +30,7 @@ int size_ip(struct ip_list *list);
   * \param    ip     Gültige IPv6-Adresse in menschenlesbarer Form (bspw. aaaa::60B1:60B1:60B1:0001)
   * \param    via    Gültige IPv6-Adresse in menschenlesbarer Form (bspw. aaaa::60B1:60B1:60B1:0001)
   */
-void add_ip(struct ip_list **list, char *ip, char *via);
+void add_ip(struct ip_list **list, uint8_t ip[16], uint8_t *via);
 
 /**
   * \brief    Listenelement auslesen
@@ -41,7 +41,7 @@ void add_ip(struct ip_list **list, char *ip, char *via);
   * \param    i      Index des gewünschten Elements in der Liste
   * \return   Zeiger auf die IP am gewünschten Index
   */
-struct in6_addr *get_ip(struct ip_list *list, int i);
+uint8_t *get_ip(struct ip_list *list, int i);
 
 /**
   * \brief    Listenelement auslesen
@@ -52,7 +52,7 @@ struct in6_addr *get_ip(struct ip_list *list, int i);
   * \param    i      Index des gewünschten Elements in der Liste
   * \return   Zeiger auf die IP am gewünschten Index
   */
-struct in6_addr *get_via(struct ip_list *list, int i);
+uint8_t *get_via(struct ip_list *list, int i);
 
 /**
   * \brief    Liste leeren

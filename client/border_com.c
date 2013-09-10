@@ -55,7 +55,7 @@ void border_printNodes(struct ip_list *list) {
     for (i = 0; i < size_ip(list); i++) {
         printf("%d: ", i);
         print_ip(get_ip(list, i));
-        struct in6_addr *tmp = get_via(list, i);
+        uint8_t *tmp = get_via(list, i);
         if (tmp != NULL) {
             printf(" via ");
             print_ip(tmp);
@@ -87,7 +87,7 @@ void border_parseAnswer(char *buffer, struct ip_list **list) {
     while (*pos != '<') {
         char *ende = strstr(pos, "\n");
 
-        char ip[40];
+        uint8_t ip[40];
         memset(ip, 0, 40);
         memcpy(ip, pos, ende - pos);
         memset(ip, 'a', 4);
@@ -100,13 +100,13 @@ void border_parseAnswer(char *buffer, struct ip_list **list) {
         char *ende;
 
         ende = strstr(pos, "/");
-        char ip[40];
+        uint8_t ip[40];
         memset(ip, 0, 40);
         memcpy(ip, pos, ende - pos);
 
         pos = strstr(pos, "via") + 4;
         ende = strstr(pos, ")");
-        char via[40];
+        uint8_t via[40];
         memset(via, 0, 40);
         memcpy(via, pos, ende - pos);
         memset(via, 'a', 4);

@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     char cbuffer[32];
 
     if (argc == 2) {
-      add_ip(&liste, argv[1], NULL);
+      add_ip(&liste, (uint8_t *) argv[1], NULL);
     } else {
       border_getNodes(&liste);
     }
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 5:
                 if (!memcmp("psk", cbuffer, 3)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 4));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 4));
                     memset(buffer, 0, 512);
                     node_getPSK(ip, buffer);
                     printf("PSK: ");
@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 6:
                 if (!memcmp("core", cbuffer, 4)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 5));
                     memset(buffer, 0, 512);
                     node_getCore(ip, buffer);
                     int i;
@@ -74,14 +74,14 @@ int main(int argc, char *argv[]) {
                     unknown = 0;
                 }
                 if (!memcmp("name", cbuffer, 4)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 5));
                     memset(buffer, 0, 512);
                     node_getName(ip, buffer);
                     printf("Name: %s\n", buffer);
                     unknown = 0;
                 }
                 if (!memcmp("uuid", cbuffer, 4)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 5));
                     memset(buffer, 0, 512);
                     node_getUUID(ip, buffer);
                     char uuid[37];
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
                     unknown = 0;
                 }
                 if (!memcmp("time", cbuffer, 4)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 5));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 5));
                     memset(buffer, 0, 512);
                     node_getTime(ip, buffer);
                     struct tm *timeinfo = localtime((const time_t *) buffer);
@@ -103,14 +103,14 @@ int main(int argc, char *argv[]) {
                 break;
             case 7:
                 if (!memcmp("model", cbuffer, 5)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 6));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 6));
                     memset(buffer, 0, 512);
                     node_getModel(ip, buffer);
                     printf("Model: %s\n", buffer);
                     unknown = 0;
                 }
                 if (!memcmp("flash", cbuffer, 5)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 6));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 6));
                     node_firmware(ip, "server_redbee-econotag.bin");
                     printf("Flash erfolgreich. Gerät wird neu gestartet ");
                     fflush(stdout);
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 9:
                 if (!memcmp("settime", cbuffer, 7)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 8));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 8));
                     memset(buffer, 0, 512);
                     node_setTime(ip, buffer);
                     printf("Zeitupdate gesendet\n");
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 11:
                 if (!memcmp("handshake", cbuffer, 9)) {
-                    struct in6_addr *ip = get_ip(liste, atoi(cbuffer + 10));
+                    uint8_t *ip = get_ip(liste, atoi(cbuffer + 10));
                     node_handshake(ip);
                     unknown = 0;
                 }

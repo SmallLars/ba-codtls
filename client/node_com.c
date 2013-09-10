@@ -23,42 +23,42 @@
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-void node_getCore(struct in6_addr *ip, char *target) {
+void node_getCore(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, ".well-known/core", target);
 }
 
-void node_getName(struct in6_addr *ip, char *target) {
+void node_getName(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/name", target);
 }
 
-void node_getModel(struct in6_addr *ip, char *target) {
+void node_getModel(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/model", target);
 }
 
-void node_getUUID(struct in6_addr *ip, char *target) {
+void node_getUUID(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/uuid", target);
 }
 
-void node_getTime(struct in6_addr *ip, char *target) {
+void node_getTime(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/time", target);
     uint32_t *time = (uint32_t *) target;
     *time = ntohl(*time);
 }
 
-void node_getPSK(struct in6_addr *ip, char *target) {
+void node_getPSK(uint8_t *ip, char *target) {
     coap_request(ip, COAP_REQUEST_GET, "d/psk", target);
 }
 
-void node_setTime(struct in6_addr *ip, char *target) {
+void node_setTime(uint8_t *ip, char *target) {
     time_t my_time = time(NULL);
     my_time = htonl(my_time);
-    coap_setPayload(&my_time, 4);
+    coap_setPayload((uint8_t *) &my_time, 4);
     coap_request(ip, COAP_REQUEST_POST, "time", target);
 }
 
 #define BLOCKSIZE 46
 
-void node_firmware(struct in6_addr *ip, char *file) {
+void node_firmware(uint8_t *ip, char *file) {
     struct stat status;
     if (stat(file, &status)) {
         printf("Datei nicht gefunden!\n");
@@ -110,7 +110,7 @@ void node_firmware(struct in6_addr *ip, char *file) {
     coap_request(ip, COAP_REQUEST_POST, "f", NULL);
 }
 
-void node_handshake(struct in6_addr *ip) {
+void node_handshake(uint8_t *ip) {
     dtls_handshake(ip);
 }
 

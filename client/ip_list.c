@@ -11,7 +11,7 @@ int size_ip(struct ip_list *list) {
     return 0;
 }
 
-void add_ip(struct ip_list **list, char *ip, char *via) {
+void add_ip(struct ip_list **list, uint8_t ip[], uint8_t *via) {
     if (ip == NULL) {
         fprintf(stderr, "Fehler: ip_list: add_ip: NULL kann nicht zur Liste hinzugefügt werden.");
         return;
@@ -20,12 +20,12 @@ void add_ip(struct ip_list **list, char *ip, char *via) {
     // Leere Liste mit ersten Element versehen
     if (*list == NULL) {
         *list = (struct ip_list *) malloc(sizeof(struct ip_list));
-        inet_pton(AF_INET6, ip, &((*list)->ip));
+        inet_pton(AF_INET6, (const char *) ip, &((*list)->ip));
         if (via == NULL) {
             (*list)->via = NULL;
         } else {
-            (*list)->via = (struct in6_addr * ) malloc(sizeof(struct in6_addr));
-            inet_pton(AF_INET6, via, (*list)->via);
+            (*list)->via = (uint8_t *) malloc(16);
+            inet_pton(AF_INET6, (const char *) via, (*list)->via);
         }
         (*list)->next = NULL;
         return;
@@ -36,25 +36,25 @@ void add_ip(struct ip_list **list, char *ip, char *via) {
     // Neues Element erzeugen und IP konvertieren
     // Wird wieder gelöscht, falls IP schon vorhanden
     struct ip_list *new = (struct ip_list *) malloc(sizeof(struct ip_list));
-    inet_pton(AF_INET6, ip, &(new->ip));
+    inet_pton(AF_INET6, (const char *) ip, &(new->ip));
     if (via == NULL) {
         new->via = NULL;
     } else {
-        new->via = (struct in6_addr * ) malloc(sizeof(struct in6_addr));
-        inet_pton(AF_INET6, via, new->via);
+        new->via = (uint8_t *) malloc(16);
+        inet_pton(AF_INET6, (const char *) via, new->via);
     }
     new->next = NULL;
 
     struct ip_list *current = *list;
     while (1) {
-        if (!ipcmp(&(new->ip), &(current->ip))) {
+        if (!ipcmp(new->ip, current->ip)) {
             free(new->via);
             free(new);
             if (via != NULL) {
                 if (current->via == NULL) {
-                    current->via = (struct in6_addr * ) malloc(sizeof(struct in6_addr));
+                    current->via = (uint8_t *) malloc(16);
                 }
-                inet_pton(AF_INET6, via, current->via);
+                inet_pton(AF_INET6, (const char *) via, current->via);
             }
             return;
         }
@@ -65,9 +65,9 @@ void add_ip(struct ip_list **list, char *ip, char *via) {
     current->next = new;
 }
 
-struct in6_addr *get_ip(struct ip_list *list, int i) {
+uint8_t *get_ip(struct ip_list *list, int i) {
     if (i == 0)
-        return &(list->ip);
+        return list->ip;
 
     if (list->next != NULL)
         return get_ip(list->next, i-1);
@@ -76,7 +76,7 @@ struct in6_addr *get_ip(struct ip_list *list, int i) {
     return NULL;
 }
 
-struct in6_addr *get_via(struct ip_list *list, int i) {
+uint8_t *get_via(struct ip_list *list, int i) {
     if (i == 0)
         return list->via;
 

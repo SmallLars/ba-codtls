@@ -2,10 +2,10 @@
 #ifndef __IP_TOOLS_H__
 #define __IP_TOOLS_H__
 
-#include <netinet/in.h>
+#include <stdint.h>
 
-void print_ip(const struct in6_addr *addr);
+void print_ip(const uint8_t addr[16]);
 
-int ipcmp(const struct in6_addr *addr1, const struct in6_addr *addr2);
+int ipcmp(const uint8_t addr1[16], const uint8_t addr2[16]);
 
 #endif /* __IP_TOOLS_H__ */
