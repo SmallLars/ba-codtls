@@ -87,7 +87,7 @@ void border_parseAnswer(char *buffer, struct ip_list **list) {
     while (*pos != '<') {
         char *ende = strstr(pos, "\n");
 
-        uint8_t ip[40];
+        char ip[40];
         memset(ip, 0, 40);
         memcpy(ip, pos, ende - pos);
         memset(ip, 'a', 4);
@@ -100,13 +100,13 @@ void border_parseAnswer(char *buffer, struct ip_list **list) {
         char *ende;
 
         ende = strstr(pos, "/");
-        uint8_t ip[40];
+        char ip[40];
         memset(ip, 0, 40);
         memcpy(ip, pos, ende - pos);
 
         pos = strstr(pos, "via") + 4;
         ende = strstr(pos, ")");
-        uint8_t via[40];
+        char via[40];
         memset(via, 0, 40);
         memcpy(via, pos, ende - pos);
         memset(via, 'a', 4);
