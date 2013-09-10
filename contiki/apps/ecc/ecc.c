@@ -61,6 +61,7 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 static void ecc_setZero(uint32_t *A, const unsigned int length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
 static unsigned int ecc_isX(const uint32_t* A, uint32_t X);
+__attribute__((always_inline)) static void ecc_lshift(uint32_t *x, int length, int shiftSize);
 
 //ecc_fieldModP-Helper
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src);
@@ -75,7 +76,6 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
 //field functions for big numbers
 int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
 int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
-void ecc_lshift(uint32_t *x, int length, int shiftSize);
 int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length);
 void ecc_fieldModP(uint32_t *A, const uint32_t *B);
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result);
@@ -218,6 +218,17 @@ static unsigned int ecc_isX(const uint32_t* A, uint32_t X) {
 
     return result;
 */
+}
+
+__attribute__((always_inline)) static void ecc_lshift(uint32_t *x, int length, int shiftSize) {
+    int i;
+    for(i = ((length/2) + shiftSize)-1; i>=0; --i){
+        if(i-shiftSize < 0){
+            x[i] = 0;
+        } else {
+            x[i] = x[i-shiftSize];
+        }
+    }
 }
 
 /*---------------------------------------------------------------------------*/
@@ -402,18 +413,6 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     return 0;
 }
 
-void ecc_lshift(uint32_t *x, int length, int shiftSize) {
-    uint32_t temp[shiftSize];
-    uint32_t oldTemp[shiftSize];
-    ecc_setZero(&oldTemp[0], shiftSize);
-    int i;
-    for(i = 0; i<length; ++i){
-        temp[i%shiftSize] = x[i];
-        x[i] = oldTemp[i%shiftSize];
-        oldTemp[i%shiftSize] = temp[i%shiftSize];
-    }
-}
-
 int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
     uint32_t AB[length*2];
     uint32_t C[length*2];
@@ -434,8 +433,8 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_
         ecc_fieldMult(&x[length/2], &y[0], &C[length], length/2);
         carry = ecc_add(&C[0], &C[length], &C[0], length);
         ecc_setZero(&C[length], length);
-        C[length] = carry;
         ecc_lshift(C, length*2, length/2);
+        C[length+(length/2)] = carry;
         ecc_add(AB, C, result, length*2);
     }
     return 0;
