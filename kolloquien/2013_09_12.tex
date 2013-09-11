@@ -59,7 +59,7 @@
     \end{itemize}
     \item Geeignete Ciphersuit
     \item Praktische Umsetzung
-    \item Fazit
+    \item Ergebnis \& Fazit
     \item Zeitplan
   \end{itemize}
 \end{frame}
@@ -195,9 +195,9 @@
       \qquad uint8 ~~:1;\\
       \qquad RecordType type:2;\\
       \qquad Version version:2;\\
-      \qquad Epoch epoch:3;\\
+      \qquad \textcolor{blue}{Epoch epoch:3;}\\
       \qquad uint8 ~~:3;\\
-      \qquad SequenceNumber snr:3;\\
+      \qquad \textcolor{blue}{SequenceNumber snr:3;}\\
       \qquad RecordLength length:2;\\
       \qquad uint8 ~~payload[0];\\
       \} DTLSRecord\_t;\\
@@ -255,7 +255,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Fazit}
+\begin{frame}{Ergebnis \& Fazit}
   \begin{itemize}
     \item Implementierung ist derzeit 10 KiB groß
     \item 7,2 KiB setzen sich zusammen:
