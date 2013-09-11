@@ -36,31 +36,39 @@ int8_t createSession(uint32_t *buf, uint8_t ip[16]) {
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf[i]));
         printf("\n");
     #endif
+
     Session_t *session = (Session_t *) (buf + 8);
+    Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
+    int8_t index = getIndexOf(ip);
 
-    // TODO prüfen ob ip schon enthalten. wenn ja nur private key schreiben
-    uint8_t list_len;
-    nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
-    if (list_len == 10)
-        return -1;
-
+    if (index >= 0) {
+        nvm_getVar(&(session->epoch), (uint32_t) &(s[index].epoch), 2);
+    } else {
+        session->epoch = 0;
+    }
     memcpy(session->ip, ip, 16);
     memcpy(session->session, "IJKLMNOP", 8); // TODO session generieren
-    session->epoch = 0;
     do {
         random_x((uint8_t *) session->private_key, 32);
     } while (!ecc_is_valid_key(session->private_key, buf));
 
-    Session_t *s = (Session_t *) RES_SESSION_LIST;
-    nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));
 
-    seq_num[list_len] = 1;
-
-    list_len++;
-    nvm_setVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
-
-    PRINTF("Session erstellt:\n");
-    PRINTSESSION(list_len - 1);
+    if (index >= 0) {
+        nvm_setVar(session, (uint32_t) &s[index], sizeof(Session_t));
+        PRINTF("Session aktualisiert:\n");
+        PRINTSESSION(index);
+    } else {
+        uint8_t list_len;
+        nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
+        if (list_len == 10)
+            return -1;
+        nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));
+        PRINTF("Session erstellt:\n");
+        PRINTSESSION(list_len);
+        list_len++;
+        nvm_setVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
+        seq_num[list_len] = 1;
+    }
 
     return 0;
 }
