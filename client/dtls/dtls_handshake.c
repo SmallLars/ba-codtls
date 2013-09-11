@@ -1,5 +1,8 @@
 #include "dtls_handshake.h"
 
+#include <string.h>
+#include <time.h>
+
 #include "dtls_ecc.h"
 #include "dtls_random.h"
 #include "dtls_content.h"
@@ -9,24 +12,14 @@
 #include "dtls_data.h"
 #include "dtls_prf.h"
 #include "dtls_aes.h"
-
-//#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-//#include <netinet/in.h>
-#include <time.h>
-
 #include "../coap_client.h"
 
-/*
 #define DEBUG 1
-#define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
 #define DEBUG_PRF 1
 
-#if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
+#if DEBUG || DEBUG_ECC || DEBUG_PRF
     #include <stdio.h>
-    #include "mc1322x.h"
 #endif
 
 #if DEBUG
@@ -34,7 +27,6 @@
 #else
     #define PRINTF(...)
 #endif
-*/
 
 uint32_t base_x[8] = {0xd898c296, 0xf4a13945, 0x2deb33a0, 0x77037d81, 0x63a440f2, 0xf8bce6e5, 0xe12c4247, 0x6b17d1f2};
 uint32_t base_y[8] = {0x37bf51f5, 0xcbb64068, 0x6b315ece, 0x2bce3357, 0x7c0f9e16, 0x8ee7eb4a, 0xfe1a7f9b, 0x4fe342e2};
@@ -70,9 +62,9 @@ void dtls_handshake(uint8_t ip[16]) {
         return;
     }
     HelloVerifyRequest_t *verify = (HelloVerifyRequest_t *) (getContentData(buffer));
-    printf("Step 1 done: Cookie erhalten: ");
+    PRINTF("Step 1 done: Cookie erhalten: ");
     for (i = 0; i < verify->cookie_len; i++) printf("%02X", verify->cookie[i]);
-    printf("\n");
+    PRINTF("\n");
 
 // --------------------------------------------------------------------------------------------
 
@@ -92,7 +84,7 @@ void dtls_handshake(uint8_t ip[16]) {
     coap_setBlock1(2, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
     if (getContentType(buffer) != server_hello) {
-        printf("Erwartetes ServerHello nicht erhalten. Abbruch.\n");
+        PRINTF("Erwartetes ServerHello nicht erhalten. Abbruch.\n");
         return;
     }
 
@@ -105,7 +97,7 @@ void dtls_handshake(uint8_t ip[16]) {
     }
 
     ServerHello_t *serverHello = (ServerHello_t *) (getContentData(buffer));
-    printf("Step 2 done: Session-Id: %.*s\n", serverHello->session_id.len, serverHello->session_id.session_id);
+    PRINTF("Step 2 done: Session-Id: %.*s\n", serverHello->session_id.len, serverHello->session_id.session_id);
 
     createSession(ip, serverHello->session_id.session_id);
 
@@ -117,30 +109,36 @@ void dtls_handshake(uint8_t ip[16]) {
     do {
         random_x((uint8_t *) private_key, 32);
     } while (!ecc_is_valid_key(private_key));
-    printf("Private Key : ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(private_key[i]));
-    printf("\n");
+    #if DEBUG_ECC
+        printf("Private Key : ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(private_key[i]));
+        printf("\n");
+    #endif
 
 // --------------------------------------------------------------------------------------------
 
     KeyExchange_t *ske = (KeyExchange_t *) getContentData(getContent(buffer, 256, server_key_exchange));
 
-    printf("PSK-Hint erhalten: ");
-    for (i = 0; i < ntohs(ske->pskHint_len); i++) printf("%02X", ske->pskHint[i]);
-    printf("\n");
+    PRINTF("PSK-Hint erhalten: ");
+    for (i = 0; i < ntohs(ske->pskHint_len); i++) PRINTF("%02X", ske->pskHint[i]);
+    PRINTF("\n");
 
-    printf("_S_PUB_KEY-X: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(ske->public_key.x[i]));
-    printf("\n_S_PUB_KEY-Y: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(ske->public_key.y[i]));
-    printf("\n");
+    #if DEBUG_ECC
+        printf("_S_PUB_KEY-X: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(ske->public_key.x[i]));
+        printf("\n_S_PUB_KEY-Y: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(ske->public_key.y[i]));
+        printf("\n");
+    #endif
 
     ecc_ec_mult(ske->public_key.x, ske->public_key.y, private_key, result_x, result_y);
-    printf("SECRET_KEY-X: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(result_x[i]));
-    printf("\nSECRET_KEY-Y: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(result_y[i]));
-    printf("\n");
+    #if DEBUG_ECC
+        printf("SECRET_KEY-X: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(result_x[i]));
+        printf("\nSECRET_KEY-Y: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(result_y[i]));
+        printf("\n");
+    #endif
 
 // --------------------------------------------------------------------------------------------
 
@@ -157,36 +155,42 @@ void dtls_handshake(uint8_t ip[16]) {
     memcpy(prf_buffer + 84, "master secret", 13);
     memcpy(prf_buffer + 97, random, 28);                    // Client-Random
     memcpy(prf_buffer + 125, sh->random.random_bytes, 28);  // Server-Random
-    printf("Seed für Master-Secret:\n    ");
-    for (i = 0; i < 33; i++) printf("%02X", prf_buffer[i]);
-    printf("\n    ");
-    for (i = 33; i < 65; i++) printf("%02X", prf_buffer[i]);
-    printf("\n    ");
-    for (i = 65; i < 97; i++) printf("%02X", prf_buffer[i]);
-    printf("\n    ");
-    for (i = 97; i < 125; i++) printf("%02X", prf_buffer[i]);
-    printf("\n    ");
-    for (i = 125; i < 153; i++) printf("%02X", prf_buffer[i]);
-    printf("\n");
+    #if DEBUG_PRF
+        printf("Seed für Master-Secret:\n    ");
+        for (i = 0; i < 33; i++) printf("%02X", prf_buffer[i]);
+        printf("\n    ");
+        for (i = 33; i < 65; i++) printf("%02X", prf_buffer[i]);
+        printf("\n    ");
+        for (i = 65; i < 97; i++) printf("%02X", prf_buffer[i]);
+        printf("\n    ");
+        for (i = 97; i < 125; i++) printf("%02X", prf_buffer[i]);
+        printf("\n    ");
+        for (i = 125; i < 153; i++) printf("%02X", prf_buffer[i]);
+        printf("\n");
+    #endif
 
     uint8_t master_secret[48];
     prf(master_secret, 48, prf_buffer, 153);
-    printf("Master-Secret:\n    ");
-    for (i = 0; i < 24; i++) printf("%02X", master_secret[i]);
-    printf("\n    ");
-    for (i = 24; i < 48; i++) printf("%02X", master_secret[i]);
-    printf("\n");
+    #if DEBUG_PRF
+        printf("Master-Secret:\n    ");
+        for (i = 0; i < 24; i++) printf("%02X", master_secret[i]);
+        printf("\n    ");
+        for (i = 24; i < 48; i++) printf("%02X", master_secret[i]);
+        printf("\n");
+    #endif
 
     memcpy(prf_buffer + 40, master_secret, 48);
     memcpy(prf_buffer + 88, "key expansion", 13);
     memcpy(prf_buffer + 101, sh->random.random_bytes, 28);
     memcpy(prf_buffer + 129, random, 28);
     prf(prf_buffer, 40, prf_buffer + 40, 117);
-    printf("Key-Block:\n    ");
-    for (i = 0; i < 20; i++) printf("%02X", prf_buffer[i]);
-    printf("\n    ");
-    for (i = 20; i < 40; i++) printf("%02X", prf_buffer[i]);
-    printf("\n");
+    #if DEBUG_PRF
+        printf("Key-Block:\n    ");
+        for (i = 0; i < 20; i++) printf("%02X", prf_buffer[i]);
+        printf("\n    ");
+        for (i = 20; i < 40; i++) printf("%02X", prf_buffer[i]);
+        printf("\n");
+    #endif
 
     insertKeyBlock(ip, (KeyBlock_t *) prf_buffer);
 
@@ -199,17 +203,21 @@ void dtls_handshake(uint8_t ip[16]) {
     cke.curve_params.namedcurve = secp256r1;
     cke.public_key.len = 65;
     cke.public_key.type = uncompressed;
-    printf("BASE_POINT-X: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(base_x[i]));
-    printf("\nBASE_POINT-Y: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(base_y[i]));
-    printf("\n");
-    ecc_ec_mult(base_x, base_y, private_key, cke.public_key.x, cke.public_key.y);
-    printf("_C_PUB_KEY-X: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.x[i]));
-    printf("\n_C_PUB_KEY-Y: ");
-    for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.y[i]));
-    printf("\n");
+    #if DEBUG_ECC
+        printf("BASE_POINT-X: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(base_x[i]));
+        printf("\nBASE_POINT-Y: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(base_y[i]));
+        printf("\n");
+    #endif
+        ecc_ec_mult(base_x, base_y, private_key, cke.public_key.x, cke.public_key.y);
+    #if DEBUG_ECC
+        printf("_C_PUB_KEY-X: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.x[i]));
+        printf("\n_C_PUB_KEY-Y: ");
+        for (i = 0; i < 8; i++) printf("%08X", htonl(cke.public_key.y[i]));
+        printf("\n");
+    #endif
 
     char uri[14];
     memcpy(uri, "dtls/", 5);
@@ -237,15 +245,19 @@ void dtls_handshake(uint8_t ip[16]) {
 
     memcpy(finished_source + 48, "client finished", 15);
     prf(client_finished, 12, finished_source, 79);
-    printf("Client Finished: ");
-    for (i = 0; i < 12; i++) printf("%02X", client_finished[i]);
-    printf("\n");
+    #if DEBUG_PRF
+        printf("Client Finished: ");
+        for (i = 0; i < 12; i++) printf("%02X", client_finished[i]);
+        printf("\n");
+    #endif
 
     memcpy(finished_source + 48, "server finished", 15);
     prf(server_finished, 12, finished_source, 79);
-    printf("Server Finished: ");
-    for (i = 0; i < 12; i++) printf("%02X", server_finished[i]);
-    printf("\n");
+    #if DEBUG_PRF
+        printf("Server Finished: ");
+        for (i = 0; i < 12; i++) printf("%02X", server_finished[i]);
+        printf("\n");
+    #endif
 
     // Senden
     coap_setPayload(message, paylen);
@@ -257,7 +269,7 @@ void dtls_handshake(uint8_t ip[16]) {
     coap_setPayload(message, paylen);
     coap_setBlock1(2, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
-    printf("Step 3 done.\n");
+    PRINTF("Step 3 done.\n");
 
     increaseEpoch(ip);
 
