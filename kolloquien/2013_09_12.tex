@@ -230,8 +230,7 @@
   \end{itemize}
   Auswirkungen auf die Programmgröße:
   \begin{itemize}
-    \item Einsparung durch AES in Hardware: \textasciitilde 1.5KiB
-    \item Einsparung durch CMAC mit PSK: \textasciitilde 1.5KiB
+    \item Einsparung durch AES in Hardware \newline und Nutzung von CCM + CMAC: \textasciitilde 3 KiB
   \end{itemize}
 \end{frame}
 
@@ -258,8 +257,18 @@
 
 \begin{frame}{Fazit}
   \begin{itemize}
-    \item Implementierung ist derzeit 10KiB groß
-    \item Stack-Größe von 2Kib reicht aus
+    \item Implementierung ist derzeit 10 KiB groß
+    \item 7,2 KiB setzen sich zusammen:
+    \begin{itemize}
+      \item 2,41 KiB ECC-Funktionen
+      \item 0,95 KiB AES-Funktionen (CCM + CMAC)
+      \item 0,80 KiB Flash-Speicher-Funktionen
+      \item 0,79 KiB Session-Verwaltung
+      \item 0,15 KiB Pseudo-Random-Funktion
+      \item 1,78 KiB Handshake-Ressource
+      \item 0,32 KiB Parse \& Send
+    \end{itemize}
+    \item Stack-Größe von 2 KiB reicht aus
     \item ECC-Multiplikation: \o 6,0 s
     \item Handshake: \o 14 s
   \end{itemize}

@@ -29,24 +29,27 @@ void ecc_rshift(uint32_t *A) {
 #endif
 
 #if ALGO == 2
+    uint32_t index = 32;
+    uint32_t carry = 0;
+
     asm volatile(
-            "mov r1, #32 \n\t"          // index = 32
-            "mov r2, #0 \n\t"           // carry = 0
         ".loop: \n\t"
-            "sub r1, r1, #4 \n\t"       // index -= 4
-            "mov r4, r2 \n\t"           // result = carry
-            "ldr r3, [%[a],r1] \n\t"    // value = a[index]
-            "lsl r2, r3, #31 \n\t"      // carry = value << 31
-            "lsr r3, r3, #1 \n\t"       // value >>= 1
-            "orr r4, r4, r3 \n\t"       // result |= value
-            "str r4, [%[a],r1] \n\t"    // a[index] = result
-            "cmp r1, #0 \n\t"           // index == 0
-            "bne .loop \n\t"            // != ? next loop
-    : /* out */
-    : /* in */
-        [a] "l" (A)
-    : /* clobber list */
-        "r1", "r2", "r3", "r4", "memory"
+            "sub %[i], %[i], #4 \n\t"     // index -= 4
+            "mov r4, %[c] \n\t"           // result = carry
+            "ldr r3, [%[a],%[i]] \n\t"    // value = a[index]
+            "lsl %[c], r3, #31 \n\t"      // carry = value << 31
+            "lsr r3, r3, #1 \n\t"         // value >>= 1
+            "orr r4, r4, r3 \n\t"         // result |= value
+            "str r4, [%[a],%[i]] \n\t"    // a[index] = result
+            "cmp %[i], #0 \n\t"           // index == 0
+            "bne .loop \n\t"              // != ? next loop
+    : // out
+    : // in
+        [a] "r" (A),
+        [i] "r" (index),
+        [c] "r" (carry)
+    : // clobber list
+        "r3", "r4", "memory"
     );
 #endif
 

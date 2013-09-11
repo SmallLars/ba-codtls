@@ -55,9 +55,10 @@ listen:
 	while true; do cat /dev/ttyUSB1; done
 
 eccasm:
-	arm-none-eabi-gcc -Werror -mcpu=arm7tdmi-s -mthumb-interwork -march=armv4t \
-	-mtune=arm7tdmi-s -Os -fno-strict-aliasing  -fno-common -ffixed-r8 -msoft-float \
-	-fno-builtin-printf -fno-builtin-sprintf -ffunction-sections -fdata-sections \
+	arm-none-eabi-gcc -Werror -mcpu=arm7tdmi-s -mthumb-interwork \
+	-march=armv4t -mtune=arm7tdmi-s -Os -fno-strict-aliasing \
+	-fno-common -ffixed-r8 -msoft-float -fno-builtin-printf \
+	-fno-builtin-sprintf -ffunction-sections -fdata-sections \
 	-MMD -mthumb -mcallee-super-interworking ../contiki/apps/ecc/ecc.c -S
 
 include $(CONTIKI)/Makefile.include
