@@ -130,18 +130,18 @@ static void ecc_setZero(uint32_t *A, const uint32_t length) {
 */
     asm volatile(
             "mov r2, $0 \n\t"
-            "stm %[a], {r2} \n\t"
+            "stm %[a]!, {r2} \n\t"
             "cmp %[l], #1 \n\t"
             "beq .endZero \n\t"
-            "stm %[a], {r2} \n\t"
+            "stm %[a]!, {r2} \n\t"
             "cmp %[l], #2 \n\t"
             "beq .endZero \n\t"
             "mov r3, $0 \n\t"
-            "stm %[a], {r2, r3} \n\t"
+            "stm %[a]!, {r2,r3} \n\t"
             "cmp %[l], #4 \n\t"
             "beq .endZero \n\t"
-            "stm %[a], {r2-r3} \n\t"
-            "stm %[a], {r2-r3} \n\t"
+            "stm %[a]!, {r2-r3} \n\t"
+            "stm %[a]!, {r2-r3} \n\t"
         ".endZero: \n\t"
     : // out
     : // in
@@ -157,10 +157,10 @@ static void ecc_setZero(uint32_t *A, const uint32_t length) {
  */
 static void ecc_copy(uint32_t *dst, const uint32_t *src) {
     asm volatile(
-        "ldm %[s], {r2-r5} \n\t"
-        "stm %[d], {r2-r5} \n\t"
-        "ldm %[s], {r2-r5} \n\t"
-        "stm %[d], {r2-r5} \n\t"
+        "ldm %[s]!, {r2-r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
+        "ldm %[s]!, {r2-r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
     : // out
     : // in
         [d] "l" (dst),
@@ -184,7 +184,7 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
     uint8_t result;
 
     asm volatile(
-            "ldm %[a], {r2-r5} \n\t"
+            "ldm %[a]!, {r2-r5} \n\t"
             "cmp r2, %[x] \n\t"
             "bne 0f \n\t"
             "cmp r3, #0 \n\t"
@@ -193,7 +193,7 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
             "bne 0f \n\t"
             "cmp r5, #0 \n\t"
             "bne 0f \n\t"
-            "ldm %[a], {r2-r5} \n\t"
+            "ldm %[a]!, {r2-r5} \n\t"
             "cmp r2, #0 \n\t"
             "bne 0f \n\t"
             "cmp r3, #0 \n\t"
@@ -239,10 +239,10 @@ __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
         "mov r4, #0 \n\t"
-        "stm %[d], {r2-r4} \n\t"
+        "stm %[d]!, {r2-r4} \n\t"
         "add %[s], %[s], #44 \n\t"
-        "ldm %[s], {r2-r6} \n\t"
-        "stm %[d], {r2-r6} \n\t"
+        "ldm %[s]!, {r2-r6} \n\t"
+        "stm %[d]!, {r2-r6} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -258,12 +258,12 @@ __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
         "mov r4, #0 \n\t"
-        "stm %[d], {r2-r4} \n\t"
+        "stm %[d]!, {r2-r4} \n\t"
         "add %[s], %[s], #48 \n\t"
-        "ldm %[s], {r2-r5} \n\t"
-        "stm %[d], {r2-r5} \n\t"
+        "ldm %[s]!, {r2-r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
         "mov r2, #0 \n\t"
-        "stm %[d], {r2} \n\t"
+        "stm %[d]!, {r2} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -277,14 +277,14 @@ __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint
     // src[8], src[9], src[10], 0, 0, 0, src[14], src[15]
     asm volatile(
         "add %[s], %[s], #32 \n\t"
-        "ldm %[s], {r2-r4} \n\t"
+        "ldm %[s]!, {r2-r4} \n\t"
         "mov r5, #0 \n\t"
-        "stm %[d], {r2-r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
         "add %[s], %[s], #12 \n\t"
-        "ldm %[s], {r4,r5} \n\t"
-        "stm %[d], {r2-r5} \n\t"
+        "ldm %[s]!, {r4,r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -298,13 +298,13 @@ __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint
     // src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]
     asm volatile(
         "add %[s], %[s], #32 \n\t"
-        "ldm %[s], {r2-r5} \n\t"
-        "stm %[d], {r3-r5} \n\t"
+        "ldm %[s]!, {r2-r5} \n\t"
+        "stm %[d]!, {r3-r5} \n\t"
         "add %[s], %[s], #4 \n\t"
-        "ldm %[s], {r3-r5} \n\t"
-        "stm %[d], {r3-r5} \n\t"
+        "ldm %[s]!, {r3-r5} \n\t"
+        "stm %[d]!, {r3-r5} \n\t"
         "mov r4, r2 \n\t"
-        "stm %[d], {r3,r4} \n\t"
+        "stm %[d]!, {r3,r4} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -318,13 +318,13 @@ __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint
     // src[11], src[12], src[13], 0, 0, 0, src[8], src[10]
     asm volatile(
         "add %[s], %[s], #32 \n\t"
-        "ldm %[s], {r2-r7} \n\t"
-        "stm %[d], {r5-r7} \n\t"
+        "ldm %[s]!, {r2-r7} \n\t"
+        "stm %[d]!, {r5-r7} \n\t"
         "mov r3, #0 \n\t"
         "mov r5, #0 \n\t"
         "mov r6, #0 \n\t"
-        "stm %[d], {r3,r5,r6} \n\t"
-        "stm %[d], {r2,r4} \n\t"
+        "stm %[d]!, {r3,r5,r6} \n\t"
+        "stm %[d]!, {r2,r4} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -338,13 +338,13 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
     // src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]
     asm volatile(
         "add %[s], %[s], #48 \n\t"
-        "ldm %[s], {r2-r5} \n\t"
-        "stm %[d], {r2-r5} \n\t"
+        "ldm %[s]!, {r2-r5} \n\t"
+        "stm %[d]!, {r2-r5} \n\t"
         "sub %[s], %[s], #28 \n\t"
-        "ldm %[s], {r4-r6} \n\t"
+        "ldm %[s]!, {r4-r6} \n\t"
         "mov r2, #0 \n\t"
         "mov r3, #0 \n\t"
-        "stm %[d], {r2-r4,r6} \n\t"
+        "stm %[d]!, {r2-r4,r6} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -358,12 +358,12 @@ __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint
     // src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]
     asm volatile(
         "add %[s], %[s], #52 \n\t"
-        "ldm %[s], {r2-r4} \n\t"
-        "stm %[d], {r2-r4} \n\t"
+        "ldm %[s]!, {r2-r4} \n\t"
+        "stm %[d]!, {r2-r4} \n\t"
         "sub %[s], %[s], #32 \n\t"
-        "ldm %[s], {r2-r6} \n\t"
+        "ldm %[s]!, {r2-r6} \n\t"
         "mov r5, #0 \n\t"
-        "stm %[d], {r2-r6} \n\t"
+        "stm %[d]!, {r2-r6} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)
@@ -377,13 +377,13 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
     // src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]
     asm volatile(
         "add %[s], %[s], #56 \n\t"
-        "ldm %[s], {r2,r3} \n\t"
+        "ldm %[s]!, {r2,r3} \n\t"
         "mov r4, #0 \n\t"
-        "stm %[d], {r2-r4} \n\t"
+        "stm %[d]!, {r2-r4} \n\t"
         "sub %[s], %[s], #28 \n\t"
-        "ldm %[s], {r2-r6} \n\t"
+        "ldm %[s]!, {r2-r6} \n\t"
         "mov r5, #0 \n\t"
-        "stm %[d], {r2-r6} \n\t"
+        "stm %[d]!, {r2-r6} \n\t"
     : // out
         [d] "+l" (dst),
         [s] "+l" (src)

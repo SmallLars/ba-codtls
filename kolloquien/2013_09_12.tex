@@ -59,6 +59,7 @@
     \end{itemize}
     \item Geeignete Ciphersuit
     \item Praktische Umsetzung
+    \item Fazit
     \item Zeitplan
   \end{itemize}
 \end{frame}
@@ -72,7 +73,6 @@
     \end{itemize}
     \item TLS und DTLS sind bewährte Standards
     \item DTLS komplexer als TLS
-    \item Problematisch in eingeschränkten Umgebungen
   \end{itemize}
 \end{frame}
 
@@ -237,10 +237,31 @@
 
 \begin{frame}{Praktische Umsetzung}
   \begin{itemize}
+    \item Ablage von Read-Only-Daten im Flash-Speicher
     \item Ein Handshake zur Zeit
-    \item Stack mit Push und Clear im Flash-Speicher für "`Finished"'
+    \begin{itemize}
+     \item Stack mit Push und Clear im Flash-Speicher für "`Finished"'
+    \end{itemize}
     \item Wechsel des Pre-shared Key nach Handshake
+    \begin{itemize}
+      \item Abrufbar über CoAP-URI
+    \end{itemize}
     \item Ablage der Session-Daten im Flash-Speicher
+    \item Implementierung einzelner Funktionen in Assembler
+    \item Software-Update über CoAP
+    \begin{itemize}
+      \item Session-Daten bleiben erhalten
+      \item Sequenznummer geht verloren
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Fazit}
+  \begin{itemize}
+    \item Implementierung ist derzeit 10KiB groß
+    \item Stack-Größe von 2Kib reicht aus
+    \item ECC-Multiplikation: \o 6,0 s
+    \item Handshake: \o 14 s
   \end{itemize}
 \end{frame}
 

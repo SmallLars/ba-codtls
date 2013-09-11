@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     char cbuffer[32];
 
     if (argc == 2) {
-      add_ip(&liste, (uint8_t *) argv[1], NULL);
+      add_ip(&liste, argv[1], NULL);
     } else {
       border_getNodes(&liste);
     }
