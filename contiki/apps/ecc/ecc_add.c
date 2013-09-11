@@ -2,13 +2,12 @@
 
 #include <string.h>
 
-#define ALGO 3
+#define ALGO 2
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
-//  1 | ASM          |   -20 | Mittel          | Funktioniert
-//  2 | 1,2,4,8,2x8  |  +168 | Schnell         | Funktioniert - Interpolation von 512-bit-Addition durch 2 bis 3 256-bit-Additionen
-//  3 | 1,2,4,8,16   |  +212 | Schnell         | Funktioniert
-//  4 | ASM nur 8    |   +96 | Schnell         | Funktioniert - Unbrauchbar für ECC da nur 256-bit-Addition nicht ausreicht
+//  1 | ASM          |   -24 | Mittel          | Funktioniert
+//  2 | 1,2,4,8,16   |  +116 | Schnell         | Funktioniert
+//  3 | ASM nur 8    |   -24 | Schnell         | Funktioniert - Unbrauchbar für ECC da nur 256-bit-Addition nicht ausreicht
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
 
@@ -64,15 +63,15 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
             "cmp %[i], %[l] \n\t"           // index == length
             "bne .loop \n\t"                // != ? next loop
     : /* out */
-        [i] "+r" (index),
-        [c] "+r" (carry),
-        [t] "+r" (total),
-        [s] "+r" (toAdd)
+        [i] "+l" (index),
+        [c] "+l" (carry),
+        [t] "+l" (total),
+        [s] "+l" (toAdd)
     : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result),
+        [l] "l" (length)
     : /* clobber list */
         "memory"
     );
@@ -80,94 +79,6 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
 #endif
 
 #if ALGO == 2
-    if (length == 16) {
-        uint8_t c1 = ecc_add(x, y, result, 8);
-        uint8_t c2 = ecc_add(x + 8, y + 8, result + 8, 8);
-        if (c1) {
-            uint32_t z[8];
-            memset(z, 0, 32);
-            z[0] = 0x0000001;
-            c2 |= ecc_add(result + 8, z, result + 8, 8);
-        }
-        return c2;
-    }
-
-    register uint32_t carry asm("r4");
-
-    asm volatile(
-            "cmp %[l], #2 \n\t"
-            "beq .add2 \n\t"
-            "bhi .add4or8 \n\t"
-        ".add1: \n\t"
-            "ldm %[x], {r4} \n\t"
-            "ldm %[y], {r6} \n\t"
-            "add r4, r4, r6 \n\t"
-            "stm %[r], {r4} \n\t"
-            "b .foot \n\t"
-        ".add2: \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "add r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "b .foot \n\t"
-        ".add4or8: \n\t"
-            "cmp %[l], #8 \n\t"
-            "beq .add8 \n\t"
-        ".add4: \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "add r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "b .foot \n\t"
-        ".add8: \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "add r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-            "ldm %[x], {r4,r5} \n\t"
-            "ldm %[y], {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r], {r4,r5} \n\t"
-        ".foot: \n\t"
-            "bcc .nocarry \n\t"
-            "mov r4, #1 \n\t"
-            "b .end \n\t"
-        ".nocarry: \n\t"
-            "mov r4, #0 \n\t"
-        ".end: \n\t"
-    : /* out */
-    : /* in */
-        [x] "l" (x),
-        [y] "l" (y),
-        [r] "l" (result),
-        [l] "l" (length)
-    : /* clobber list */
-        "r4", "r5", "r6", "r7", "memory"
-    );
-
-    return carry;
-#endif
-
-#if ALGO == 3
     register uint32_t carry asm("r4");
 
     asm volatile(
@@ -286,63 +197,48 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
     return carry;
 #endif
 
-#if ALGO == 4
-    uint32_t total;
-    uint32_t toAdd;
+#if ALGO == 3
+    uint32_t carry;
 
     asm volatile(
-            "ldr %[t], [%[x],#0] \n\t"
-            "ldr %[s], [%[y],#0] \n\t"
-            "add %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#0] \n\t"
-            "ldr %[t], [%[x],#4] \n\t"
-            "ldr %[s], [%[y],#4] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#4] \n\t"
-            "ldr %[t], [%[x],#8] \n\t"
-            "ldr %[s], [%[y],#8] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#8] \n\t"
-            "ldr %[t], [%[x],#12] \n\t"
-            "ldr %[s], [%[y],#12] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#12] \n\t"
-            "ldr %[t], [%[x],#16] \n\t"
-            "ldr %[s], [%[y],#16] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#16] \n\t"
-            "ldr %[t], [%[x],#20] \n\t"
-            "ldr %[s], [%[y],#20] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#20] \n\t"
-            "ldr %[t], [%[x],#24] \n\t"
-            "ldr %[s], [%[y],#24] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#24] \n\t"
-            "ldr %[t], [%[x],#28] \n\t"
-            "ldr %[s], [%[y],#28] \n\t"
-            "adc %[t], %[t], %[s] \n\t"
-            "str %[t], [%[r],#28] \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "add r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
+            "ldm %[x], {r4,r5} \n\t"
+            "ldm %[y], {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r], {r4,r5} \n\t"
         ".foot: \n\t"
             "bcc .nocarry \n\t"
-            "mov %[t], #1 \n\t"
+            "mov %[c], #1 \n\t"
             "b .end \n\t"
         ".nocarry: \n\t"
-            "mov %[t], #0 \n\t"
+            "mov %[c], #0 \n\t"
         ".end: \n\t"
     : /* out */
-        [t] "+r" (total),
-        [s] "+r" (toAdd)
+        [c] "=l" (carry)
     : /* in */
-        [x] "r" (x),
-        [y] "r" (y),
-        [r] "r" (result),
-        [l] "r" (length)
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result)
     : /* clobber list */
-        "memory"
+        "r4", "r5", "r6", "r7", "memory"
     );
 
-    return total;
+    return carry;
 #endif
 
 }
