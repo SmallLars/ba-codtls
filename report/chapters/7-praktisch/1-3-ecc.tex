@@ -29,18 +29,16 @@ ein Zähler erhöht und verglichen werden muss. Da der Block mit dem Carry-Bit i
 geht das Carry-Bit der Hauptoperation vom einen zum nächsten Schleifendurchlauf verloren, muss manuell zwischengespeichert, und bei Bedarf
 berücksichtigt werden. Ein Sichern und Wiederherstellen des Blocks mit dem Carry-Bit ist nur im ARM-Instruktion-Set möglich.
 Die Optimierung besteht bei dieser Umsetzung somit nur darin, dass es einfach möglich ist, einen Überlauf zu erkennen.
-Während dies bei der Addition und Subtraktion jeweils \textasciitilde 20 Byte Programmgröße einspart, bringt es bei Right-Shift
+Während dies bei der Addition und Subtraktion 24 und 32 Byte Programmgröße einspart, bringt es bei Right-Shift
 keinen Größenvorteil. Jedoch ist die Berechnung aufgrund der eingesparten Vergleiche bei allen Operationen schneller.
 
 Da im Thumb-Instruktion-Set für einen Right-Shift keine Funktion zur Verfügung steht, die das Carry-Bit direkt benutzt, ist hier keine weitere Optimierung möglich.
 Für die Addition und Subtraktion sind weitere Varianten verfügbar. Da die Subtraktion ausschließlich für die Berechnung von 256-bit-Zahlen benutzt wird,
 was acht 32-bit-Blöcken entspricht, ist es möglich, die acht Subtraktionen direkt hintereinander auszuführen, so dass das Carry-Bit ohne weitere
-Eingriffe direkt berücksichtigt wird. Die Programmgröße nimmt dabei, im Vergleich zum C-Code, um \textasciitilde 12 Byte zu, wobei die
-Berechnungsgeschwindigkeit jedoch wesentlich zunimmt. Anders verhält es sich bei der Addition, da Werte unterschiedlicher Größe addiert werden.
+Eingriffe direkt berücksichtigt wird. Die Programmgröße nimmt dabei, im Vergleich zum C-Code, um \textasciitilde 32 Byte ab und die
+Berechnungsgeschwindigkeit nimmt wesentlich zu. Anders verhält es sich bei der Addition, da Werte unterschiedlicher Größe addiert werden.
 Notwendig sind hier 32, 64, 128, 256 und 512 Bit. Für jede dieser Größen ist nun ein eigener Additionsblock vorhanden. Bei Aufruf der Funktion wird
-die Größe überprüft und der richtige Block ausgewählt. Dies bietet eine maximale Geschwindigkeit, erhöht jedoch die Größe des Programms um \textasciitilde 212 Byte.
-Redzuieren lässt sich dieses noch, durch die Realisierung der 512-bit-Addition, durch zwei bis drei 256-Bit-Additionen, wobei hier, das dabei entstehende
-Carry-Bit, manuell berücksichtigt werden muss. Im Vergleich zum C-Code ist diese Variante 168 Byte größer.
+die Größe überprüft und der richtige Block ausgewählt. Dies bietet eine maximale Geschwindigkeit, erhöht jedoch die Größe des Programms um 116 Byte.
 
 Um weitere 96 Byte einzusparen, sind 3 benötigte Konstanten im Flash-Speicher hinterlegt. Dazu gehören die X- und Y- Koordinate des Basis-Punkts, der für
 den Diffie-Hellman-Schlüsselaustausch verwendet wird, und die Ordnung der verwendeten elliptischen Kurve. Die Ordnung wird nur verwendet, um zu überprüfen,
