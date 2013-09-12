@@ -1,0 +1,9 @@
+Header compression deterministisch ?
+
+Flashsspeicher abnutzung ?
+
+genereic header compression - paper mit einbeziehen ohne praktische implementierung
+
+length feld erweitern -> freie bits im record layer header
+
+trennung von ciphersuit spezifischen sachen zu generellen dtls anpassungen im vergleich !!!
