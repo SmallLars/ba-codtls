@@ -149,8 +149,6 @@ rest_invoke_restful_service(void* request, void* response, uint8_t *buffer, uint
   uint8_t found = 0;
   uint8_t allowed = 0;
 
-  PRINTF("rest_invoke_restful_service url /%.*s -->\n", url_len, url);
-
   resource_t* resource = NULL;
   const char *url = NULL;
 
@@ -160,6 +158,8 @@ rest_invoke_restful_service(void* request, void* response, uint8_t *buffer, uint
     if ((REST.get_url(request, &url)==strlen(resource->url) || (REST.get_url(request, &url)>strlen(resource->url) && (resource->flags & HAS_SUB_RESOURCES)))
         && strncmp(resource->url, url, strlen(resource->url)) == 0)
     {
+      PRINTF("rest_invoke_restful_service url /%.*s -->\n", strlen(resource->url), resource->url);
+
       found = 1;
       rest_resource_flags_t method = REST.get_method_type(request);
 

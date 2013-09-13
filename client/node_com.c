@@ -53,6 +53,7 @@ void node_setTime(uint8_t *ip, char *target) {
     time_t my_time = time(NULL);
     my_time = htonl(my_time);
     coap_setPayload((uint8_t *) &my_time, 4);
+    coap_setBlock1(0, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, "time", target);
 }
 
