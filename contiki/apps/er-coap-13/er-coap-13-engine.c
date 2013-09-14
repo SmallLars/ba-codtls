@@ -47,7 +47,6 @@
   #include "er-dtls-13.h"
 #endif
 
-
 #define DEBUG 0
 #if DEBUG
 #define PRINTF(...) printf(__VA_ARGS__)
@@ -75,9 +74,6 @@ PROCESS(coap_receiver, "CoAP Receiver");
 /*- Variables ----------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 static service_callback_t service_cbk = NULL;
-
-extern uint8_t block1_paylen;
-extern uint8_t block1_buffer[COAP_BLOCK1_BUFFER_SIZE];
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
@@ -149,26 +145,6 @@ coap_receive(void)
               coap_set_header_token(response, message->token, message->token_len);
           }
 
-          /* block 1 check -> if more != 0 -> not last packet -> no REST call */
-          uint32_t b1_num;
-          uint8_t b1_more;
-          uint16_t b1_size;
-          uint32_t b1_offset;
-          if (coap_get_header_block1(message, &b1_num, &b1_more, &b1_size, &b1_offset))
-          {
-              PRINTF("Blockwise: block 1 request: Num: %u, More: %u, Size: %u, Offset: %u\n", b1_num, b1_more, b1_size, b1_offset);
-              const uint8_t *payload = 0;
-              int old_len = block1_paylen;
-              block1_paylen = 0;
-              block1_paylen = coap_get_payload(message, &payload);
-              if (b1_offset + block1_paylen <= COAP_BLOCK1_BUFFER_SIZE) {
-                  if (block1_paylen && payload) {
-                      memcpy(block1_buffer + b1_offset, payload, block1_paylen);
-                      block1_paylen += old_len;
-                  }
-              }
-          }
-
           /* get offset for blockwise transfers */
           if (coap_get_header_block2(message, &block_num, NULL, &block_size, &block_offset))
           {
@@ -181,34 +157,17 @@ coap_receive(void)
           if (service_cbk)
           {
             /* Call REST framework and check if found and allowed. */
-            if (b1_more || service_cbk(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
+            if (service_cbk(message, response, transaction->packet+COAP_MAX_HEADER_SIZE, block_size, &new_offset))
             {
               if (coap_error_code==NO_ERROR)
               {
                 /* Apply blockwise transfers. */
                 if ( IS_OPTION(message, COAP_OPTION_BLOCK1) && response->code<BAD_REQUEST_4_00 && !IS_OPTION(response, COAP_OPTION_BLOCK1) )
                 {
-                  if (b1_offset + block1_paylen <= COAP_BLOCK1_BUFFER_SIZE)
-                  {
-                    if (message->block1_more)
-                    {
-                      PRINTF("ACK Block1 Paket with More-Bit\n");
-                      coap_packet_t ack[1];
-                      /* ACK with empty code (0) */
-                      coap_init_message(ack, COAP_TYPE_ACK, VALID_2_03, message->mid);
-                      coap_set_header_block1(ack, message->block1_num, message->block1_more, message->block1_size);
-                      /* Serializing into IPBUF: Only overwrites header parts that are already parsed into the request struct. */
-                      coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, (uip_appdata), coap_serialize_message(ack, uip_appdata));
-                      coap_error_code = MANUAL_RESPONSE;
-                    } else {
-                      coap_set_header_block1(response, message->block1_num, message->block1_more, message->block1_size);
-                    }
-                  } else {
-                    PRINTF("Block1 NOT IMPLEMENTED\n");
+                  PRINTF("Block1 NOT IMPLEMENTED in this resource\n");
 
-                    coap_error_code = NOT_IMPLEMENTED_5_01;
-                    coap_error_message = "Block1Support only for msg_size <= 128";
-                  }
+                  coap_error_code = NOT_IMPLEMENTED_5_01;
+                  coap_error_message = "NoBlock1Support";
                 }
                 else if ( IS_OPTION(message, COAP_OPTION_BLOCK2) )
                 {
@@ -275,16 +234,6 @@ coap_receive(void)
         if (message->type==COAP_TYPE_ACK)
         {
           PRINTF("Received ACK\n");
-          #if DEBUG
-            uint32_t b2_num;
-            uint8_t b2_more;
-            uint16_t b2_size;
-            uint32_t b2_offset;
-            if (coap_get_header_block2(message, &b2_num, &b2_more, &b2_size, &b2_offset))
-            {
-              PRINTF("ACK contains Block2: Num: %u, More: %u, Size: %u, Offset: %u\n", b2_num, b2_more, b2_size, b2_offset);
-            }
-          #endif
         }
         else if (message->type==COAP_TYPE_RST)
         {
@@ -541,22 +490,18 @@ well_known_core_handler(void* request, void* response, uint8_t *buffer, uint16_t
     }
 }
 /*----------------------------------------------------------------------------*/
-
-/* The dtls-handshake resource is automatically included for CoAP
-   and definied in er-13-dtls/er-dtls-13-resource.c. */
+// The dtls-handshake resource is automatically included for CoAP
+// and definied in er-13-dtls/er-dtls-13-resource.c. */
 #ifdef WITH_DTLS
   RESOURCE(dtls, METHOD_POST | HAS_SUB_RESOURCES, "dtls", "rt=\"dtls.handshake\";if=\"core.lb\";ct=42");
 #endif
-
 /*----------------------------------------------------------------------------*/
 PROCESS_THREAD(coap_receiver, ev, data)
 {
   PROCESS_BEGIN();
-
   #ifdef WITH_DTLS
     aes_init();
   #endif
-
   PRINTF("Starting CoAP-13 receiver...\n");
 
   rest_activate_resource(&resource_well_known_core);

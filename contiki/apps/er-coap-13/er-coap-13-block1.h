@@ -31,48 +31,17 @@
 
 /**
  * \file
- *      CoAP module for reliable transport
+ *      CoAP module for block 1 handling
  * \author
  *      Matthias Kovatsch <kovatsch@inf.ethz.ch>
  */
 
-#ifndef COAP_TRANSACTIONS_H_
-#define COAP_TRANSACTIONS_H_
+#ifndef COAP_BLOCK1_H_
+#define COAP_BLOCK1_H_
 
-#include "er-coap-13.h"
+#include <stddef.h>
+#include <stdint.h>
 
-/*
- * The number of concurrent messages that can be stored for retransmission in the transaction layer.
- */
-#ifndef COAP_MAX_OPEN_TRANSACTIONS
-#define COAP_MAX_OPEN_TRANSACTIONS 4 
-#endif /* COAP_MAX_OPEN_TRANSACTIONS */
+int coap_block1_handler(void* request, void* response, uint8_t *target, size_t *len, size_t max_len);
 
-/* container for transactions with message buffer and retransmission info */
-typedef struct coap_transaction {
-  struct coap_transaction *next; /* for LIST */
-
-  uint16_t mid;
-  struct etimer retrans_timer;
-  uint8_t retrans_counter;
-
-  uip_ipaddr_t addr;
-  uint16_t port;
-
-  restful_response_handler callback;
-  void *callback_data;
-
-  uint16_t packet_len;
-  uint8_t packet[COAP_MAX_PACKET_SIZE+1]; /* +1 for the terminating '\0' to simply and savely use snprintf(buf, len+1, "", ...) in the resource handler. */
-} coap_transaction_t;
-
-void coap_register_as_transaction_handler();
-
-coap_transaction_t *coap_new_transaction(uint16_t mid, uip_ipaddr_t *addr, uint16_t port);
-void coap_send_transaction(coap_transaction_t *t);
-void coap_clear_transaction(coap_transaction_t *t);
-coap_transaction_t *coap_get_transaction_by_mid(uint16_t mid);
-
-void coap_check_transactions();
-
-#endif /* COAP_TRANSACTIONS_H_ */
+#endif /* COAP_BLOCK1_H_ */

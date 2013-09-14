@@ -75,8 +75,6 @@
 #define COAP_HEADER_OPTION_DELTA_MASK        0xF0
 #define COAP_HEADER_OPTION_SHORT_LENGTH_MASK 0x0F
 
-#define COAP_BLOCK1_BUFFER_SIZE              128
-
 /*
  * Conservative size limit, as not all options have to be set at the same time.
  */

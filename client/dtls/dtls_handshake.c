@@ -269,8 +269,12 @@ void dtls_handshake(uint8_t ip[16]) {
     coap_setPayload(message, paylen);
     coap_setBlock1(2, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
-    PRINTF("Step 3 done.\n");
+    if (getContentType(buffer) != change_cipher_spec) {
+        PRINTF("Erwartetes ChangeCipherSpec nicht erhalten. Abbruch.\n");
+        return;
+    }
 
+    PRINTF("Step 3 done.\n");
     increaseEpoch(ip);
 
     isHandshakeMessage = 0;

@@ -6,6 +6,7 @@
 #include "er-coap-13.h"
 #include "er-coap-13-separate.h"
 #include "er-coap-13-transactions.h"
+#include "er-coap-13-block1.h"
 #include "er-dtls-13.h"
 #include "er-dtls-13-data.h"
 #include "er-dtls-13-random.h"
@@ -41,6 +42,9 @@ int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 uint8_t src_ip[16];
 coap_separate_t request_metadata[1];
 
+uint8_t big_msg[128];
+size_t big_msg_len;
+
 uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. zurück auf 0 bei ersten daten
 uint16_t created_offset;
 uint16_t changed_offset;
@@ -53,19 +57,20 @@ uint16_t server_random_offset;
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
 
+    if (coap_block1_handler(request, response, big_msg, &big_msg_len, 128)) {
+        return;
+    }
+
     uint32_t buf32[40];
     uint8_t *buf08 = (uint8_t *) buf32;
 
-    const uint8_t *payload = 0;
-    size_t pay_len = REST.get_request_payload(request, &payload);
-
-    if (pay_len && payload) {
+    if (big_msg_len > 0) {
 
         const char *uri_path = NULL;
         uint8_t uri_len = REST.get_url(request, &uri_path);
 
         if (uri_len == 4) {
-            DTLSContent_t *content = (DTLSContent_t *) payload;
+            DTLSContent_t *content = (DTLSContent_t *) big_msg;
 
             if (content->type == client_hello) {
                 ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
@@ -78,14 +83,14 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 if (cookie_len > 0) {
                     // Abspeichern für Finished-Hash
                     stack_init();
-                    stack_push((uint8_t *) payload, pay_len);
-                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) payload;
+                    stack_push((uint8_t *) big_msg, big_msg_len);
+                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
 
                     // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
                     memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
                 }
 
-                generateCookie(new_cookie, content, &pay_len);
+                generateCookie(new_cookie, content, &big_msg_len);
 
                 if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
                     #if DEBUG
@@ -117,10 +122,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-            DTLSContent_t *content = (DTLSContent_t *) payload;
+            DTLSContent_t *content = (DTLSContent_t *) big_msg;
             KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
 
-            stack_push((uint8_t *) payload, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+            stack_push((uint8_t *) big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
 
             #if DEBUG_ECC
                 printf("_C_PUB_KEY-X: ");
@@ -264,6 +269,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 coap_send_transaction(transaction);
             }
         }
+
+        big_msg_len = 0;
     }
 }
 
