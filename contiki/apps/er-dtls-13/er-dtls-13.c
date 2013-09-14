@@ -2,8 +2,10 @@
 
 #include <string.h>
 
+#include "er-coap-13.h"
 #include "er-dtls-13-data.h"
 #include "er-dtls-13-aes.h"
+#include "er-dtls-13-alert.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -16,19 +18,23 @@
     #define PRINTF(...)
 #endif
 
-uint8_t isHandshakeMessage = 0;
+#define EPOCH ((nonce[4] << 8) + nonce[5])
+
+RecordType returnType;
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata) {
+void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata) {
+    uip_ipaddr_t *addr = &UIP_IP_BUF->srcipaddr;
+
     len -= sizeof(DTLSRecord_t);
     uint8_t type = record->type;
     uint8_t *payload = record->payload;
     uint8_t nonce[12] = {0, 0, 0, 0, 0, record->epoch, 0, 0, 0, 0, 0, 0};
 
-    isHandshakeMessage = (record->type == handshake ? 1 : 0);
+    returnType = record->type;
 
     if (record->type == type_8_bit) {
         type = payload[0];
@@ -58,7 +64,7 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
 
     // Bei Bedarf entschlüsseln
     uint32_t key_block;
-    if ((key_block = getKeyBlock(ip, record->epoch, 1))) { // TODO uip_htons(*((uint16_t *) (nonce + 4)))
+    if ((key_block = getKeyBlock((uint8_t *) addr, EPOCH, 1))) { // TODO cast weg -> pointer anpassen
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -74,23 +80,34 @@ void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData
         aes_crypt(payload, len, key, nonce, 0);
         aes_crypt(payload, len, key, nonce, 1);
         uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
-        if (check) printf("DTLS-MAC fehler. Paket ungültig.\n");
+        if (check) {
+            PRINTF("DTLS-MAC fehler. Paket ungültig.\n");
+            sendAlert(addr, UIP_UDP_BUF->srcport, fatal, bad_record_mac);
+        } else {
+            coapdata->data = payload;
+            coapdata->data_len = len;
+        }
         coapdata->valid = (check == 0 ? 1 : 0);
-        coapdata->data = payload;
-        coapdata->data_len = len;
     } else {
-        coapdata->valid = 1;
-        coapdata->data = payload;
-        coapdata->data_len = len;
+        if (EPOCH == 0) {
+            if (type == handshake) {
+                // TODO check auf korrekte resource: /dtls       -> fatal, illegal_parameter
+                coapdata->valid = 1;
+                coapdata->data = payload;
+                coapdata->data_len = len;
+            } else {
+                sendAlert(addr, UIP_UDP_BUF->srcport, fatal, unexpected_message);
+            }
+        } else {
+            sendAlert(addr, UIP_UDP_BUF->srcport, fatal, decode_error);
+        }
     }
 
-    if (type == 21) { // Alert
+    if (type == alert) {
         PRINTF("Alert erhalten.\n");
         // TODO Alert-Auswertung
         coapdata->valid = 0;
     }
-
-    // TODO für fehler -> struct uip_udp_conn *uip_udp_new(const uip_ipaddr_t *ripaddr, uint16_t rport)
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
@@ -100,7 +117,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     getSessionData(nonce + 4, conn->ripaddr.u8, session_epoch);
 
     uint32_t key_block;
-    key_block = getKeyBlock(conn->ripaddr.u8, (nonce[4] << 8) + nonce[5], 0);
+    key_block = getKeyBlock(conn->ripaddr.u8, EPOCH, 0);
 
     getSessionData(nonce + 6, conn->ripaddr.u8, session_num_write);
 
@@ -109,7 +126,7 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
     uint8_t headerAdd = 0;
     DTLSRecord_t *record = (DTLSRecord_t *) packet;
     record->u1 = 0;
-    record->type = (isHandshakeMessage ? handshake : application_data);
+    record->type = returnType;
     record->version= dtls_1_2;
     if (nonce[4] || nonce[5] > 4) {
         if (nonce[4]) {

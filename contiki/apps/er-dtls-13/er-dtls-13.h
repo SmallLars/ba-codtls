@@ -78,11 +78,11 @@ typedef struct {
   *           enthalten sind wird valid in coapdata auf 1 gesetzt; Ansonsten
   *           bleibt valid unverändert.
   *
-  * \param    ip         Zeiger auf die 16 Byte lange IP-Adresse des Senders
   * \param    record     Zeiger auf die auszuwertenden Daten
+  * \param    len        Länge der auszuwertenden Daten
   * \param    coapdata   Zeiger auf die Struktur in der das Ergebnis abgelegt wird
   */
-void dtls_parse_message(uint8_t *ip, DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata);
+void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata);
 
 /**
   * \brief    Datenversand über DTLS

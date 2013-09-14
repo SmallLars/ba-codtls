@@ -29,22 +29,19 @@ AUTOSTART_PROCESSES(&server_firmware);
 PROCESS_THREAD(server_firmware, ev, data) {
     PROCESS_BEGIN();
 
+    leds_on(LEDS_GREEN);
+        nvm_init();
+        rest_init_engine();
+        rest_activate_resource(&resource_device);
+        rest_activate_resource(&resource_time);
+        rest_activate_resource(&resource_flasher);
+    leds_off(LEDS_GREEN);
     PRINTF("Firmware gestartet.\n");
-
-    rest_init_engine();
-
-    rest_activate_resource(&resource_device);
-    rest_activate_resource(&resource_time);
-    rest_activate_resource(&resource_flasher);
 
 	while(1) {
 		PROCESS_WAIT_EVENT();
 
 		if (ev == sensors_event && data == &button_sensor) {
-            leds_on(LEDS_GREEN);
-            nvm_init();
-            leds_off(LEDS_GREEN);
-
             #if DEBUG
                 PRINTF("\n");
                 PRINTF("Speicheraufteilung (Konfiguration in contiki/cpu/mc1322x/mc1322x.lds)\n");

@@ -21,13 +21,6 @@
 // 0x1E000 - 0x1EFFF MAC, UUID, PSK, ECC-Base-Point, Name, Model, Flashzeitpunkt
 // 0x1F000 - 0x1FFFF Systemreserviert
 
-#define RES_BLOCK_11     0x18000
-#define RES_BLOCK_12     0x19000
-#define RES_BLOCK_21     0x1A000
-#define RES_BLOCK_22     0x1B000
-#define LEN_BLOCK_XX     0x1000
-#define LEN_BLOCK        0x01
-
 //Read Only Fehlermeldungen
 #define RES_B_ERR_05     0x1D000
 #define LEN_B_ERR_05     73
@@ -99,10 +92,6 @@ int main(int nArgs, char **argv) {
 
 // Rest zur initlialisierung zunächst mit 0x00 füllen
     for (; i < 0x1F000; i++) output[i] = 0x00;
-
-// Blöcke für Random Zugriff initialisieren -----------------------------------
-    output[RES_BLOCK_11] = 1;
-    output[RES_BLOCK_21] = 1;
 
 // Fehlermeldungen setzen -----------------------------------------------------
     char *buffer;

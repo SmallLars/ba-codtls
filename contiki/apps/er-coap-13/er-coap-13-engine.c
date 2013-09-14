@@ -100,7 +100,7 @@ coap_receive(void)
 
     #ifdef WITH_DTLS
       CoapData_t coapdata = {0, NULL, 0};
-      dtls_parse_message((uint8_t *) &UIP_IP_BUF->srcipaddr, uip_appdata, uip_datalen(), &coapdata);
+      dtls_parse_message(uip_appdata, uip_datalen(), &coapdata);
       if (!coapdata.valid) return NO_ERROR;
       coap_error_code = coap_parse_message(message, coapdata.data, coapdata.data_len);
     #else
