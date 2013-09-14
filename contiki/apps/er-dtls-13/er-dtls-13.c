@@ -84,14 +84,51 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
             PRINTF("DTLS-MAC fehler. Paket ungültig.\n");
             sendAlert(addr, UIP_UDP_BUF->srcport, fatal, bad_record_mac);
         } else {
+            coapdata->valid = 1;
             coapdata->data = payload;
             coapdata->data_len = len;
         }
-        coapdata->valid = (check == 0 ? 1 : 0);
     } else {
         if (EPOCH == 0) {
             if (type == handshake) {
-                // TODO check auf korrekte resource: /dtls       -> fatal, illegal_parameter
+                // coap_parse_message verändert payload. deshalb selbst parsen
+                const char *url = payload;
+                int url_len = 0;
+
+                url += (4 + (url[0] & 0x0F));         // 4 Byte Header und Tokenlength. url zeigt nun auf Options
+                int option = 0;
+                while (1) {
+                    option += ((url[0] & 0xF0) >> 4); // Da 11 gesucht ist es nicht notwendig Extendet-Delta zu berücksichten
+                    if (option > 11) {                // Da Payload-Marker an dieser Stelle 15 wäre, erledigt sich Ende-Check von selbst
+                        url = 0;
+                        break;
+                    }
+                    url_len = url[0] & 0x0F;
+                    url++;
+
+                    if (url_len == 13) {
+                        url_len = url[0];
+                        url++;
+                    }
+                    if (url_len == 14) {
+                        url_len = ((url[0] << 8) + url[1]);
+                        url+=2;
+                    }
+
+                    if (option == 11) break;
+                    url += url_len;
+                }
+
+                if (url) {
+                    PRINTF("dtls-uri-check: %.*s\n", url_len, url);
+                    if (url_len != 4 || strncmp("dtls", url, 4)) {
+                        sendAlert(addr, UIP_UDP_BUF->srcport, fatal, illegal_parameter);
+                        return;
+                    }
+                } else {
+                    PRINTF("dtls-uri-check: empty\n");
+                }
+
                 coapdata->valid = 1;
                 coapdata->data = payload;
                 coapdata->data_len = len;
@@ -106,7 +143,6 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
     if (type == alert) {
         PRINTF("Alert erhalten.\n");
         // TODO Alert-Auswertung
-        coapdata->valid = 0;
     }
 }
 

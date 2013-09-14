@@ -114,8 +114,9 @@ int main(int argc, char *argv[]) {
                     node_firmware(ip, "server_redbee-econotag.bin");
                     printf("Flash erfolgreich. Gerät wird neu gestartet ");
                     fflush(stdout);
+                    sleep(1);
                     int i;
-                    for (i = 0; i < 10; i++) {
+                    for (i = 0; i < 11; i++) {
                         printf(".");
                         fflush(stdout);
                         sleep(1);
