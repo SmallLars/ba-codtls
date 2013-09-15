@@ -16,8 +16,9 @@
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
 #define DEBUG_PRF 1
+#define DEBUG_FIN 1
 
-#if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF
+#if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF || DEBUG_FIN
     #include <stdio.h>
     #include "mc1322x.h"
 #endif
@@ -137,10 +138,27 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 if (content->type == c_change_cipher_spec) {
                     PRINTF("ChangeCipherSpec gefunden. Folgedaten werden entschlüsselt.\n");
                 }
+                memcpy(buf08 + 12, buf08 + 160, 48);
+                getSessionData(buf08 + 96, src_addr, session_epoch);
+                buf08[97]++;
+                if (buf08[97] == 0) buf08[96]++;
+                uint32_t key_block;
+                key_block = getKeyBlock(src_addr, (buf08[96] << 8) + buf08[97], 0);
+                nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_CLIENT_IV, 4);
+                memset(buf08 + 98, 0, 6);
+                nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // |#|#|#|     Master-Secret     |#|#|#|#|#|#|#|#|Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                #if DEBUG_FIN
+                    printf("Nonce zum Entschlüsseln von Finished: ");
+                    for (i = 92; i < 104; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                    printf("Key zum Entschlüsseln von Finished: ");
+                    for (i = 104; i < 120; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
 
-                // Finished Nachrichten berechnen
-                // buf08 = finished[12] + master_secret[48] + label[15] + hash[16]
-                //         0              12                  60          75
                 memset(buf08 + 75, 0, 16);
                 nvm_getVar(buf08 + 92, RES_STACK, 16);
                 for (i = 16; i < stack_size(); i+=16) {
@@ -148,16 +166,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     nvm_getVar(buf08 + 92, RES_STACK + i, 16);
                 }
                 aes_cmac(buf08 + 75, buf08 + 92, stack_size() + 16 - i, 1);
-                memcpy(buf08 + 12, buf08 + 160, 48);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
 
                 memcpy(buf08 + 60, "client finished", 15);
                 prf(buf08, 12, buf08 + 12, 79);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F |     Master-Secret     | "c f" + C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // | C-F |     Master-Secret     | "c f" + C-MAC |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
                     printf("Client Finished: ");
                     for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
@@ -170,7 +187,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 prf(buf08, 12, buf08 + 12, 79);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | S-F |     Master-Secret     | "s f" + C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // | S-F |     Master-Secret     | "s f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
                     printf("Server Finished: ");
                     for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
