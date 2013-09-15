@@ -5,8 +5,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "contiki-net.h"
+
 typedef struct { // 16 + 8 + 2 + 32 = 58
-    uint8_t ip[16];
+    uip_ipaddr_t addr;
     uint8_t session[8];
     uint16_t epoch;
     uint32_t private_key[8];
@@ -38,14 +40,14 @@ typedef enum {
 
 // ----------------------------------------------------------------------------
 
-int8_t createSession(uint32_t *buf, uint8_t ip[16]);
+int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr);
 
-int8_t getSessionData(uint8_t *dst, uint8_t ip[16], SessionDataType type);
+int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type);
 
 // ----------------------------------------------------------------------------
 
-int8_t insertKeyBlock(uint8_t ip[16], KeyBlock_t *key_block);
+int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block);
 
-uint32_t getKeyBlock(uint8_t ip[16], uint16_t epoch, uint8_t update);
+uint32_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update);
 
 #endif /* __ER_DTLS_13_DATA_H__ */

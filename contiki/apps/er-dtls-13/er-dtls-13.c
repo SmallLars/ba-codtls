@@ -24,6 +24,8 @@ RecordType returnType;
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
+__attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, size_t len);
+
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata) {
@@ -64,7 +66,7 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
 
     // Bei Bedarf entschlüsseln
     uint32_t key_block;
-    if ((key_block = getKeyBlock((uint8_t *) addr, EPOCH, 1))) { // TODO cast weg -> pointer anpassen
+    if ((key_block = getKeyBlock(addr, EPOCH, 1))) {
         len -= MAC_LEN;
         uint8_t oldMAC[MAC_LEN];
         memcpy(oldMAC, payload + len, MAC_LEN);
@@ -90,43 +92,18 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
         }
     } else {
         if (EPOCH == 0) {
+            uint16_t known_epoch = 0;
+            getSessionData((uint8_t *) &known_epoch, addr, session_epoch);
+            if (known_epoch > 0) {
+                PRINTF("Angriff auf Session oder Client hat Daten verloren\n");
+                // Leider nicht zu unterscheiden. Bei Datenverlust ist Reset notwendig.
+                return;
+            }
+
             if (type == handshake) {
-                // coap_parse_message verändert payload. deshalb selbst parsen
-                const char *url = payload;
-                int url_len = 0;
-
-                url += (4 + (url[0] & 0x0F));         // 4 Byte Header und Tokenlength. url zeigt nun auf Options
-                int option = 0;
-                while (1) {
-                    option += ((url[0] & 0xF0) >> 4); // Da 11 gesucht ist es nicht notwendig Extendet-Delta zu berücksichten
-                    if (option > 11) {                // Da Payload-Marker an dieser Stelle 15 wäre, erledigt sich Ende-Check von selbst
-                        url = 0;
-                        break;
-                    }
-                    url_len = url[0] & 0x0F;
-                    url++;
-
-                    if (url_len == 13) {
-                        url_len = url[0];
-                        url++;
-                    }
-                    if (url_len == 14) {
-                        url_len = ((url[0] << 8) + url[1]);
-                        url+=2;
-                    }
-
-                    if (option == 11) break;
-                    url += url_len;
-                }
-
-                if (url) {
-                    PRINTF("dtls-uri-check: %.*s\n", url_len, url);
-                    if (url_len != 4 || strncmp("dtls", url, 4)) {
-                        sendAlert(addr, UIP_UDP_BUF->srcport, fatal, illegal_parameter);
-                        return;
-                    }
-                } else {
-                    PRINTF("dtls-uri-check: empty\n");
+                if (checkCoapURI(payload, len)) {
+                    sendAlert(addr, UIP_UDP_BUF->srcport, fatal, illegal_parameter);
+                    return;
                 }
 
                 coapdata->valid = 1;
@@ -150,12 +127,12 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 
     uint8_t nonce[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    getSessionData(nonce + 4, conn->ripaddr.u8, session_epoch);
+    getSessionData(nonce + 4, &conn->ripaddr, session_epoch);
 
     uint32_t key_block;
-    key_block = getKeyBlock(conn->ripaddr.u8, EPOCH, 0);
+    key_block = getKeyBlock(&conn->ripaddr, EPOCH, 0);
 
-    getSessionData(nonce + 6, conn->ripaddr.u8, session_num_write);
+    getSessionData(nonce + 6, &conn->ripaddr, session_num_write);
 
     uint8_t packet[sizeof(DTLSRecord_t) + 13 + len + MAC_LEN]; // 13 = maximaler Header-Anhang
 
@@ -203,3 +180,43 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 }
 
 /* Private Funktionen ------------------------------------------------------ */
+
+__attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, size_t len) {
+    // coap_parse_message verändert payload. deshalb selbst parsen
+    int url_len = 0;
+
+    packet += (4 + (packet[0] & 0x0F));         // 4 Byte Header und Tokenlength. packet zeigt nun auf Options
+    int option = 0;
+    while (1) {
+        option += ((packet[0] & 0xF0) >> 4); // Da 11 gesucht ist es nicht notwendig Extendet-Delta zu berücksichten
+        if (option > 11) {                // Da Payload-Marker an dieser Stelle 15 wäre, erledigt sich Ende-Check von selbst
+            packet = 0;
+            break;
+        }
+        url_len = packet[0] & 0x0F;
+        packet++;
+
+        if (url_len == 13) {
+            url_len = packet[0];
+            packet++;
+        }
+        if (url_len == 14) {
+            url_len = ((packet[0] << 8) + packet[1]);
+            packet+=2;
+        }
+
+        if (option == 11) break;
+        packet += url_len;
+    }
+
+    if (packet) {
+        PRINTF("dtls-uri-check: %.*s\n", url_len, packet);
+        if (url_len != 4 || strncmp("dtls", packet, 4)) {
+            return -1;
+        }
+    } else {
+        PRINTF("dtls-uri-check: empty\n");
+    }
+
+    return 0;
+}

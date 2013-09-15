@@ -39,7 +39,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32);
 void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
 
-uint8_t src_ip[16];
+uip_ipaddr_t src_addr[1];
 coap_separate_t request_metadata[1];
 
 uint8_t big_msg[128];
@@ -55,7 +55,7 @@ uint16_t server_random_offset;
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    memcpy(src_ip, (uint8_t *) &UIP_IP_BUF->srcipaddr, 16);
+    uip_ipaddr_copy(src_addr, &UIP_IP_BUF->srcipaddr);
 
     if (coap_block1_handler(request, response, big_msg, &big_msg_len, 128)) {
         return;
@@ -138,7 +138,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             memcpy(buf32 + 24, cke->public_key.x, 32);
             memcpy(buf32 + 32, cke->public_key.y, 32);
             uint32_t private_key[12];
-            getSessionData((uint8_t *) private_key, src_ip, session_key);
+            getSessionData((uint8_t *) private_key, src_addr, session_key);
             #if DEBUG
                 printf("ECC - START\n");
                 uint32_t time = *MACA_CLK;
@@ -199,7 +199,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 for (i = 20; i < 40; i++) printf("%02X", buf08[i]);
                 printf("\n");
             #endif
-            insertKeyBlock(src_ip, (KeyBlock_t *) buf08);
+            insertKeyBlock(src_addr, (KeyBlock_t *) buf08);
 
             // Finished Nachrichten berechnen
             // buf08 = finished[20] + master_secret[48] + label[15] + hash[16]
@@ -328,14 +328,14 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 
     uint8_t mac[16];
     memset(mac, 0, 16);
-    aes_cmac(mac, src_ip, 16, 0);
+    aes_cmac(mac, src_addr, 16, 0);
     aes_cmac(mac, data, *data_len, 1);
     memcpy(dst, mac, 8);
 }
 
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) {
 
-    if (createSession(buf32, src_ip) == -1) return;
+    if (createSession(buf32, src_addr) == -1) return;
 
     created_offset = stack_size();
 
@@ -351,7 +351,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
     sh->server_version.minor = 3;
     sh->random.gmt_unix_time = uip_htonl(getTime());
     random_x(sh->random.random_bytes, 28);
-    sh->session_id.len = getSessionData(sh->session_id.session_id, src_ip, session_id);
+    sh->session_id.len = getSessionData(sh->session_id.session_id, src_addr, session_id);
     sh->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
     sh->compression_method = null;
     sh->extensions[0] = 0x00;        // Länge der Extensions
@@ -393,7 +393,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf32) 
         for (i = 24; i < 32; i++) printf("%08X", uip_htonl(buf32[i]));
         printf("\n");
     #endif
-    getSessionData((uint8_t *) (buf32 + 32), src_ip, session_key);
+    getSessionData((uint8_t *) (buf32 + 32), src_addr, session_key);
     #if DEBUG_ECC
         printf("Private Key : ");
         for (i = 32; i < 40; i++) printf("%08X", uip_htonl(buf32[i]));;

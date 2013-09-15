@@ -20,6 +20,7 @@
 
 /* Private Variablen ------------------------------------------------------- */
 
+extern uint8_t isHandshakeMessage;
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
@@ -32,7 +33,9 @@ void node_getName(uint8_t *ip, char *target) {
 }
 
 void node_getModel(uint8_t *ip, char *target) {
+    isHandshakeMessage = 1;
     coap_request(ip, COAP_REQUEST_GET, "d/model", target);
+    isHandshakeMessage = 0;
 }
 
 void node_getUUID(uint8_t *ip, char *target) {
