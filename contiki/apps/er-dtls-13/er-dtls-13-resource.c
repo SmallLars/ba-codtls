@@ -61,17 +61,16 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         return;
     }
 
-    uint32_t buf32[40];
-    uint8_t *buf08 = (uint8_t *) buf32;
-
     if (big_msg_len > 0) {
+        DTLSContent_t *content = (DTLSContent_t *) big_msg;
+
+        uint32_t buf32[40];
+        uint8_t *buf08 = (uint8_t *) buf32;
 
         const char *uri_path = NULL;
         uint8_t uri_len = REST.get_url(request, &uri_path);
 
         if (uri_len == 4) {
-            DTLSContent_t *content = (DTLSContent_t *) big_msg;
-
             if (content->type == client_hello) {
                 ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
 
@@ -83,7 +82,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 if (cookie_len > 0) {
                     // Abspeichern für Finished-Hash
                     stack_init();
-                    stack_push((uint8_t *) big_msg, big_msg_len);
+                    stack_push(big_msg, big_msg_len);
                     client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
 
                     // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
@@ -122,147 +121,146 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-            DTLSContent_t *content = (DTLSContent_t *) big_msg;
-            KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
+            if (content->type == client_key_exchange) {
+                stack_push(big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
 
-            stack_push((uint8_t *) big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+                KeyExchange_t *cke = (KeyExchange_t *) (content->payload + content->len);
 
-            #if DEBUG_ECC
-                printf("_C_PUB_KEY-X: ");
-                for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.x[i]));
-                printf("\n_C_PUB_KEY-Y: ");
-                for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.y[i]));
-                printf("\n");
-            #endif
+                #if DEBUG_ECC
+                    printf("_C_PUB_KEY-X: ");
+                    for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.x[i]));
+                    printf("\n_C_PUB_KEY-Y: ");
+                    for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.y[i]));
+                    printf("\n");
+                #endif
 
-            memcpy(buf32 + 24, cke->public_key.x, 32);
-            memcpy(buf32 + 32, cke->public_key.y, 32);
-            uint32_t private_key[12];
-            getSessionData((uint8_t *) private_key, src_addr, session_key);
-            #if DEBUG
-                printf("ECC - START\n");
-                uint32_t time = *MACA_CLK;
-            #endif
-            ecc_ec_mult(buf32 + 24, buf32 + 32, private_key, buf32 + 5, buf32 + 13);
-            #if DEBUG
-                time = *MACA_CLK - time;
-                printf("ECC - BEENDET NACH %u MS\n", time / 250);
-            #endif
-            #if DEBUG_ECC
-                printf("SECRET_KEY-X: ");
-                for (i = 20; i < 52; i++) printf("%02X", buf08[i]);
-                printf("\nSECRET_KEY-Y: ");
-                for (i = 52; i < 84; i++) printf("%02X", buf08[i]);
-                printf("\n");
-            #endif
+                memcpy(buf32 + 24, cke->public_key.x, 32);
+                memcpy(buf32 + 32, cke->public_key.y, 32);
+                uint32_t private_key[12];
+                getSessionData((uint8_t *) private_key, src_addr, session_key);
+                #if DEBUG
+                    printf("ECC - START\n");
+                    uint32_t time = *MACA_CLK;
+                #endif
+                ecc_ec_mult(buf32 + 24, buf32 + 32, private_key, buf32 + 5, buf32 + 13);
+                #if DEBUG
+                    time = *MACA_CLK - time;
+                    printf("ECC - BEENDET NACH %u MS\n", time / 250);
+                #endif
+                #if DEBUG_ECC
+                    printf("SECRET_KEY-X: ");
+                    for (i = 20; i < 52; i++) printf("%02X", buf08[i]);
+                    printf("\nSECRET_KEY-Y: ");
+                    for (i = 52; i < 84; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
 
-            buf08[0] = 0;
-            buf08[1] = 16;
-            getPSK(buf08 + 2);
-            buf08[18] = 0;
-            buf08[19] = 64;
-            memcpy(buf08 + 84, "master secret", 13);
-            nvm_getVar(buf08 + 97, RES_STACK + client_random_offset, 28);
-            nvm_getVar(buf08 + 125, RES_STACK + server_random_offset, 28);
-            #if DEBUG_PRF
-                printf("Seed für Master-Secret:\n    ");
-                for (i = 0; i < 33; i++) printf("%02X", buf08[i]);
-                printf("\n    ");
-                for (i = 33; i < 65; i++) printf("%02X", buf08[i]);
-                printf("\n    ");
-                for (i = 65; i < 97; i++) printf("%02X", buf08[i]);
-                printf("\n    ");
-                for (i = 97; i < 125; i++) printf("%02X", buf08[i]);
-                printf("\n    ");
-                for (i = 125; i < 153; i++) printf("%02X", buf08[i]);
-                printf("\n");
-            #endif
+                buf08[0] = 0;
+                buf08[1] = 16;
+                getPSK(buf08 + 2);
+                buf08[18] = 0;
+                buf08[19] = 64;
+                memcpy(buf08 + 84, "master secret", 13);
+                nvm_getVar(buf08 + 97, RES_STACK + client_random_offset, 28);
+                nvm_getVar(buf08 + 125, RES_STACK + server_random_offset, 28);
+                #if DEBUG_PRF
+                    printf("Seed für Master-Secret:\n    ");
+                    for (i = 0; i < 33; i++) printf("%02X", buf08[i]);
+                    printf("\n    ");
+                    for (i = 33; i < 65; i++) printf("%02X", buf08[i]);
+                    printf("\n    ");
+                    for (i = 65; i < 97; i++) printf("%02X", buf08[i]);
+                    printf("\n    ");
+                    for (i = 97; i < 125; i++) printf("%02X", buf08[i]);
+                    printf("\n    ");
+                    for (i = 125; i < 153; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
 
-            prf((uint8_t *) private_key, 48, buf08, 153);
-            #if DEBUG_PRF
-                printf("Master-Secret:\n    ");
-                for (i = 0; i < 6; i++) printf("%02X", uip_htonl(private_key[i]));
-                printf("\n    ");
-                for (i = 6; i < 12; i++) printf("%02X", uip_htonl(private_key[i]));
-                printf("\n");
-            #endif
+                prf((uint8_t *) private_key, 48, buf08, 153);
+                #if DEBUG_PRF
+                    printf("Master-Secret:\n    ");
+                    for (i = 0; i < 6; i++) printf("%02X", uip_htonl(private_key[i]));
+                    printf("\n    ");
+                    for (i = 6; i < 12; i++) printf("%02X", uip_htonl(private_key[i]));
+                    printf("\n");
+                #endif
 
-            memcpy(buf08 + 40, private_key, 48);
-            memcpy(buf08 + 88, "key expansion", 13);
-            nvm_getVar(buf08 + 101, RES_STACK + server_random_offset, 28);
-            nvm_getVar(buf08 + 129, RES_STACK + client_random_offset, 28);
-            prf(buf08, 40, buf08 + 40, 117);
-            #if DEBUG_PRF
-                printf("Key-Block:\n    ");
-                for (i = 0; i < 20; i++) printf("%02X", buf08[i]);
-                printf("\n    ");
-                for (i = 20; i < 40; i++) printf("%02X", buf08[i]);
-                printf("\n");
-            #endif
-            insertKeyBlock(src_addr, (KeyBlock_t *) buf08);
+                memcpy(buf08 + 40, private_key, 48);
+                memcpy(buf08 + 88, "key expansion", 13);
+                nvm_getVar(buf08 + 101, RES_STACK + server_random_offset, 28);
+                nvm_getVar(buf08 + 129, RES_STACK + client_random_offset, 28);
+                prf(buf08, 40, buf08 + 40, 117);
+                #if DEBUG_PRF
+                    printf("Key-Block:\n    ");
+                    for (i = 0; i < 20; i++) printf("%02X", buf08[i]);
+                    printf("\n    ");
+                    for (i = 20; i < 40; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
+                insertKeyBlock(src_addr, (KeyBlock_t *) buf08);
 
-            // Finished Nachrichten berechnen
-            // buf08 = finished[20] + master_secret[48] + label[15] + hash[16]
-            //         0              20                  68          83
-            memset(buf08 + 83, 0, 16);
-            nvm_getVar(buf08, RES_STACK, 16);
-            for (i = 16; i < stack_size(); i+=16) {
-                aes_cmac(buf08 + 83, buf08, 16, 0);
-                nvm_getVar(buf08, RES_STACK + i, 16);
+                // ClientKeyExchange wurde ausgewertet und ein KeyBlock berechnet
+
+                content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+                if (content->type == c_change_cipher_spec) {
+                    PRINTF("c_change_cipher_spec\n");
+                }
+
+                // Finished Nachrichten berechnen
+                // buf08 = finished[20] + master_secret[48] + label[15] + hash[16]
+                //         0              20                  68          83
+                memset(buf08 + 83, 0, 16);
+                nvm_getVar(buf08, RES_STACK, 16);
+                for (i = 16; i < stack_size(); i+=16) {
+                    aes_cmac(buf08 + 83, buf08, 16, 0);
+                    nvm_getVar(buf08, RES_STACK + i, 16);
+                }
+                aes_cmac(buf08 + 83, buf08, stack_size() + 16 - i, 1);
+                memcpy(buf08 + 20, private_key, 48);
+
+                memcpy(buf08 + 68, "client finished", 15);
+                prf(buf08, 12, buf08 + 20, 79);
+                #if DEBUG_PRF
+                    printf("Client Finished: ");
+                    for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
+
+                // TODO vergleichen mit erhaltenem
+
+                memcpy(buf08 + 68, "server finished", 15);
+                prf(buf08, 12, buf08 + 20, 79);
+                #if DEBUG_PRF
+                    printf("Server Finished: ");
+                    for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
+
+                // Antworten generieren
+
+                DTLSContent_t *c;
+
+                c = (DTLSContent_t *) buffer;
+                c->type = c_change_cipher_spec;
+                c->len = con_length_8_bit;
+                c->payload[0] = 1;
+                c->payload[1] = 1;
+
+                c = (DTLSContent_t *) (buffer + 3);
+                c->type = finished;
+                c->len = con_length_8_bit;
+                c->payload[0] = 20;
+                memcpy(c->payload + 1, buf08, 12);
+                // TODO verschlüsseln
             }
-            aes_cmac(buf08 + 83, buf08, stack_size() + 16 - i, 1);
-            memcpy(buf08 + 20, private_key, 48);
-
-            memcpy(buf08 + 68, "client finished", 15);
-            prf(buf08, 12, buf08 + 20, 79);
-            #if DEBUG_PRF
-                printf("Client Finished: ");
-                for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
-                printf("\n");
-            #endif
-
-            memcpy(buf08 + 68, "server finished", 15);
-            prf(buf08, 12, buf08 + 20, 79);
-            #if DEBUG_PRF
-                printf("Server Finished: ");
-                for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
-                printf("\n");
-            #endif
-
-            // Antworten generieren
-
-            DTLSContent_t *c;
-
-            c = (DTLSContent_t *) buffer;
-            c->type = c_change_cipher_spec;
-            c->len = con_length_8_bit;
-            c->payload[0] = 1;
-            c->payload[1] = 1;
-/*
-            c = (DTLSContent_t *) (buffer + 3);
-            c->type = c_change_cipher_spec;
-            c->len = con_length_8_bit;
-            c->payload[0] = 12;
-            
-            uint8_t mac[16];
-            uint8_t tmp[16];
-            memset(mac, 0, 16);
-            uint8_t rest = stack_size() % 16;
-            for (i = 0; i < stack_size() - rest; i+=16) {
-                nvm_getVar(tmp, RES_STACK + i, 16);
-                cbc_mac_16(mac, tmp, 16);
-            }
-            printf("Size: %u, Rest: %u, I: %u\n", stack_size(), rest, i);
-            nvm_getVar(tmp, RES_STACK + i, rest);
-            cbc_mac_16(mac, tmp, 16);
-*/
 
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
                 coap_packet_t response[1];
                 coap_separate_resume(response, request_metadata, REST.status.CHANGED);
                 coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                coap_set_payload(response, buffer, 3);
+                coap_set_payload(response, buffer, 25); // TODO Länge anpassen
                 // TODO Warning: No check for serialization error.
                 transaction->packet_len = coap_serialize_message(response, transaction->packet);
                 transaction->callback = NULL;
