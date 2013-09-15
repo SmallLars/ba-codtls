@@ -129,7 +129,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 // ClientKeyExchange wird ausgewertet und ein KeyBlock berechnet
                 processClientKeyExchange((KeyExchange_t *) (content->payload + content->len), buf08);
-                // Master-Secret steht nun an buf08 + 160 bzw. buf32 + 40
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
 
                 content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
                 if (content->type == c_change_cipher_spec) {
@@ -137,19 +139,25 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 }
 
                 // Finished Nachrichten berechnen
-                // buf08 = finished[20] + master_secret[48] + label[15] + hash[16]
-                //         0              20                  68          83
-                memset(buf08 + 83, 0, 16);
-                nvm_getVar(buf08, RES_STACK, 16);
+                // buf08 = finished[12] + master_secret[48] + label[15] + hash[16]
+                //         0              12                  60          75
+                memset(buf08 + 75, 0, 16);
+                nvm_getVar(buf08 + 92, RES_STACK, 16);
                 for (i = 16; i < stack_size(); i+=16) {
-                    aes_cmac(buf08 + 83, buf08, 16, 0);
-                    nvm_getVar(buf08, RES_STACK + i, 16);
+                    aes_cmac(buf08 + 75, buf08 + 92, 16, 0);
+                    nvm_getVar(buf08 + 92, RES_STACK + i, 16);
                 }
-                aes_cmac(buf08 + 83, buf08, stack_size() + 16 - i, 1);
-                memcpy(buf08 + 20, buf32 + 40, 48);
+                aes_cmac(buf08 + 75, buf08 + 92, stack_size() + 16 - i, 1);
+                memcpy(buf08 + 12, buf08 + 160, 48);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
 
-                memcpy(buf08 + 68, "client finished", 15);
-                prf(buf08, 12, buf08 + 20, 79);
+                memcpy(buf08 + 60, "client finished", 15);
+                prf(buf08, 12, buf08 + 12, 79);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // | C-F |     Master-Secret     | "c f" + C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
                     printf("Client Finished: ");
                     for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
@@ -158,8 +166,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 // TODO vergleichen mit erhaltenem
 
-                memcpy(buf08 + 68, "server finished", 15);
-                prf(buf08, 12, buf08 + 20, 79);
+                memcpy(buf08 + 60, "server finished", 15);
+                prf(buf08, 12, buf08 + 12, 79);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // | S-F |     Master-Secret     | "s f" + C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
                     printf("Server Finished: ");
                     for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
@@ -261,6 +272,7 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 }
 
 __attribute__((always_inline)) static  int checkClientHello(ClientHello_t *clientHello, size_t len) {
+    // TODO
     return 0;
 }
 
