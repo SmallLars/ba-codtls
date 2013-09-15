@@ -39,14 +39,20 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
     returnType = record->type;
 
     if (record->type == type_8_bit) {
-        type = payload[0];
+        type = payload[0] - 20;
         len -= 1;
         payload += 1;
     }
     if (record->version == version_16_bit) {
-        // TODO auslesen
+        if (payload[0] == 3 && payload[1] == 3) {
+            record->version = dtls_1_2;
+        }
         len -= 2;
         payload += 2;
+    }
+    if (record->version != dtls_1_2) {
+        sendAlert(addr, UIP_UDP_BUF->srcport, fatal, protocol_version);
+        return;
     }
     if (record->epoch == epoch_8_bit || record->epoch == epoch_16_bit) {
         uint8_t epoch_len = record->epoch - 4;
@@ -182,7 +188,10 @@ void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len)
 /* Private Funktionen ------------------------------------------------------ */
 
 __attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, size_t len) {
-    // coap_parse_message verändert payload. deshalb selbst parsen
+    // coap_parse_message verändert payload und liefert komplette uri
+    // payload zunächst kopieren und dann in coap_parse_message verwenden
+    // ist ineffizienter (auch weil die URI noch zerlegt werden muss)
+
     int url_len = 0;
 
     packet += (4 + (packet[0] & 0x0F));         // 4 Byte Header und Tokenlength. packet zeigt nun auf Options
