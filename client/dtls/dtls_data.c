@@ -56,7 +56,11 @@ int insertKeyBlock(uint8_t ip[16], KeyBlock_t *key_block) {
 }
 
 uint8_t *getKeyBlock(uint8_t ip[16], uint16_t epoch) {
-    return session[0].key_block.key_block;
+    if (session[0].epoch == epoch) {
+        return session[0].key_block.key_block;
+    } else {
+        return session[0].key_block_new.key_block;
+    }
 }
 
 void increaseEpoch(uint8_t ip[16]) {

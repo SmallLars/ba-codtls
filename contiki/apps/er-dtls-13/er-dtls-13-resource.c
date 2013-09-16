@@ -137,6 +137,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
                 if (content->type == c_change_cipher_spec) {
                     PRINTF("ChangeCipherSpec gefunden. Folgedaten werden entschlüsselt.\n");
+                    content += 3; // TODO
                 }
                 memcpy(buf08 + 12, buf08 + 160, 48);
                 getSessionData(buf08 + 96, src_addr, session_epoch);
@@ -156,6 +157,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     printf("\n");
                     printf("Key zum Entschlüsseln von Finished: ");
                     for (i = 104; i < 120; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
+                aes_crypt(content, 14, buf08 + 104, buf08 + 92, 0);
+                #if DEBUG_FIN
+                    printf("Erhaltenes Client Finished: ");
+                    for (i = 2; i < 14; i++) printf("%02X", content[i]);
                     printf("\n");
                 #endif
 

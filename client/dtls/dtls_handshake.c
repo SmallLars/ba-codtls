@@ -17,8 +17,9 @@
 #define DEBUG 1
 #define DEBUG_ECC 0
 #define DEBUG_PRF 1
+#define DEBUG_FIN 1
 
-#if DEBUG || DEBUG_ECC || DEBUG_PRF
+#if DEBUG || DEBUG_ECC || DEBUG_PRF || DEBUG_FIN
     #include <stdio.h>
 #endif
 
@@ -236,8 +237,8 @@ void dtls_handshake(uint8_t ip[16]) {
 
     // Finished Nachrichten berechnen
     uint8_t finished_source[79];
-    uint8_t client_finished[20];
-    uint8_t server_finished[20];
+    uint8_t client_finished[12];
+    uint8_t server_finished[12];
 
     memset(finished_source + 63, 0, 16);
     aes_cmac(finished_source + 63, handshake_messages, handshake_messages_len, 1);
@@ -250,6 +251,25 @@ void dtls_handshake(uint8_t ip[16]) {
         for (i = 0; i < 12; i++) printf("%02X", client_finished[i]);
         printf("\n");
     #endif
+
+    size_t fin_len = makeContent(message + paylen, finished, client_finished, 12);
+    uint8_t nonce[12];
+    uint16_t epoch = getEpoch(ip) + 1;
+    nonce[4] = (epoch & 0xFF00) >> 8;
+    nonce[5] = (epoch & 0x00FF) >> 0;
+    memset(nonce + 6, 0, 6);
+    uint8_t *key_block = getKeyBlock(ip, epoch);
+    memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+    #if DEBUG_FIN
+        printf("Nonce zum Verschlüsseln von Finished: ");
+        for (i = 0; i < 12; i++) printf("%02X", nonce[i]);
+        printf("\n");
+        printf("Key zum Verschlüsseln von Finished: ");
+        for (i = KEY_BLOCK_CLIENT_KEY; i < KEY_BLOCK_CLIENT_KEY + 16; i++) printf("%02X", key_block[i]);
+        printf("\n");
+    #endif
+    aes_encrypt(message + paylen, fin_len, key_block + KEY_BLOCK_CLIENT_KEY, nonce);
+    paylen += (fin_len + MAC_LEN);
 
     memcpy(finished_source + 48, "server finished", 15);
     prf(server_finished, 12, finished_source, 79);
@@ -267,7 +287,10 @@ void dtls_handshake(uint8_t ip[16]) {
     coap_setBlock1(1, 1, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
     coap_setPayload(message, paylen);
-    coap_setBlock1(2, 0, 1);
+    coap_setBlock1(2, 1, 1);
+    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
+    coap_setPayload(message, paylen);
+    coap_setBlock1(3, 0, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
     if (getContentType(buffer) != change_cipher_spec) {
         PRINTF("Erwartetes ChangeCipherSpec nicht erhalten. Abbruch.\n");
