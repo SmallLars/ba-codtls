@@ -160,6 +160,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     printf("\n");
                 #endif
                 aes_crypt(content, 14, buf08 + 104, buf08 + 92, 0);
+                // TODO MAC-Check
                 #if DEBUG_FIN
                     printf("Erhaltenes Client Finished: ");
                     for (i = 2; i < 14; i++) printf("%02X", content[i]);
@@ -216,7 +217,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 c->len = con_length_8_bit;
                 c->payload[0] = 20;
                 memcpy(c->payload + 1, buf08, 12);
-                // TODO verschlüsseln
+
+                nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
+                nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
+                aes_crypt(buffer + 3, 14, buf08 + 104, buf08 + 92, 0);
             }
 
             coap_transaction_t *transaction = NULL;
