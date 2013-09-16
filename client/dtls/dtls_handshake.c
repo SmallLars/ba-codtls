@@ -297,6 +297,15 @@ void dtls_handshake(uint8_t ip[16]) {
         return;
     }
 
+    memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
+    aes_decrypt(buffer + 3, 14, key_block + KEY_BLOCK_SERVER_KEY, nonce);
+
+    #if DEBUG_FIN
+        printf("Erhaltenes Server Finished: ");
+        for (i = 5; i < 17; i++) printf("%02X", buffer[i]);
+        printf("\n");
+    #endif
+
     PRINTF("Step 3 done.\n");
     increaseEpoch(ip);
 

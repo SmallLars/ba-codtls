@@ -168,21 +168,21 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 #endif
 
                 memset(buf08 + 75, 0, 16);
-                nvm_getVar(buf08 + 92, RES_STACK, 16);
+                nvm_getVar(buf08 + 104, RES_STACK, 16);
                 for (i = 16; i < stack_size(); i+=16) {
-                    aes_cmac(buf08 + 75, buf08 + 92, 16, 0);
-                    nvm_getVar(buf08 + 92, RES_STACK + i, 16);
+                    aes_cmac(buf08 + 75, buf08 + 104, 16, 0);
+                    nvm_getVar(buf08 + 104, RES_STACK + i, 16);
                 }
-                aes_cmac(buf08 + 75, buf08 + 92, stack_size() + 16 - i, 1);
+                aes_cmac(buf08 + 75, buf08 + 104, stack_size() + 16 - i, 1);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
 
                 memcpy(buf08 + 60, "client finished", 15);
                 prf(buf08, 12, buf08 + 12, 79);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F |     Master-Secret     | "c f" + C-MAC |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // | C-F |     Master-Secret     | "c f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
                     printf("Client Finished: ");
                     for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
@@ -220,6 +220,14 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
                 nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
+                #if DEBUG_FIN
+                    printf("Nonce zum Verschlüsseln von Finished: ");
+                    for (i = 92; i < 104; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                    printf("Key zum Verschlüsseln von Finished: ");
+                    for (i = 104; i < 120; i++) printf("%02X", buf08[i]);
+                    printf("\n");
+                #endif
                 aes_crypt(buffer + 3, 14, buf08 + 104, buf08 + 92, 0);
             }
 
