@@ -1,3 +1,22 @@
+/*
+   handshake_failure
+      Reception of a handshake_failure alert message indicates that the
+      sender was unable to negotiate an acceptable set of security
+      parameters given the options available.  This is a fatal error.
+
+
+   illegal_parameter
+      A field in the handshake was out of range or inconsistent with
+      other fields.  This message is always fatal.
+
+
+   decrypt_error
+      A handshake cryptographic operation failed, including being unable
+      to correctly verify a signature or validate a Finished message.
+      This message is always fatal.
+*/
+
+
 #include "er-dtls-13-resource.h"
 
 #include <string.h>
@@ -41,7 +60,7 @@
     #define PRINTF(...)
 #endif
 
-// Die folgenden 3 Funktionen werden nur einmal aufgerufen und dienen lediglich der Codeübersicht.
+// Die folgenden 6 Funktionen werden nur einmal aufgerufen und dienen lediglich der Codeübersicht.
 // Das inline-Keyword wird mit den gesetzten Kompiler-Parametern aufgrund der Funktionsgrößen ignoriert, weshalb das Attribut genutzt wird.
 // Bei generateHelloVerifyRequest nimmt die Programmgröße um ca 24 Byte ab während sie bei den anderen gleich bleibt.
 // Durch den gesparten Funktionsaufruf nimmt jedoch die Größe des benötigten Stacks erheblich ab.
@@ -81,7 +100,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         DTLSContent_t *content = (DTLSContent_t *) big_msg;
 
         uint32_t buf32[52];
-        uint8_t *buf08 = (uint8_t *) buf32;
+        uint8_t *buf = (uint8_t *) buf32;
 
         const char *uri_path = NULL;
         uint8_t uri_len = REST.get_url(request, &uri_path);
@@ -92,8 +111,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
                 uint8_t session_len = clienthello->data[0];
                 uint8_t cookie_len = clienthello->data[session_len + 1];
-                uint8_t *old_cookie = buf08;
-                uint8_t *new_cookie = buf08 + 8;
+                uint8_t *old_cookie = buf;
+                uint8_t *new_cookie = buf + 8;
 
                 if (cookie_len > 0) {
                     // Abspeichern für Finished-Hash
@@ -127,8 +146,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                         // genau ein Ciphersuit mit einer Konfiguration beherrscht.
                         generateServerHello(buf32); // Das dauert nun
                         sendServerHello(NULL, request);
+                    } else {
+                        // TODO fatal, handshake_failure
                     }
                 }
+            } else {
+                // TODO fatal, illegal_parameter
             }
         } else {
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
@@ -141,11 +164,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 stack_push(big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
 
                 // ClientKeyExchange wird ausgewertet und ein KeyBlock berechnet
-                processClientKeyExchange((KeyExchange_t *) (content->payload + content->len), buf08);
+                processClientKeyExchange((KeyExchange_t *) (content->payload + content->len), buf);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
-                generateFinished(buf08);
+                generateFinished(buf);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
@@ -156,22 +179,22 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     content += 3; // TODO
                 }
 
-                getSessionData(buf08 + 96, src_addr, session_epoch);
-                buf08[97]++;
-                if (buf08[97] == 0) buf08[96]++;
+                getSessionData(buf + 28, src_addr, session_epoch);
+                buf[29]++;
+                if (buf[29] == 0) buf[28]++;
                 fpoint_t key_block;
-                key_block = getKeyBlock(src_addr, (buf08[96] << 8) + buf08[97], 0);
-                nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_CLIENT_IV, 4);
-                memset(buf08 + 98, 0, 6);
-                nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+                key_block = getKeyBlock(src_addr, (buf[28] << 8) + buf[29], 0);
+                nvm_getVar(buf + 24, key_block + KEY_BLOCK_CLIENT_IV, 4);
+                memset(buf + 30, 0, 6);
+                nvm_getVar(buf + 36, key_block + KEY_BLOCK_CLIENT_KEY, 16);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // | C-F | S-F |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_FIN
-                    printBytes("Nonce zum Entschlüsseln von Finished", buf08 + 92, 12);
-                    printBytes("Key zum Entschlüsseln von Finished", buf08 + 104, 16);
+                    printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
+                    printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
                 #endif
-                aes_crypt((uint8_t *) content, 14, buf08 + 104, buf08 + 92, 0);
+                aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
                 // TODO MAC-Check
                 #if DEBUG_FIN
                     printBytes("Erhaltenes Client Finished", ((uint8_t *) content) + 2, 12);
@@ -193,15 +216,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 c->type = finished;
                 c->len = con_length_8_bit;
                 c->payload[0] = 20;
-                memcpy(c->payload + 1, buf08, 12);
+                memcpy(c->payload + 1, buf, 12);
 
-                nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
-                nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
+                nvm_getVar(buf + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
+                nvm_getVar(buf + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
                 #if DEBUG_FIN
-                    printBytes("Nonce zum Verschlüsseln von Finished", buf08 + 92, 12);
-                    printBytes("Key zum Verschlüsseln von Finished", buf08 + 104, 16);
+                    printBytes("Nonce zum Verschlüsseln von Finished", buf + 92, 12);
+                    printBytes("Key zum Verschlüsseln von Finished", buf + 104, 16);
                 #endif
-                aes_crypt(buffer + 3, 14, buf08 + 104, buf08 + 92, 0);
+                aes_crypt(buffer + 3, 14, buf + 104, buf + 92, 0);
             }
 
             coap_transaction_t *transaction = NULL;
