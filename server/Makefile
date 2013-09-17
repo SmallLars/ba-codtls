@@ -13,8 +13,10 @@ CFLAGS += -DWITH_DTLS=1
 CFLAGS += -DWITH_COAP=13
 CFLAGS += -DREST=coap_rest_implementation
 CFLAGS += -DUIP_CONF_TCP=0
-CFLAGS += -DDEBUG_PRINT=1
+#??? CFLAGS += -DDEBUG_PRINT=1
 CFLAGS += -I../../contiki/apps/er-coap-13
+# CFLAGS += -Wcast-align -Wall -Wstrict-prototypes -Wextra
+# http://www.gnu.org/software/gsl/manual/html_node/GCC-warning-options-for-numerical-programs.html
 
 LDFLAGS += "-Wl,-gc-sections"
 

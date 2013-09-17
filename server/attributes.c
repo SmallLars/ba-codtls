@@ -8,6 +8,8 @@
 #include "mc1322x.h"
 #include "flash-store.h"
 #include "ecc.h"
+#include "time.h"
+#include "er-dtls-13-psk.h"
 
 void device_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
     const char *uri_path = NULL;

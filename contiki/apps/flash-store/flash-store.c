@@ -78,7 +78,7 @@ nvmErr_t nvm_setVar(void *src, fpoint_t address, uint16_t numBytes) {
 
     nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (dst_block / LEN_BLOCK_XX));
 
-    int i;
+    uint32_t i;
     for (i = 0; i < address; i++) {
         uint8_t buf;
         nvm_read(gNvmInternalInterface_c, gNvmType_SST_c, &buf, src_block + i, 1);

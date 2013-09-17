@@ -1,6 +1,7 @@
 #include "er-dtls-13-psk.h"
 
 #include "flash-store.h"
+#include "er-dtls-13-random.h"
 
 /*---------------------------------------------------------------------------*/
 

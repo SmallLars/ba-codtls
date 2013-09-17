@@ -2,6 +2,7 @@
 #include "flasher.h"
 #include "button-sensor.h"
 #include "leds.h"
+#include "flash-store.h"
 
 #define DEBUG 1
 

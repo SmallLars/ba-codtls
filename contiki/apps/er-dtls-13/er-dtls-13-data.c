@@ -4,6 +4,7 @@
 
 #include "ecc.h"
 #include "flash-store.h"
+#include "er-dtls-13-random.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -101,6 +102,7 @@ int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
             seq_num[i]++;
             return 6;
     }
+    return 0;
 }
 
 int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {

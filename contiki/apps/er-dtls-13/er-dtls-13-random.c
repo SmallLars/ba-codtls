@@ -3,7 +3,7 @@
 #include "mc1322x.h"
 
 void random_x(uint8_t *c, size_t len) {
-    int i;
+    uint32_t i;
     for (i = 0; i < len; i++) c[i] = random_8();
 }
 

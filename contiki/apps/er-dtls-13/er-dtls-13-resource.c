@@ -10,6 +10,11 @@
 #include "er-dtls-13.h"
 #include "er-dtls-13-data.h"
 #include "er-dtls-13-random.h"
+#include "er-dtls-13-aes.h"
+#include "er-dtls-13-prf.h"
+#include "er-dtls-13-psk.h"
+#include "time.h"
+#include "ecc.h"
 #include "flash-store.h"
 
 #define DEBUG 1
@@ -161,7 +166,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     printBytes("Nonce zum Entschlüsseln von Finished", buf08 + 92, 12);
                     printBytes("Key zum Entschlüsseln von Finished", buf08 + 104, 16);
                 #endif
-                aes_crypt(content, 14, buf08 + 104, buf08 + 92, 0);
+                aes_crypt((uint8_t *) content, 14, buf08 + 104, buf08 + 92, 0);
                 // TODO MAC-Check
                 #if DEBUG_FIN
                     printBytes("Erhaltenes Client Finished", ((uint8_t *) content) + 2, 12);
@@ -289,8 +294,8 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 
     uint8_t mac[16];
     memset(mac, 0, 16);
-    aes_cmac(mac, src_addr, 16, 0);
-    aes_cmac(mac, data, *data_len, 1);
+    aes_cmac(mac, src_addr->u8, 16, 0);
+    aes_cmac(mac, (uint8_t *) data, *data_len, 1);
     memcpy(dst, mac, 8);
 }
 
@@ -398,7 +403,7 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
         printf("ECC - START\n");
         uint32_t time = *MACA_CLK;
     #endif
-    ecc_ec_mult(buf + 96, buf + 128, buf + 160, buf + 20, buf + 52);
+    ecc_ec_mult((uint32_t *) (buf + 96), (uint32_t *) (buf + 128), (uint32_t *) (buf + 160), (uint32_t *) (buf + 20), (uint32_t *) (buf + 52));
     //  0                   1                   2                   3                   4                   5
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // |#|#|#|#|#|   Secret-Px   |   Secret-Py   |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
