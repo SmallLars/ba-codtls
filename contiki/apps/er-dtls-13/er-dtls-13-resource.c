@@ -20,7 +20,7 @@
 #define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
-#define DEBUG_PRF 0
+#define DEBUG_PRF 1
 #define DEBUG_FIN 1
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF || DEBUG_FIN
@@ -50,6 +50,7 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 __attribute__((always_inline)) static  int checkClientHello(ClientHello_t *clientHello, size_t len);
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf);
 __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_t *cke, uint8_t *buf);
+__attribute__((always_inline)) static void generateFinished(uint8_t *buf);
 
 void sendServerHello(void *data, void* resp);
 int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
@@ -144,13 +145,17 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
+                generateFinished(buf08);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
 
                 content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
                 if (content->type == c_change_cipher_spec) {
                     PRINTF("ChangeCipherSpec gefunden. Folgedaten werden entschlüsselt.\n");
                     content += 3; // TODO
                 }
-                memcpy(buf08 + 12, buf08 + 160, 48);
+
                 getSessionData(buf08 + 96, src_addr, session_epoch);
                 buf08[97]++;
                 if (buf08[97] == 0) buf08[96]++;
@@ -161,7 +166,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_CLIENT_KEY, 16);
                 //  0                   1                   2                   3                   4                   5
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // |#|#|#|     Master-Secret     |#|#|#|#|#|#|#|#|Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_FIN
                     printBytes("Nonce zum Entschlüsseln von Finished", buf08 + 92, 12);
                     printBytes("Key zum Entschlüsseln von Finished", buf08 + 104, 16);
@@ -172,37 +177,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     printBytes("Erhaltenes Client Finished", ((uint8_t *) content) + 2, 12);
                 #endif
 
-                memset(buf08 + 75, 0, 16);
-                nvm_getVar(buf08 + 104, RES_STACK, 16);
-                int i;
-                for (i = 16; i < stack_size(); i+=16) {
-                    aes_cmac(buf08 + 75, buf08 + 104, 16, 0);
-                    nvm_getVar(buf08 + 104, RES_STACK + i, 16);
-                }
-                aes_cmac(buf08 + 75, buf08 + 104, stack_size() + 16 - i, 1);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-
-                memcpy(buf08 + 60, "client finished", 15);
-                prf(buf08, 12, buf08 + 12, 79);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F |     Master-Secret     | "c f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-                #if DEBUG_PRF
-                    printBytes("Client Finished", buf08, 12);
-                #endif
-
-                // TODO vergleichen mit erhaltenem
-
-                memcpy(buf08 + 60, "server finished", 15);
-                prf(buf08, 12, buf08 + 12, 79);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | S-F |     Master-Secret     | "s f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-                #if DEBUG_PRF
-                    printBytes("Server Finished", buf08, 12);
-                #endif
+                // TODO vergleich des clientfinished
 
                 // Antworten generieren
 
@@ -474,6 +449,39 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
     //  0                   1                   2                   3                   4                   5
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
+}
+
+__attribute__((always_inline)) static void generateFinished(uint8_t *buf) {
+    memcpy(buf + 24, buf + 160, 48);
+    memset(buf + 87, 0, 16);
+    nvm_getVar(buf + 104, RES_STACK, 16);
+    int i;
+    for (i = 16; i < stack_size(); i+=16) {
+        aes_cmac(buf + 87, buf + 104, 16, 0);
+        nvm_getVar(buf + 104, RES_STACK + i, 16);
+    }
+    aes_cmac(buf + 87, buf + 104, stack_size() + 16 - i, 1);
+    //  0                   1                   2                   3                   4                   5
+    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    // |#|#|#|#|#|#|     Master-Secret     |#|#|#|#| C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+
+    memcpy(buf + 72, "client finished", 15);
+    prf(buf, 12, buf + 24, 79);
+    //  0                   1                   2                   3                   4                   5
+    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    // | C-F |#|#|#|     Master-Secret     |#|#|#|#| C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+    #if DEBUG_PRF
+        printBytes("Client Finished", buf, 12);
+    #endif
+
+    memcpy(buf + 72, "server finished", 15);
+    prf(buf + 12, 12, buf + 24, 79);
+    //  0                   1                   2                   3                   4                   5
+    //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+    #if DEBUG_PRF
+        printBytes("Server Finished", buf + 12, 12);
+    #endif
 }
 
 void sendServerHello(void *data, void* resp) {

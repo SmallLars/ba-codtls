@@ -302,7 +302,7 @@ void dtls_handshake(uint8_t ip[16]) {
 
     #if DEBUG_FIN
         printf("Erhaltenes Server Finished: ");
-        for (i = 5; i < 17; i++) printf("%02X", buffer[i]);
+        for (i = 5; i < 17; i++) printf("%02X", (uint8_t) buffer[i]);
         printf("\n");
     #endif
 
