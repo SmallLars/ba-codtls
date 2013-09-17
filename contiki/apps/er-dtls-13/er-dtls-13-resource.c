@@ -15,12 +15,19 @@
 #define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
-#define DEBUG_PRF 1
+#define DEBUG_PRF 0
 #define DEBUG_FIN 1
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF || DEBUG_FIN
     #include <stdio.h>
     #include "mc1322x.h"
+
+    void printBytes(uint8_t *label, uint8_t *data, uint8_t len) {
+        int i;
+        printf("%s: ", label);
+        for (i = 0; i < len; i++) printf("%02X", data[i]);
+        printf("\n");
+    }
 #endif
 
 #if DEBUG
@@ -118,7 +125,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 }
             }
         } else {
-            uint32_t i;
             // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", uri_len - 5, uri_path + 5);
             // TODO check ob ip zur session passt
@@ -152,23 +158,18 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // |#|#|#|     Master-Secret     |#|#|#|#|#|#|#|#|Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_FIN
-                    printf("Nonce zum Entschlüsseln von Finished: ");
-                    for (i = 92; i < 104; i++) printf("%02X", buf08[i]);
-                    printf("\n");
-                    printf("Key zum Entschlüsseln von Finished: ");
-                    for (i = 104; i < 120; i++) printf("%02X", buf08[i]);
-                    printf("\n");
+                    printBytes("Nonce zum Entschlüsseln von Finished", buf08 + 92, 12);
+                    printBytes("Key zum Entschlüsseln von Finished", buf08 + 104, 16);
                 #endif
                 aes_crypt(content, 14, buf08 + 104, buf08 + 92, 0);
                 // TODO MAC-Check
                 #if DEBUG_FIN
-                    printf("Erhaltenes Client Finished: ");
-                    for (i = 2; i < 14; i++) printf("%02X", content[i]);
-                    printf("\n");
+                    printBytes("Erhaltenes Client Finished", ((uint8_t *) content) + 2, 12);
                 #endif
 
                 memset(buf08 + 75, 0, 16);
                 nvm_getVar(buf08 + 104, RES_STACK, 16);
+                int i;
                 for (i = 16; i < stack_size(); i+=16) {
                     aes_cmac(buf08 + 75, buf08 + 104, 16, 0);
                     nvm_getVar(buf08 + 104, RES_STACK + i, 16);
@@ -184,9 +185,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // | C-F |     Master-Secret     | "c f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
-                    printf("Client Finished: ");
-                    for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
-                    printf("\n");
+                    printBytes("Client Finished", buf08, 12);
                 #endif
 
                 // TODO vergleichen mit erhaltenem
@@ -197,9 +196,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
                 // | S-F |     Master-Secret     | "s f" + C-MAC |Nonce|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
                 #if DEBUG_PRF
-                    printf("Server Finished: ");
-                    for (i = 0; i < 12; i++) printf("%02X", buf08[i]);
-                    printf("\n");
+                    printBytes("Server Finished", buf08, 12);
                 #endif
 
                 // Antworten generieren
@@ -221,12 +218,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
                 nvm_getVar(buf08 + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
                 #if DEBUG_FIN
-                    printf("Nonce zum Verschlüsseln von Finished: ");
-                    for (i = 92; i < 104; i++) printf("%02X", buf08[i]);
-                    printf("\n");
-                    printf("Key zum Verschlüsseln von Finished: ");
-                    for (i = 104; i < 120; i++) printf("%02X", buf08[i]);
-                    printf("\n");
+                    printBytes("Nonce zum Verschlüsseln von Finished", buf08 + 92, 12);
+                    printBytes("Key zum Verschlüsseln von Finished", buf08 + 104, 16);
                 #endif
                 aes_crypt(buffer + 3, 14, buf08 + 104, buf08 + 92, 0);
             }
@@ -269,18 +262,14 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
     uint32_t i;
 
     #if DEBUG_COOKIE
-        printf("Content Länge Input: 0x");
-        for (i = 0; i < data->len; i++) PRINTF("%02X", data->payload[i]);
-        printf(" (MSB)\n");
+        printBytes("Content Länge Input (MSB)", data->payload, data->len);
     #endif
     uint32_t hello_len = 0;
     memcpy(((uint8_t *) &hello_len) + 4 - data->len, data->payload, data->len);
     hello_len = uip_ntohl(hello_len);
     #if DEBUG_COOKIE
         printf("Content Länge Berechnet: %u\n", hello_len);
-        printf("Content Data (mc): ");
-        for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
-        printf("\n");
+        printBytes("Content Data (mc)", (uint8_t *) data, *data_len);
     #endif
     // Alten Cookie entfernen falls vorhanden
     uint32_t cookie = data->len + sizeof(ProtocolVersion) + sizeof(Random);
@@ -295,9 +284,7 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
         *data_len -= 8;
     }
     #if DEBUG_COOKIE
-        printf("Content Data (oc): ");
-        for (i = 0; i < *data_len; i++) PRINTF("%02X", data[i]);
-        printf("\n");
+        printBytes("Content Data (oc)", (uint8_t *) data, *data_len);
     #endif
 
     uint8_t mac[16];
@@ -365,18 +352,12 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf) {
     nvm_getVar(buf + 16, RES_ECC_BASE_X, LEN_ECC_BASE_X);
     nvm_getVar(buf + 24, RES_ECC_BASE_Y, LEN_ECC_BASE_Y);
     #if DEBUG_ECC
-        uint8_t i;
-        printf("BASE_POINT-X: ");
-        for (i = 16; i < 24; i++) printf("%08X", uip_htonl(buf[i]));
-        printf("\nBASE_POINT-Y: ");
-        for (i = 24; i < 32; i++) printf("%08X", uip_htonl(buf[i]));
-        printf("\n");
+        printBytes("BASE_POINT-X", (uint8_t *) (buf + 16), 32);
+        printBytes("BASE_POINT-Y", (uint8_t *) (buf + 24), 32);
     #endif
     getSessionData((uint8_t *) (buf + 32), src_addr, session_key);
     #if DEBUG_ECC
-        printf("Private Key : ");
-        for (i = 32; i < 40; i++) printf("%08X", uip_htonl(buf[i]));;
-        printf("\n");
+        printBytes("Private Key ", (uint8_t *) (buf + 32), 32);
     #endif
     #if DEBUG
         printf("ECC - START\n");
@@ -388,11 +369,8 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf) {
         printf("ECC - BEENDET NACH %u MS\n", time / 250);
     #endif
     #if DEBUG_ECC
-        printf("_S_PUB_KEY-X: ");
-        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf[i]));
-        printf("\n_S_PUB_KEY-Y: ");
-        for (i = 8; i < 16; i++) printf("%08X", uip_htonl(buf[i]));
-        printf("\n");
+        printBytes("_S_PUB_KEY-X", (uint8_t *) (buf), 32);
+        printBytes("_S_PUB_KEY-Y", (uint8_t *) (buf + 8), 32);
     #endif
     stack_push((uint8_t *) buf, 64);
 
@@ -406,11 +384,8 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
     uint32_t i;
 
     #if DEBUG_ECC
-        printf("_C_PUB_KEY-X: ");
-        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.x[i]));
-        printf("\n_C_PUB_KEY-Y: ");
-        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(cke->public_key.y[i]));
-        printf("\n");
+        printBytes("_C_PUB_KEY-X", (uint8_t *) cke->public_key.x, 32);
+        printBytes("_C_PUB_KEY-Y", (uint8_t *) cke->public_key.y, 32);
     #endif
 
     memcpy(buf + 96, cke->public_key.x, 32);
@@ -432,11 +407,8 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
         printf("ECC - BEENDET NACH %u MS\n", time / 250);
     #endif
     #if DEBUG_ECC
-        printf("SECRET_KEY-X: ");
-        for (i = 20; i < 52; i++) printf("%02X", buf[i]);
-        printf("\nSECRET_KEY-Y: ");
-        for (i = 52; i < 84; i++) printf("%02X", buf[i]);
-        printf("\n");
+        printBytes("SECRET_KEY-X", buf + 20, 32);
+        printBytes("SECRET_KEY-Y", buf + 52, 32);
     #endif
 
     buf[0] = 0;
