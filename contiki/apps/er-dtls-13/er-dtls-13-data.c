@@ -42,7 +42,7 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
     int8_t index = getIndexOf(addr);
 
     if (index >= 0) {
-        nvm_getVar(&(session->epoch), (uint32_t) &(s[index].epoch), 2);
+        nvm_getVar(&(session->epoch), (fpoint_t) &(s[index].epoch), 2);
     } else {
         session->epoch = 0;
     }
@@ -54,7 +54,7 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
 
 
     if (index >= 0) {
-        nvm_setVar(session, (uint32_t) &s[index], sizeof(Session_t));
+        nvm_setVar(session, (fpoint_t) &s[index], sizeof(Session_t));
         PRINTF("Session aktualisiert:\n");
         PRINTSESSION(index);
     } else {
@@ -62,7 +62,7 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
         nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
         if (list_len == 10)
             return -1;
-        nvm_setVar(session, (uint32_t) &s[list_len], sizeof(Session_t));
+        nvm_setVar(session, (fpoint_t) &s[list_len], sizeof(Session_t));
         PRINTF("Session erstellt:\n");
         PRINTSESSION(list_len);
         list_len++;
@@ -85,15 +85,15 @@ int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     switch (type) {
         case session_id:
-            nvm_getVar(dst, (uint32_t) &s[i].session, 8);
+            nvm_getVar(dst, (fpoint_t) &s[i].session, 8);
             return 8;
         case session_epoch:
-            nvm_getVar(&epo_buf, (uint32_t) &s[i].epoch, 2);
+            nvm_getVar(&epo_buf, (fpoint_t) &s[i].epoch, 2);
             epo_buf = uip_htons(epo_buf);
             memcpy(dst, &epo_buf, 2);
             return 2;
         case session_key:
-            nvm_getVar(dst, (uint32_t) &s[i].private_key, 32);
+            nvm_getVar(dst, (fpoint_t) &s[i].private_key, 32);
             return 32;
         case session_num_write:
             num_buf = uip_htonl(seq_num[i]);
@@ -113,13 +113,13 @@ int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {
     PRINTF("Daten vor Insert KeyBlock:\n");
     PRINTSESSION(index);
     KeyBlock_t *ck = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
-    nvm_setVar(key_block, (uint32_t) &ck[(2 * index) + 1], sizeof(KeyBlock_t));
+    nvm_setVar(key_block, (fpoint_t) &ck[(2 * index) + 1], sizeof(KeyBlock_t));
     PRINTF("Daten nach Insert KeyBlock:\n");
     PRINTSESSION(index);
     return 0;
 }
 
-uint32_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update) {
+fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update) {
     if (epoch == 0) return 0;
 
     int8_t index = getIndexOf(addr);
@@ -129,12 +129,12 @@ uint32_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update) {
 
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
-    if (nvm_cmp(&epoch, (uint32_t) &s[index].epoch, 2) == 0) {
-        return (uint32_t ) &kb[2 * index];
+    if (nvm_cmp(&epoch, (fpoint_t) &s[index].epoch, 2) == 0) {
+        return (fpoint_t) &kb[2 * index];
     }
     epoch--;
-    if (nvm_cmp(&epoch, (uint32_t) &s[index].epoch, 2) == 0) {
-        return (uint32_t ) &kb[(2 * index) + 1];
+    if (nvm_cmp(&epoch, (fpoint_t) &s[index].epoch, 2) == 0) {
+        return (fpoint_t) &kb[(2 * index) + 1];
     }
 
     return 0;
@@ -149,7 +149,7 @@ int8_t getIndexOf(uip_ipaddr_t *addr) {
     Session_t *s = (Session_t *) RES_SESSION_LIST;
     uint8_t i;
     for (i = 0; i < list_len; i++) {
-        if (nvm_cmp(addr, (uint32_t) &s[i].addr, sizeof(uip_ipaddr_t)) == 0) return i;
+        if (nvm_cmp(addr, (fpoint_t) &s[i].addr, sizeof(uip_ipaddr_t)) == 0) return i;
     }
     return -1;
 }
@@ -158,18 +158,18 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
     epoch--;
     Session_t *s = (Session_t *) RES_SESSION_LIST;
 
-    if (nvm_cmp(&epoch, (uint32_t) &s[index].epoch, 2) == 0) {
+    if (nvm_cmp(&epoch, (fpoint_t) &s[index].epoch, 2) == 0) {
         PRINTF("Daten vor Epoch-Increase:\n");
         PRINTSESSION(index);
 
         epoch++;
-        nvm_setVar(&epoch, (uint32_t) &s[index].epoch, 2);
+        nvm_setVar(&epoch, (fpoint_t) &s[index].epoch, 2);
         
         uint8_t buf[2 * sizeof(KeyBlock_t)];
         KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
-        nvm_getVar(buf, (uint32_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
+        nvm_getVar(buf, (fpoint_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
         memset(buf + sizeof(KeyBlock_t), 0, sizeof(KeyBlock_t));
-        nvm_setVar(buf, (uint32_t) &kb[2 * index], 2 * sizeof(KeyBlock_t));
+        nvm_setVar(buf, (fpoint_t) &kb[2 * index], 2 * sizeof(KeyBlock_t));
 
         seq_num[index] = 1;
 
@@ -185,7 +185,7 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
 
         Session_t *session = (Session_t *) buffer;
         Session_t *s = (Session_t *) RES_SESSION_LIST;
-        nvm_getVar(buffer, (uint32_t) &s[index], sizeof(Session_t));
+        nvm_getVar(buffer, (fpoint_t) &s[index], sizeof(Session_t));
         printf("    Index: %u \n    Session-ID: %.*s\n    IP: ", index, 8, session->session);
         for (i = 0; i < 16; i++) printf("%02X", ((uint8_t *) &session->addr)[i]);
         printf("\n    Epoch: %u\n    Private-Key: ", session->epoch);
@@ -193,10 +193,10 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
         printf("\n    Sequenznummer: %u", seq_num[index]);
 
         KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
-        nvm_getVar(buffer, (uint32_t) &kb[2 * index], sizeof(KeyBlock_t));
+        nvm_getVar(buffer, (fpoint_t) &kb[2 * index], sizeof(KeyBlock_t));
         printf("\n        Key-Block 1: ");
         for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
-        nvm_getVar(buffer, (uint32_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
+        nvm_getVar(buffer, (fpoint_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
         printf("\n        Key-Block 2: ");
         for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
         printf("\n");

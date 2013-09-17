@@ -149,7 +149,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 getSessionData(buf08 + 96, src_addr, session_epoch);
                 buf08[97]++;
                 if (buf08[97] == 0) buf08[96]++;
-                uint32_t key_block;
+                fpoint_t key_block;
                 key_block = getKeyBlock(src_addr, (buf08[96] << 8) + buf08[97], 0);
                 nvm_getVar(buf08 + 92, key_block + KEY_BLOCK_CLIENT_IV, 4);
                 memset(buf08 + 98, 0, 6);

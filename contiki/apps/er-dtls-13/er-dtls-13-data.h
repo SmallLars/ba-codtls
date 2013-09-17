@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "flash-store.h"
 #include "contiki-net.h"
 
 typedef struct { // 16 + 8 + 2 + 32 = 58
@@ -48,6 +49,6 @@ int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type);
 
 int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block);
 
-uint32_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update);
+fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update);
 
 #endif /* __ER_DTLS_13_DATA_H__ */

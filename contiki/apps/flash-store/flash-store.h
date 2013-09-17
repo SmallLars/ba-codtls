@@ -74,6 +74,8 @@
 #define LEN_BLOCK_1         1400
 #define LEN_BLOCK_2            1
 
+typedef uint32_t fpoint_t;   // Adresse im Flash-Speicher
+
 /**
   * \brief    Zurücksetzen der Blöcke für den Random-Zugriff
   *
@@ -96,7 +98,7 @@ void nvm_init();
   *
   * \return   0 bei erfolgreichem Lesevorgang. Ansonsten größer 0
   */
-nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes);
+nvmErr_t nvm_getVar(void *dest, fpoint_t address, uint16_t numBytes);
 
 /**
   * \brief    Schreiben von Daten in den Flashspeicher
@@ -110,7 +112,7 @@ nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes);
   *
   * \return   0 bei erfolgreichem Schreibvorgang. Ansonsten größer 0
   */
-nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes);
+nvmErr_t nvm_setVar(void *src, fpoint_t address, uint16_t numBytes);
 
 /**
   * \brief    Vergleich von Daten mit Daten aus dem Flashspeicher
@@ -126,7 +128,7 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes);
   *
   * \return   0 bei Gleichheit der Daten. Ansonsten größer 0
   */
-nvmErr_t nvm_cmp(void *src, uint32_t address, uint16_t numBytes);
+nvmErr_t nvm_cmp(void *src, fpoint_t address, uint16_t numBytes);
 
 /*
 typedef enum {

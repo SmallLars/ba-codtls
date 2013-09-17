@@ -22,7 +22,7 @@ uint16_t stackPointer;
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
-uint32_t getAddr(uint32_t address);
+fpoint_t getAddr(fpoint_t address);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
@@ -46,7 +46,7 @@ void nvm_init() {
     PRINTF(" Erfolgreich!\n");
 }
 
-nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes) {
+nvmErr_t nvm_getVar(void *dest, fpoint_t address, uint16_t numBytes) {
     address = getAddr(address);
 
     if (address >= 0x18000 && address <= 0x1FFFF) {
@@ -63,7 +63,7 @@ nvmErr_t nvm_getVar(void *dest, uint32_t address, uint16_t numBytes) {
     return gNvmErrInvalidPointer_c;
 }
 
-nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
+nvmErr_t nvm_setVar(void *src, fpoint_t address, uint16_t numBytes) {
     if (address >= 8192) {
         PRINTF("Schreibfehler - Ungültiger Bereich.\n");
         return gNvmErrInvalidPointer_c;
@@ -72,8 +72,8 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
 
     address = getAddr(address);
 
-    uint32_t src_block = address & 0xFF000;
-    uint32_t dst_block = src_block ^ 0x01000;
+    fpoint_t src_block = address & 0xFF000;
+    fpoint_t dst_block = src_block ^ 0x01000;
     address = address & 0x00FFF;
 
     nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (dst_block / LEN_BLOCK_XX));
@@ -97,7 +97,7 @@ nvmErr_t nvm_setVar(void *src, uint32_t address, uint16_t numBytes) {
     return gNvmErrNoError_c;
 }
 
-nvmErr_t nvm_cmp(void *src, uint32_t address, uint16_t numBytes) {
+nvmErr_t nvm_cmp(void *src, fpoint_t address, uint16_t numBytes) {
     address = getAddr(address);
 
     return nvm_verify(gNvmInternalInterface_c, gNvmType_SST_c, src, address, numBytes);
@@ -119,10 +119,10 @@ uint16_t stack_size() {
 
 /* Private Funktionen ------------------------------------------------------ */
 
-uint32_t getAddr(uint32_t address) {
+fpoint_t getAddr(fpoint_t address) {
     if (address >= 0x02000) return address;
 
-    uint32_t block = (address & 0x01000 ? RES_BLOCK_21 : RES_BLOCK_11);
+    fpoint_t block = (address & 0x01000 ? RES_BLOCK_21 : RES_BLOCK_11);
     uint8_t blockcheck = (nvm_cmp("\001", block, LEN_BLK_X_ACTIVE) == 0 ? 0 : 1);
     return block + (blockcheck << 12) + (address & 0x00FFF);
 }
