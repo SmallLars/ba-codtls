@@ -53,6 +53,7 @@ void dtls_handshake(uint8_t ip[16]) {
 
     len = makeClientHello(message, my_time, random, NULL, 0);
     memset(buffer, 0, 256);
+    PRINTF("Länge der Anfrage: %u Byte\n", len);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
     coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
@@ -75,6 +76,7 @@ void dtls_handshake(uint8_t ip[16]) {
     handshake_messages_len += len;
 
     memset(buffer, 0, 256);
+    PRINTF("Länge der Anfrage: %u Byte\n", len);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
     coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
@@ -280,6 +282,7 @@ void dtls_handshake(uint8_t ip[16]) {
     #endif
 
     // Senden
+    PRINTF("Länge der Anfrage: %u Byte\n", paylen);
     coap_setPayload(message, paylen);
     coap_setBlock1(0, 1, 1);
     coap_request(ip, COAP_REQUEST_POST, uri, buffer);
