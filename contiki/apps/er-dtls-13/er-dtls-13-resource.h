@@ -58,7 +58,6 @@ typedef struct {
 struct {
     ProtocolVersion client_version;
     Random random;
-    SessionID session_id;
     opaque cookie<0..2^8-1>;
     CipherSuite cipher_suites<2..2^16-2>;
     CompressionMethod compression_methods<1..2^8-1>;

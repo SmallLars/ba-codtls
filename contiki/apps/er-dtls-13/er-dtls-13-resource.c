@@ -216,15 +216,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 c->type = finished;
                 c->len = con_length_8_bit;
                 c->payload[0] = 20;
-                memcpy(c->payload + 1, buf, 12);
+                memcpy(c->payload + 1, buf + 12, 12);
 
-                nvm_getVar(buf + 92, key_block + KEY_BLOCK_SERVER_IV, 4);
-                nvm_getVar(buf + 104, key_block + KEY_BLOCK_SERVER_KEY, 16);
+                nvm_getVar(buf + 24, key_block + KEY_BLOCK_SERVER_IV, 4);
+                nvm_getVar(buf + 36, key_block + KEY_BLOCK_SERVER_KEY, 16);
                 #if DEBUG_FIN
-                    printBytes("Nonce zum Verschlüsseln von Finished", buf + 92, 12);
-                    printBytes("Key zum Verschlüsseln von Finished", buf + 104, 16);
+                    printBytes("Nonce zum Verschlüsseln von Finished", buf + 24, 12);
+                    printBytes("Key zum Verschlüsseln von Finished", buf + 36, 16);
                 #endif
-                aes_crypt(buffer + 3, 14, buf + 104, buf + 92, 0);
+                aes_crypt(buffer + 3, 14, buf + 36, buf + 24, 0);
             }
 
             coap_transaction_t *transaction = NULL;
