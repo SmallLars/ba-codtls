@@ -51,7 +51,7 @@ void dtls_handshake(uint8_t ip[16]) {
     random_x(random, 28);
     char buffer[256];
 
-    len = makeClientHello(message, my_time, random, NULL, 0, NULL, 0);
+    len = makeClientHello(message, my_time, random, NULL, 0);
     memset(buffer, 0, 256);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
@@ -69,7 +69,7 @@ void dtls_handshake(uint8_t ip[16]) {
 
 // --------------------------------------------------------------------------------------------
 
-    len = makeClientHello(message, my_time, random, NULL, 0, verify->cookie, verify->cookie_len);
+    len = makeClientHello(message, my_time, random, verify->cookie, verify->cookie_len);
 
     memcpy(handshake_messages + handshake_messages_len, message, len);
     handshake_messages_len += len;
@@ -298,7 +298,7 @@ void dtls_handshake(uint8_t ip[16]) {
     }
 
     memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
-    aes_decrypt(buffer + 3, 14, key_block + KEY_BLOCK_SERVER_KEY, nonce);
+    aes_decrypt((uint8_t *) buffer + 3, 14, key_block + KEY_BLOCK_SERVER_KEY, nonce);
 
     #if DEBUG_FIN
         printf("Erhaltenes Server Finished: ");

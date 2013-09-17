@@ -28,6 +28,6 @@ typedef struct {
     uint8_t cookie[0];
 } __attribute__ ((packed)) HelloVerifyRequest_t;
 
-size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len);
+size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *cookie, uint8_t cookie_len);
 
 #endif /* __DTLS_CLIENTHELLO_H__ */

@@ -4,7 +4,7 @@
 
 #include "dtls_content.h"
 
-size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *sessionID, uint8_t session_len, uint8_t *cookie, uint8_t cookie_len) {
+size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *cookie, uint8_t cookie_len) {
     uint8_t buffer[128];
     ClientHello_t *clientHello = (ClientHello_t *) buffer;
     clientHello->client_version.major = 3;
@@ -13,14 +13,6 @@ size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *s
     memcpy(clientHello->random.random_bytes, random, 28);
 
     uint32_t data_index = 0;
-    if (sessionID && session_len) {
-        clientHello->data[data_index++] = session_len;
-        memcpy(clientHello->data + data_index, sessionID, session_len);
-        data_index += session_len;
-    } else {
-        clientHello->data[data_index++] = 0;
-    }
-
     if (cookie && cookie_len) {
         clientHello->data[data_index++] = cookie_len;
         memcpy(clientHello->data + data_index, cookie, cookie_len);

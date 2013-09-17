@@ -109,8 +109,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             if (content->type == client_hello) {
                 ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
 
-                uint8_t session_len = clienthello->data[0];
-                uint8_t cookie_len = clienthello->data[session_len + 1];
+                uint8_t cookie_len = clienthello->data[0];
                 uint8_t *old_cookie = buf;
                 uint8_t *new_cookie = buf + 8;
 
@@ -121,7 +120,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
 
                     // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
-                    memcpy(old_cookie, clienthello->data + session_len + 2, cookie_len);
+                    memcpy(old_cookie, clienthello->data + 1, cookie_len);
                 }
 
                 generateCookie(new_cookie, content, &big_msg_len);
@@ -276,7 +275,6 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
     #endif
     // Alten Cookie entfernen falls vorhanden
     uint32_t cookie = data->len + sizeof(ProtocolVersion) + sizeof(Random);
-    cookie += (data->payload[cookie] + 1); //Längenfeld und Länge der Session addieren
     if (data->payload[cookie] > 0) {
         for (i = cookie + 9; i <= hello_len; i++) {
             data->payload[i - 8] = data->payload[i];
