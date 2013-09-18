@@ -106,125 +106,147 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         uint8_t uri_len = REST.get_url(request, &uri_path);
 
         if (uri_len == 4) {
-            if (content->type == client_hello) {
-                ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
-
-                uint8_t cookie_len = clienthello->data[0];
-                uint8_t *old_cookie = buf;
-                uint8_t *new_cookie = buf + 8;
-
-                if (cookie_len > 0) {
-                    // Abspeichern für Finished-Hash
-                    stack_init();
-                    stack_push(big_msg, big_msg_len);
-                    client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
-
-                    // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
-                    memcpy(old_cookie, clienthello->data + 1, cookie_len);
-                }
-
-                generateCookie(new_cookie, content, &big_msg_len);
-
-                if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
-                    #if DEBUG
-                        if (cookie_len == 0) PRINTF("ClientHello ohne Cookie erhalten\n");
-                        else PRINTF("ClientHello mit falschem Cookie erhalten\n");
-                    #endif
-                    generateHelloVerifyRequest(buffer, new_cookie, 8);
-
-                    REST.set_response_status(response, UNAUTHORIZED_4_01);
-                    REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                    REST.set_response_payload(response, buffer + 1, buffer[0]);
-                } else {
-                    PRINTF("ClientHello mit korrektem Cookie erhalten\n");
-                    if (!checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len))) {
-                        PRINTF("ClientHello enthält unterstützte Werte\n");
-                        coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
-
-                        // ServerHello wird immer gleich generiert da Server nur
-                        // genau ein Ciphersuit mit einer Konfiguration beherrscht.
-                        generateServerHello(buf32); // Das dauert nun
-                        sendServerHello(NULL, request);
-                    } else {
-                        // TODO fatal, handshake_failure
-                    }
-                }
-            } else {
+            if (content->type != client_hello) {
+                PRINTF("Erwartetes ClientHello nicht erhalten\n");
                 // TODO fatal, illegal_parameter
+                return;
+            }
+
+            ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
+
+            uint8_t cookie_len = clienthello->data[0];
+            uint8_t *old_cookie = buf;
+            uint8_t *new_cookie = buf + 8;
+
+            if (cookie_len > 0) {
+                // Abspeichern für Finished-Hash
+                stack_init();
+                stack_push(big_msg, big_msg_len);
+                client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
+
+                // Übertragenen Cookie in Buffer sichern zum späteren Vergleich
+                memcpy(old_cookie, clienthello->data + 1, cookie_len);
+            }
+
+            generateCookie(new_cookie, content, &big_msg_len);
+
+            if (cookie_len == 0 || memcmp(old_cookie, new_cookie, 8)) {
+                #if DEBUG
+                    if (cookie_len == 0) PRINTF("ClientHello ohne Cookie erhalten\n");
+                    else PRINTF("ClientHello mit falschem Cookie erhalten\n");
+                #endif
+                generateHelloVerifyRequest(buffer, new_cookie, 8);
+
+                REST.set_response_status(response, UNAUTHORIZED_4_01);
+                REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                REST.set_response_payload(response, buffer + 1, buffer[0]);
+            } else {
+                PRINTF("ClientHello mit korrektem Cookie erhalten\n");
+
+                if (checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len))) {
+                    PRINTF("ClientHello enthält keine unterstützten Werte\n");
+                    // TODO fatal, handshake_failure
+                    return;
+                }
+
+                coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
+
+                // ServerHello wird immer gleich generiert da Server nur
+                // genau ein Ciphersuit mit einer Konfiguration beherrscht.
+                generateServerHello(buf32); // Das dauert nun
+                sendServerHello(NULL, request);
             }
         } else {
-            // ClientKeyExchange + ChangeCypherSpec trifft ein -> Antwort generieren:
             PRINTF("POST für Session: %.*s erhalten.\n", uri_len - 5, uri_path + 5);
-            // TODO check ob ip zur session passt
+
+            if (getSessionData(buf, src_addr, session_id) < 0 || memcmp(buf, uri_path + 5, 8)) {
+                PRINTF("Ressource existiert nicht\n");
+                // TODO coap error
+                return;
+            }
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
-            if (content->type == client_key_exchange) {
-                stack_push(big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
-
-                // ClientKeyExchange wird ausgewertet und ein KeyBlock berechnet
-                processClientKeyExchange((KeyExchange_t *) (content->payload + content->len), buf);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
-                generateFinished(buf);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-
-                content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
-                if (content->type == c_change_cipher_spec) {
-                    PRINTF("ChangeCipherSpec gefunden. Folgedaten werden entschlüsselt.\n");
-                    content += 3; // TODO
-                }
-
-                getSessionData(buf + 28, src_addr, session_epoch);
-                buf[29]++;
-                if (buf[29] == 0) buf[28]++;
-                fpoint_t key_block;
-                key_block = getKeyBlock(src_addr, (buf[28] << 8) + buf[29], 0);
-                nvm_getVar(buf + 24, key_block + KEY_BLOCK_CLIENT_IV, 4);
-                memset(buf + 30, 0, 6);
-                nvm_getVar(buf + 36, key_block + KEY_BLOCK_CLIENT_KEY, 16);
-                //  0                   1                   2                   3                   4                   5
-                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-                // | C-F | S-F |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-                #if DEBUG_FIN
-                    printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
-                    printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
-                #endif
-                aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
-                // TODO MAC-Check
-                #if DEBUG_FIN
-                    printBytes("Erhaltenes Client Finished", ((uint8_t *) content) + 2, 12);
-                #endif
-
-                // TODO vergleich des clientfinished
-
-                // Antworten generieren
-
-                DTLSContent_t *c;
-
-                c = (DTLSContent_t *) buffer;
-                c->type = c_change_cipher_spec;
-                c->len = con_length_8_bit;
-                c->payload[0] = 1;
-                c->payload[1] = 1;
-
-                c = (DTLSContent_t *) (buffer + 3);
-                c->type = finished;
-                c->len = con_length_8_bit;
-                c->payload[0] = 20;
-                memcpy(c->payload + 1, buf + 12, 12);
-
-                nvm_getVar(buf + 24, key_block + KEY_BLOCK_SERVER_IV, 4);
-                nvm_getVar(buf + 36, key_block + KEY_BLOCK_SERVER_KEY, 16);
-                #if DEBUG_FIN
-                    printBytes("Nonce zum Verschlüsseln von Finished", buf + 24, 12);
-                    printBytes("Key zum Verschlüsseln von Finished", buf + 36, 16);
-                #endif
-                aes_crypt(buffer + 3, 14, buf + 36, buf + 24, 0);
+            if (content->type != client_key_exchange) {
+                PRINTF("Erwartetes ClientKeyExchange nicht erhalten\n");
+                // TODO fatal, ???
+                return;
             }
+
+            stack_push(big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+
+            // ClientKeyExchange wird ausgewertet und ein KeyBlock berechnet
+            processClientKeyExchange((KeyExchange_t *) (content->payload + content->len), buf);
+            //  0                   1                   2                   3                   4                   5
+            //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+            // |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|     Master-Secret     |
+            generateFinished(buf);
+            //  0                   1                   2                   3                   4                   5
+            //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+            // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+
+            content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
+            if (content->type != c_change_cipher_spec) {
+                PRINTF("Erwartetes ChangeCipherSpec nicht erhalten\n");
+                // TODO fatal, ???
+                return;
+            }
+
+            content += 3; // TODO
+
+            getSessionData(buf + 28, src_addr, session_epoch);
+            buf[29]++;
+            if (buf[29] == 0) buf[28]++;
+            fpoint_t key_block;
+            key_block = getKeyBlock(src_addr, (buf[28] << 8) + buf[29], 0);
+            nvm_getVar(buf + 24, key_block + KEY_BLOCK_CLIENT_IV, 4);
+            memset(buf + 30, 0, 6);
+            nvm_getVar(buf + 36, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+            //  0                   1                   2                   3                   4                   5
+            //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+            // | C-F | S-F |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+            #if DEBUG_FIN
+                printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
+                printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
+            #endif
+            aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
+            // TODO MAC-Check
+
+            if (content->type != finished) {
+                PRINTF("Erwartetes Finished nicht erhalten\n");
+                // TODO fatal, ???
+                return;
+            }
+
+            #if DEBUG_FIN
+                printBytes("Client Finished gefunden", ((uint8_t *) content) + 2, 12);
+            #endif
+
+            // TODO vergleich des clientfinished
+
+            // Antworten generieren
+
+            DTLSContent_t *c;
+
+            c = (DTLSContent_t *) buffer;
+            c->type = c_change_cipher_spec;
+            c->len = con_length_8_bit;
+            c->payload[0] = 1;
+            c->payload[1] = 1;
+
+            c = (DTLSContent_t *) (buffer + 3);
+            c->type = finished;
+            c->len = con_length_8_bit;
+            c->payload[0] = 20;
+            memcpy(c->payload + 1, buf + 12, 12);
+
+            nvm_getVar(buf + 24, key_block + KEY_BLOCK_SERVER_IV, 4);
+            nvm_getVar(buf + 36, key_block + KEY_BLOCK_SERVER_KEY, 16);
+            #if DEBUG_FIN
+                printBytes("Nonce zum Verschlüsseln von Finished", buf + 24, 12);
+                printBytes("Key zum Verschlüsseln von Finished", buf + 36, 16);
+            #endif
+            aes_crypt(buffer + 3, 14, buf + 36, buf + 24, 0);
 
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
