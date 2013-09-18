@@ -76,7 +76,7 @@ int coap_block1_handler(void* request, void* response, uint8_t *target, size_t *
     packet->block1_offset);
 
   if (packet->block1_offset + pay_len > max_len) {
-    coap_error_code = SERVICE_UNAVAILABLE_5_03;
+    coap_error_code = REQUEST_ENTITY_TOO_LARGE_4_13;
     coap_error_message = "Message to big";
     return -1;
   }

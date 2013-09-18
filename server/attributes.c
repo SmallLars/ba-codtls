@@ -20,7 +20,7 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
         size_t pay_len = REST.get_request_payload(request, &payload);
         printf("Payload erhalten: %.*s\n", pay_len, payload);
 
-        memcpy(buffer, "?i=(name | model | uuid | time | psk)", 37);
+        memcpy(buffer, "/(name | model | uuid | time | psk)", 35);
         REST.set_response_status(response, CONTENT_2_05);
         REST.set_header_content_type(response, TEXT_PLAIN);
         REST.set_response_payload(response, buffer, 43);

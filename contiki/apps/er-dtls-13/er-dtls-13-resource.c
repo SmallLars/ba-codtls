@@ -1,27 +1,7 @@
-/*
-   handshake_failure
-      Reception of a handshake_failure alert message indicates that the
-      sender was unable to negotiate an acceptable set of security
-      parameters given the options available.  This is a fatal error.
-
-
-   illegal_parameter
-      A field in the handshake was out of range or inconsistent with
-      other fields.  This message is always fatal.
-
-
-   decrypt_error
-      A handshake cryptographic operation failed, including being unable
-      to correctly verify a signature or validate a Finished message.
-      This message is always fatal.
-*/
-
-
 #include "er-dtls-13-resource.h"
 
 #include <string.h>
 
-#include "erbium.h"
 #include "er-coap-13.h"
 #include "er-coap-13-separate.h"
 #include "er-coap-13-transactions.h"
@@ -32,6 +12,7 @@
 #include "er-dtls-13-aes.h"
 #include "er-dtls-13-prf.h"
 #include "er-dtls-13-psk.h"
+#include "er-dtls-13-alert.h"
 #include "time.h"
 #include "ecc.h"
 #include "flash-store.h"
@@ -103,12 +84,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         uint8_t *buf = (uint8_t *) buf32;
 
         const char *uri_path = NULL;
-        uint8_t uri_len = REST.get_url(request, &uri_path);
+        uint8_t uri_len = coap_get_header_uri_path(request, &uri_path);
 
         if (uri_len == 4) {
             if (content->type != client_hello) {
                 PRINTF("Erwartetes ClientHello nicht erhalten\n");
-                // TODO fatal, illegal_parameter
+                generateAlert(response, buffer, illegal_parameter);
                 return;
             }
 
@@ -137,15 +118,15 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 #endif
                 generateHelloVerifyRequest(buffer, new_cookie, 8);
 
-                REST.set_response_status(response, UNAUTHORIZED_4_01);
-                REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                REST.set_response_payload(response, buffer + 1, buffer[0]);
+                coap_set_status_code(response, UNAUTHORIZED_4_01);
+                coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
+                coap_set_payload(response, buffer + 1, buffer[0]);
             } else {
                 PRINTF("ClientHello mit korrektem Cookie erhalten\n");
 
                 if (checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len))) {
                     PRINTF("ClientHello enthält keine unterstützten Werte\n");
-                    // TODO fatal, handshake_failure
+                    generateAlert(response, buffer, handshake_failure);
                     return;
                 }
 
@@ -157,21 +138,21 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 sendServerHello(NULL, request);
             }
         } else {
-            PRINTF("POST für Session: %.*s erhalten.\n", uri_len - 5, uri_path + 5);
+            PRINTF("POST-Anfrage auf %.*s erhalten\n", uri_len, uri_path);
 
             if (getSessionData(buf, src_addr, session_id) < 0 || memcmp(buf, uri_path + 5, 8)) {
                 PRINTF("Ressource existiert nicht\n");
-                // TODO coap error
+                coap_set_status_code(response, NOT_FOUND_4_04);
+                return;
+            }
+
+            if (content->type != client_key_exchange) {
+                PRINTF("Erwartetes ClientKeyExchange nicht erhalten\n");
+                generateAlert(response, buffer, illegal_parameter);
                 return;
             }
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
-
-            if (content->type != client_key_exchange) {
-                PRINTF("Erwartetes ClientKeyExchange nicht erhalten\n");
-                // TODO fatal, ???
-                return;
-            }
 
             stack_push(big_msg, sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
 
@@ -188,7 +169,8 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
             if (content->type != c_change_cipher_spec) {
                 PRINTF("Erwartetes ChangeCipherSpec nicht erhalten\n");
-                // TODO fatal, ???
+                coap_separate_resume(response, request_metadata, BAD_REQUEST_4_00);
+                generateAlert(response, buffer, illegal_parameter);
                 return;
             }
 
@@ -210,11 +192,12 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
             #endif
             aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
-            // TODO MAC-Check
+            // TODO MAC-Check     description: bad_record_mac
 
             if (content->type != finished) {
                 PRINTF("Erwartetes Finished nicht erhalten\n");
-                // TODO fatal, ???
+                coap_separate_resume(response, request_metadata, BAD_REQUEST_4_00);
+                generateAlert(response, buffer, illegal_parameter);
                 return;
             }
 
@@ -223,6 +206,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             #endif
 
             // TODO vergleich des clientfinished
+            // bei ungleich :    description: decrypt_error
 
             // Antworten generieren
 
@@ -251,9 +235,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             coap_transaction_t *transaction = NULL;
             if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
                 coap_packet_t response[1];
-                coap_separate_resume(response, request_metadata, REST.status.CHANGED);
+                coap_separate_resume(response, request_metadata, CHANGED_2_04);
                 coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                coap_set_payload(response, buffer, 25); // TODO Länge anpassen
+                coap_set_payload(response, buffer, 25);
                 // TODO Warning: No check for serialization error.
                 transaction->packet_len = coap_serialize_message(response, transaction->packet);
                 transaction->callback = NULL;
@@ -540,7 +524,7 @@ void sendServerHello(void *data, void* resp) {
     coap_transaction_t *transaction = NULL;
     if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
         coap_packet_t response[1];
-        coap_separate_resume(response, request_metadata, REST.status.CREATED);
+        coap_separate_resume(response, request_metadata, CREATED_2_01);
         coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
         coap_set_payload(response, buffer, read == 0 ? request_metadata->block2_size : read);
         coap_set_header_block2(response, request_metadata->block2_num, read == 0 ? 1 : 0, request_metadata->block2_size);
