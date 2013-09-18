@@ -165,87 +165,92 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             //  0                   1                   2                   3                   4                   5
             //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
             // | C-F | S-F |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-
             content += (sizeof(DTLSContent_t) + content->len + sizeof(KeyExchange_t));
-            if (content->type != c_change_cipher_spec) {
-                PRINTF("Erwartetes ChangeCipherSpec nicht erhalten\n");
-                coap_separate_resume(response, request_metadata, BAD_REQUEST_4_00);
-                generateAlert(response, buffer, illegal_parameter);
-                return;
-            }
-
-            content += 3; // TODO
-
-            getSessionData(buf + 28, src_addr, session_epoch);
-            buf[29]++;
-            if (buf[29] == 0) buf[28]++;
-            fpoint_t key_block;
-            key_block = getKeyBlock(src_addr, (buf[28] << 8) + buf[29], 0);
-            nvm_getVar(buf + 24, key_block + KEY_BLOCK_CLIENT_IV, 4);
-            memset(buf + 30, 0, 6);
-            nvm_getVar(buf + 36, key_block + KEY_BLOCK_CLIENT_KEY, 16);
-            //  0                   1                   2                   3                   4                   5
-            //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-            // | C-F | S-F |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
-            #if DEBUG_FIN
-                printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
-                printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
-            #endif
-            aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
-            // TODO MAC-Check     description: bad_record_mac
-
-            if (content->type != finished) {
-                PRINTF("Erwartetes Finished nicht erhalten\n");
-                coap_separate_resume(response, request_metadata, BAD_REQUEST_4_00);
-                generateAlert(response, buffer, illegal_parameter);
-                return;
-            }
-
-            #if DEBUG_FIN
-                printBytes("Client Finished gefunden", ((uint8_t *) content) + 2, 12);
-            #endif
-
-            // TODO vergleich des clientfinished
-            // bei ungleich :    description: decrypt_error
-
-            // Antworten generieren
-
-            DTLSContent_t *c;
-
-            c = (DTLSContent_t *) buffer;
-            c->type = c_change_cipher_spec;
-            c->len = con_length_8_bit;
-            c->payload[0] = 1;
-            c->payload[1] = 1;
-
-            c = (DTLSContent_t *) (buffer + 3);
-            c->type = finished;
-            c->len = con_length_8_bit;
-            c->payload[0] = 20;
-            memcpy(c->payload + 1, buf + 12, 12);
-
-            nvm_getVar(buf + 24, key_block + KEY_BLOCK_SERVER_IV, 4);
-            nvm_getVar(buf + 36, key_block + KEY_BLOCK_SERVER_KEY, 16);
-            #if DEBUG_FIN
-                printBytes("Nonce zum Verschlüsseln von Finished", buf + 24, 12);
-                printBytes("Key zum Verschlüsseln von Finished", buf + 36, 16);
-            #endif
-            aes_crypt(buffer + 3, 14, buf + 36, buf + 24, 0);
 
             coap_transaction_t *transaction = NULL;
-            if ( (transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port)) ) {
-                coap_packet_t response[1];
-                coap_separate_resume(response, request_metadata, CHANGED_2_04);
-                coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-                coap_set_payload(response, buffer, 25);
-                // TODO Warning: No check for serialization error.
-                transaction->packet_len = coap_serialize_message(response, transaction->packet);
-                transaction->callback = NULL;
-                coap_send_transaction(transaction);
+            transaction = coap_new_transaction(request_metadata->mid, &request_metadata->addr, request_metadata->port);
+            if (transaction == NULL) {
+                PRINTF("Separate Antwort konnte nicht erstellt werden\n");
+                // Da keine Antwort an den Clienten gesendet werden kann,
+                // ist es nicht möglich irgendwas zu tun :(
+                // Vielleicht nach einiger Zeit nochmal probieren ?
+                return;
             }
+
+            coap_packet_t response[1];
+            coap_separate_resume(response, request_metadata, CHANGED_2_04);
+            coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
+
+            if (content->type == c_change_cipher_spec) {
+                content += 3;
+
+                getSessionData(buf + 28, src_addr, session_epoch);
+                buf[29]++;
+                if (buf[29] == 0) buf[28]++;
+                fpoint_t key_block;
+                key_block = getKeyBlock(src_addr, (buf[28] << 8) + buf[29], 0);
+                nvm_getVar(buf + 24, key_block + KEY_BLOCK_CLIENT_IV, 4);
+                memset(buf + 30, 0, 6);
+                nvm_getVar(buf + 36, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+                //  0                   1                   2                   3                   4                   5
+                //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+                // | C-F | S-F |Nonce|  Key  |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|
+                #if DEBUG_FIN
+                    printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
+                    printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
+                #endif
+                aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
+                // TODO MAC-Check     description: bad_record_mac
+
+                if (content->type != finished) {
+                    PRINTF("Erwartetes Finished nicht erhalten\n");
+                    generateAlert(response, buffer, illegal_parameter);
+                    return;
+                }
+
+                #if DEBUG_FIN
+                    printBytes("Client Finished gefunden", ((uint8_t *) content) + 2, 12);
+                #endif
+
+                // TODO vergleich des clientfinished
+                // bei ungleich :    description: decrypt_error
+
+                // Antworten generieren
+
+                DTLSContent_t *c;
+
+                c = (DTLSContent_t *) buffer;
+                c->type = c_change_cipher_spec;
+                c->len = con_length_8_bit;
+                c->payload[0] = 1;
+                c->payload[1] = 1;
+
+                c = (DTLSContent_t *) (buffer + 3);
+                c->type = finished;
+                c->len = con_length_8_bit;
+                c->payload[0] = 20;
+                memcpy(c->payload + 1, buf + 12, 12);
+
+                nvm_getVar(buf + 24, key_block + KEY_BLOCK_SERVER_IV, 4);
+                nvm_getVar(buf + 36, key_block + KEY_BLOCK_SERVER_KEY, 16);
+                #if DEBUG_FIN
+                    printBytes("Nonce zum Verschlüsseln von Finished", buf + 24, 12);
+                    printBytes("Key zum Verschlüsseln von Finished", buf + 36, 16);
+                #endif
+                aes_crypt(buffer + 3, 14, buf + 36, buf + 24, 0);
+
+                coap_set_payload(response, buffer, 25);
+            } else {
+                PRINTF("Erwartetes ChangeCipherSpec nicht erhalten\n");
+                generateAlert(response, buffer, illegal_parameter);
+            }
+            // TODO Warning: No check for serialization error.
+            transaction->packet_len = coap_serialize_message(response, transaction->packet);
+            transaction->callback = NULL;
+            coap_send_transaction(transaction);
         }
 
-        big_msg_len = 0;
+        big_msg_len = 0; // TODO ACHTUNG wird nicht immer erreicht ?
     }
 }
 
