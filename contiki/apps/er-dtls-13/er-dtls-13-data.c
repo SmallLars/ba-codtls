@@ -15,7 +15,28 @@
     #include <stdio.h>
     #define PRINTF(...) printf(__VA_ARGS__)
     #define PRINTSESSION(i) printSession(i)
-    void printSession(uint8_t index);
+    void printSession(uint8_t index) {
+        uint8_t i;
+        uint8_t buffer[sizeof(Session_t)];
+
+        Session_t *session = (Session_t *) buffer;
+        Session_t *s = (Session_t *) RES_SESSION_LIST;
+        nvm_getVar(buffer, (fpoint_t) &s[index], sizeof(Session_t));
+        printf("    Index: %u \n    Session-ID: %.*s\n    IP: ", index, 8, session->session);
+        for (i = 0; i < 16; i++) printf("%02X", ((uint8_t *) &session->addr)[i]);
+        printf("\n    Epoch: %u\n    Private-Key: ", session->epoch);
+        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(session->private_key[i]));
+        printf("\n    Sequenznummer: %u", seq_num[index]);
+
+        KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
+        nvm_getVar(buffer, (fpoint_t) &kb[2 * index], sizeof(KeyBlock_t));
+        printf("\n        Key-Block 1: ");
+        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
+        nvm_getVar(buffer, (fpoint_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
+        printf("\n        Key-Block 2: ");
+        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
+        printf("\n");
+    }
 #else
     #define PRINTF(...)
     #define PRINTSESSION(i)
@@ -33,36 +54,35 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
 int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
     uint32_t i;
 
+    Session_t *session = (Session_t *) (buf + 8);
+    Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
+    int32_t index = getIndexOf(addr);
+
+    // Ein neuer private Key für ECDH wird in jedem Fall generiert
     nvm_getVar(buf, RES_ECC_ORDER, LEN_ECC_ORDER);
     #if DEBUG
         printf("ECC_ORDER: ");
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf[i]));
         printf("\n");
     #endif
-
-    Session_t *session = (Session_t *) (buf + 8);
-    Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
-    int32_t index = getIndexOf(addr);
-
-    if (index >= 0) {
-        nvm_getVar(&(session->epoch), (fpoint_t) &(s[index].epoch), 2);
-    } else {
-        session->epoch = 0;
-    }
-    uip_ipaddr_copy(&session->addr, addr);
-    for (i = 0; i < 8; i++) {
-        nvm_getVar(session->session + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
-    }
     do {
         random_x((uint8_t *) session->private_key, 32);
     } while (!ecc_is_valid_key(session->private_key, buf));
 
-
+    // Falls schon ein Eintrag existiert wird die Session durch
+    // setzten des neuen private Keys weiterentwickelt. Ansonsten
+    // wird alles gesetzt.
     if (index >= 0) {
-        nvm_setVar(session, (fpoint_t) &s[index], sizeof(Session_t));
+        nvm_setVar(session->private_key, (fpoint_t) s[index].private_key, 32);
         PRINTF("Session aktualisiert:\n");
         PRINTSESSION(index);
     } else {
+        uip_ipaddr_copy(&session->addr, addr);
+        for (i = 0; i < 8; i++) {
+            nvm_getVar(session->session + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
+        }
+        session->epoch = 0;
+
         uint8_t list_len;
         nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
         if (list_len == 10)
@@ -185,28 +205,3 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
         // TODO aktivieren: newPSK();
     }
 }
-
-#if DEBUG
-    void printSession(uint8_t index) {
-        uint8_t i;
-        uint8_t buffer[sizeof(Session_t)];
-
-        Session_t *session = (Session_t *) buffer;
-        Session_t *s = (Session_t *) RES_SESSION_LIST;
-        nvm_getVar(buffer, (fpoint_t) &s[index], sizeof(Session_t));
-        printf("    Index: %u \n    Session-ID: %.*s\n    IP: ", index, 8, session->session);
-        for (i = 0; i < 16; i++) printf("%02X", ((uint8_t *) &session->addr)[i]);
-        printf("\n    Epoch: %u\n    Private-Key: ", session->epoch);
-        for (i = 0; i < 8; i++) printf("%08X", uip_htonl(session->private_key[i]));
-        printf("\n    Sequenznummer: %u", seq_num[index]);
-
-        KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
-        nvm_getVar(buffer, (fpoint_t) &kb[2 * index], sizeof(KeyBlock_t));
-        printf("\n        Key-Block 1: ");
-        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
-        nvm_getVar(buffer, (fpoint_t) &kb[(2 * index) + 1], sizeof(KeyBlock_t));
-        printf("\n        Key-Block 2: ");
-        for (i = 0; i < sizeof(KeyBlock_t); i++) printf("%02X", buffer[i]);
-        printf("\n");
-    }
-#endif
