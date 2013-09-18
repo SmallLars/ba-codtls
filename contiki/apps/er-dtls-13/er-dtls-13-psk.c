@@ -31,25 +31,13 @@ void getPSK(uint8_t *dst) {
 }
 
 void newPSK() {
-    // Gültige Zeichen: 45, 48 - 57, 65 - 90, 95, 97 - 122
     uint8_t newPSK[LEN_PSK_ISNEW + LEN_NEWPSK];
     newPSK[0] = 1;
-    uint8_t i;
+    uint32_t i;
     for (i = 1; i <= LEN_NEWPSK; i++) {
-        newPSK[i] = 45 + (random_32() % 78);
-        PRINTF("%u: %u\n", i, newPSK[i]);
-        if (newPSK[i] == 45 || newPSK[i] == 95) continue;
-        if (newPSK[i] < 48 || newPSK[i] > 122) {
-            i--;
-        } else
-        if (newPSK[i] > 57 && newPSK[i] < 65) {
-            i--;
-        } else
-        if (newPSK[i] > 90 && newPSK[i] < 97) {
-            i--;
-        }    
+        nvm_getVar(newPSK + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
     }
-    PRINTF("%.*s\n", LEN_NEWPSK, &newPSK[1]);
+    PRINTF("Neuer PSK: %.*s\n", LEN_NEWPSK, newPSK + 1);
     nvm_setVar(newPSK, RES_PSK_ISNEW, LEN_PSK_ISNEW + LEN_NEWPSK);
 }
 

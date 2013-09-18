@@ -5,6 +5,7 @@
 #include "ecc.h"
 #include "flash-store.h"
 #include "er-dtls-13-random.h"
+#include "er-dtls-13-psk.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -30,9 +31,10 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
+    uint32_t i;
+
     nvm_getVar(buf, RES_ECC_ORDER, LEN_ECC_ORDER);
     #if DEBUG
-        uint8_t i;
         printf("ECC_ORDER: ");
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(buf[i]));
         printf("\n");
@@ -40,7 +42,7 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
 
     Session_t *session = (Session_t *) (buf + 8);
     Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
-    int8_t index = getIndexOf(addr);
+    int32_t index = getIndexOf(addr);
 
     if (index >= 0) {
         nvm_getVar(&(session->epoch), (fpoint_t) &(s[index].epoch), 2);
@@ -48,7 +50,9 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
         session->epoch = 0;
     }
     uip_ipaddr_copy(&session->addr, addr);
-    memcpy(session->session, "IJKLMNOP", 8); // TODO session generieren
+    for (i = 0; i < 8; i++) {
+        nvm_getVar(session->session + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
+    }
     do {
         random_x((uint8_t *) session->private_key, 32);
     } while (!ecc_is_valid_key(session->private_key, buf));
@@ -177,6 +181,8 @@ __attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uin
 
         PRINTF("Daten nach Epoch-Increase:\n");
         PRINTSESSION(index);
+
+        // TODO aktivieren: newPSK();
     }
 }
 

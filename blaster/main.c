@@ -40,17 +40,19 @@
 #define LEN_UUID         0x10
 #define RES_PSK          0x1E018
 #define LEN_PSK          0x10
-#define RES_ECC_BASE_X   0x1E028
+#define RES_ANSCHARS     0x1E028
+#define LEN_ANSCHARS     0x40
+#define RES_ECC_BASE_X   0x1E068
 #define LEN_ECC_BASE_X   0x20
-#define RES_ECC_BASE_Y   0x1E048
+#define RES_ECC_BASE_Y   0x1E088
 #define LEN_ECC_BASE_Y   0x20
-#define RES_ECC_ORDER    0x1E068
+#define RES_ECC_ORDER    0x1E0A8
 #define LEN_ECC_ORDER    0x20
-#define RES_NAME         0x1E088
+#define RES_NAME         0x1E0C8
 #define LEN_NAME         0x0F
-#define RES_MODEL        0x1E0A8
+#define RES_MODEL        0x1E0E8
 #define LEN_MODEL        0x0E
-#define RES_FLASHTIME    0x1E0C8
+#define RES_FLASHTIME    0x1E108
 #define LEN_FLASHTIME    0x04
 
 // ----------------------------------------------------------------------------
@@ -123,17 +125,17 @@ int main(int nArgs, char **argv) {
 
 // PSK setzen -----------------------------------------------------------------
     unsigned char psk[16] = "ABCDEFGHIJKLMNOP";
+    char *anschars = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
     if (nArgs == 2) {
         FILE *fd = fopen("/dev/urandom","r");
         if (fd == NULL) {
             perror("Öffnen von /dev/urandom fehlgeschlagen: ");
             return -1;
         }
-        char *letter = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
         for (i = 0; i < 16; i++) {
             int c;
             while ((c = fgetc(fd)) == EOF);
-            psk[i] = letter[((unsigned char) c) % 64];
+            psk[i] = anschars[((unsigned char) c) % 64];
         }
         if (fclose(fd) == -1) printf("Fehler beim Schließen von /dev/urandom\n");
     }
@@ -141,6 +143,9 @@ int main(int nArgs, char **argv) {
         output[RES_PSK + i] = psk[i];
     }
     fprintf(stderr, "PSK: %.*s\n", 16, psk);
+
+// Zulässige Zeichen für Session und PSK setzen (alphanum Zeichen + "_" + "-")
+    memcpy(output + RES_ANSCHARS, anschars, LEN_ANSCHARS);
 
 // ECC Base Points setzen -----------------------------------------------------
     uint32_t *base_x = (uint32_t *) (output + RES_ECC_BASE_X);
