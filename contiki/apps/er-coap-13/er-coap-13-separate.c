@@ -76,6 +76,11 @@ coap_separate_accept(void *request, coap_separate_t *separate_store)
       coap_packet_t ack[1];
       /* ACK with empty code (0) */
       coap_init_message(ack, COAP_TYPE_ACK, 0, coap_req->mid);
+      /* Add Block 1 Option if Request used Block 1 */
+      coap_packet_t *packet = (coap_packet_t *) request;
+      if (IS_OPTION(packet, COAP_OPTION_BLOCK1)) {
+        coap_set_header_block1(ack, packet->block1_num, packet->block1_more, packet->block1_size);
+      }
       /* Serializing into IPBUF: Only overwrites header parts that are already parsed into the request struct. */
       coap_send_message(&UIP_IP_BUF->srcipaddr, UIP_UDP_BUF->srcport, (uip_appdata), coap_serialize_message(ack, uip_appdata));
     }

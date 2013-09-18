@@ -281,12 +281,14 @@ coap_pdu_parse(unsigned char *data, size_t length, coap_pdu_t *pdu) {
   pdu->data = NULL;
 
   /* sanity checks */
+  /* disabled for block1 accept in a empty message FIXME
   if (pdu->hdr->code == 0) {
     if (length != sizeof(coap_hdr_t) || pdu->hdr->token_length) {
       debug("coap_pdu_parse: empty message is not empty\n");
       goto discard;
     }
   }
+  */
 
   if (length < sizeof(coap_hdr_t) + pdu->hdr->token_length
       || pdu->hdr->token_length > 8) {
