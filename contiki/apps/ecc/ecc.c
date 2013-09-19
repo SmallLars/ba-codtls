@@ -221,19 +221,21 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 }
 
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
-    uint32_t AB[length*2];
-    uint32_t C[length*2];
-
     if (length == 1) {
-        /* Ersetzt durch nachfolgenden Assembler-Code
-        AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
-        AB[1] = (x[0]>>16) * (y[0]>>16);
-        C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
-        C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
-        carry = ecc_add(&C[0], &C[1], C, 1);
-        C[1] = carry << 16 | C[0] >> 16;
-        C[0] = C[0] << 16;
-        */
+        uint64_t *r = (uint64_t *) result;
+        *r = (uint64_t) x[0] * (uint64_t) y[0];
+
+        //uint32_t AB[length*2];
+        //uint32_t C[length*2];
+        // Nachfolgender Assembler-Code steht für:
+        // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
+        // AB[1] = (x[0]>>16) * (y[0]>>16);
+        // C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
+        // C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
+        // carry = ecc_add(&C[0], &C[1], C, 1);
+        // C[1] = carry << 16 | C[0] >> 16;
+        // C[0] = C[0] << 16;
+        /*
         asm volatile(
             // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
                 "ldrh r4, [%[x], #0] \n\t"
@@ -276,7 +278,11 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         : // clobber list
             "r4", "r5", "memory"
         );
+        ecc_add(AB, C, result, 2);
+        */
     } else {
+        uint32_t AB[length*2];
+        uint32_t C[length*2];
         uint32_t carry;
         ecc_mult(&x[0], &y[0], &AB[0], length/2);
         ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
@@ -286,9 +292,8 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_setZero(&C[length], length);
         ecc_lshift(C, length*2, length/2);
         C[length+(length/2)] = carry;
+        ecc_add(AB, C, result, length*2);
     }
-
-    ecc_add(AB, C, result, length*2);
 }
 
 __attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize) {
