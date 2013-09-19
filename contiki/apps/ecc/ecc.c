@@ -432,8 +432,7 @@ __attribute__((always_inline)) static void special(uint32_t a[2], uint32_t b[2],
         // b[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
             "ldrh r4, [%[x], #0] \n\t"
             "mul r4, r5 \n\t"
-            "str r4, [%[b], #4] \n\t" //tmp
-/*
+            // "str r4, [%[b], #4] \n\t" // nicht notwendig
         // b[0] += b[1]
             "ldr r5, [%[b], #0] \n\t"
             "add r5, r5, r4 \n\t"
@@ -442,14 +441,13 @@ __attribute__((always_inline)) static void special(uint32_t a[2], uint32_t b[2],
             "mov r4, #0 \n\t"
             "bcc .nocarry \n\t"
             "mov r4, #1 \n\t"
-            "lsl r4, r4, #16 \n\t"
         ".nocarry: \n\t"
             "strh r4, [%[b], #6] \n\t"
-            "strh r5, [%[b], #4] \n\t"
+            "lsr r4, r5, #16 \n\t"
+            "strh r4, [%[b], #4] \n\t"
         // b[0] = b[0] << 16;
             "lsl r4, r5, #16 \n\t"
             "str r4, [%[b], #0] \n\t"
-*/
     : // out
     : // in
         [a] "l" (a),
@@ -459,15 +457,6 @@ __attribute__((always_inline)) static void special(uint32_t a[2], uint32_t b[2],
     : // clobber list
         "r4", "r5", "memory"
     );
-
-    uint32_t carry;
-//    a[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
-//    b[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
-//    a[1] = (x[0]>>16) * (y[0]>>16);
-//    b[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
-    carry = ecc_add(&b[0], &b[1], b, 1);
-    b[1] = carry << 16 | b[0] >> 16;
-    b[0] = b[0] << 16;
 }
 
 int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length){
