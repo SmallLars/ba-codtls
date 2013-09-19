@@ -221,8 +221,6 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 }
 
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
-    uint32_t AB[length*2];
-
     if (length == 1) {
 //        uint64_t *r = (uint64_t *) result;
 //        *r = (uint64_t) x[0] * (uint64_t) y[0];
@@ -257,28 +255,31 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "add r5, r4, r3 \n\t"
             // zustand: r5 = C[0] und C[1] wird verworfen
             // C[1] = carry << 16 | C[0] >> 16;
+            // C[0] = C[0] << 16;
                 "mov r4, #0 \n\t"
                 "bcc .nocarry \n\t"
                 "mov r4, #1 \n\t"
+                "lsl r4, r4, #16 \n\t"
             ".nocarry: \n\t"
-                "strh r4, [%[b], #6] \n\t"
-                "lsr r4, r5, #16 \n\t"
-                "strh r4, [%[b], #4] \n\t"
-            // C[0] = C[0] << 16;
-                "lsl r4, r5, #16 \n\t"
-                "str r4, [%[b], #0] \n\t"
+                "lsr r3, r5, #16 \n\t"
+                "orr r4, r4, r3 \n\t"
+                "lsl r3, r5, #16 \n\t"
+                "ldm %[r]!, {r5, r6} \n\t"
+                "sub %[r], %[r], #8 \n\t"
+                "add r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[r]!, {r3, r4} \n\t"
         : // out
         : // in
             [x] "l" (x),
             [y] "l" (y),
-            [r] "l" (result),
-            [b] "l" (AB)
+            [r] "l" (result)
         : // clobber list
-            "r3", "r4", "r5", "memory"
+            "r3", "r4", "r5", "r6", "memory"
         );
-        ecc_add(result, AB, result, length*2);
     } else {
         uint32_t carry;
+        uint32_t AB[length*2];
         uint32_t C[length*2];
         ecc_mult(&x[0], &y[0], &AB[0], length/2);
         ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
