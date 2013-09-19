@@ -61,6 +61,7 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 static void ecc_setZero(uint32_t *A, const uint32_t length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
 static unsigned int ecc_isX(const uint32_t* A, const uint32_t X);
+static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length);
 __attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize);
 
 //ecc_fieldModP-Helper
@@ -74,16 +75,15 @@ __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src);
 
 //field functions for big numbers
-int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
-int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
-int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length);
-void ecc_fieldModP(uint32_t *A, const uint32_t *B);
+static void ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
+static void ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
+static void ecc_fieldModP(uint32_t *A, const uint32_t *B);
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result);
-void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B);
+static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B);
 
 //ec Functions
-void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy);
-void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
+static void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy);
+static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
@@ -218,6 +218,77 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 
     return result;
 */
+}
+
+static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
+    uint32_t AB[length*2];
+    uint32_t C[length*2];
+
+    if (length == 1) {
+        /* Ersetzt durch nachfolgenden Assembler-Code
+        AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
+        AB[1] = (x[0]>>16) * (y[0]>>16);
+        C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
+        C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
+        carry = ecc_add(&C[0], &C[1], C, 1);
+        C[1] = carry << 16 | C[0] >> 16;
+        C[0] = C[0] << 16;
+        */
+        asm volatile(
+            // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
+                "ldrh r4, [%[x], #0] \n\t"
+                "ldrh r5, [%[y], #0] \n\t"
+                "mul r4, r5 \n\t"
+                "str r4, [%[a], #0] \n\t"
+            // C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
+                "ldrh r4, [%[x], #2] \n\t"
+                "mul r4, r5 \n\t"
+                "str r4, [%[b], #0] \n\t"
+            // AB[1] = (x[0]>>16) * (y[0]>>16);
+                "ldrh r4, [%[x], #2] \n\t"
+                "ldrh r5, [%[y], #2] \n\t"
+                "mul r4, r5 \n\t"
+                "str r4, [%[a], #4] \n\t"
+            // C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
+                "ldrh r4, [%[x], #0] \n\t"
+                "mul r4, r5 \n\t"
+            // C[0] += C[1]
+                "ldr r5, [%[b], #0] \n\t"
+                "add r5, r5, r4 \n\t"
+            // zustand: r5 = C[0] und C[1] wird verworfen
+            // C[1] = carry << 16 | C[0] >> 16;
+                "mov r4, #0 \n\t"
+                "bcc .nocarry \n\t"
+                "mov r4, #1 \n\t"
+            ".nocarry: \n\t"
+                "strh r4, [%[b], #6] \n\t"
+                "lsr r4, r5, #16 \n\t"
+                "strh r4, [%[b], #4] \n\t"
+            // C[0] = C[0] << 16;
+                "lsl r4, r5, #16 \n\t"
+                "str r4, [%[b], #0] \n\t"
+        : // out
+        : // in
+            [a] "l" (AB),
+            [b] "l" (C),
+            [x] "l" (x),
+            [y] "l" (y)
+        : // clobber list
+            "r4", "r5", "memory"
+        );
+    } else {
+        uint32_t carry;
+        ecc_mult(&x[0], &y[0], &AB[0], length/2);
+        ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
+        ecc_mult(&x[0], &y[length/2], &C[0], length/2);
+        ecc_mult(&x[length/2], &y[0], &C[length], length/2);
+        carry = ecc_add(&C[0], &C[length], &C[0], length);
+        ecc_setZero(&C[length], length);
+        ecc_lshift(C, length*2, length/2);
+        C[length+(length/2)] = carry;
+    }
+
+    ecc_add(AB, C, result, length*2);
 }
 
 __attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize) {
@@ -395,104 +466,21 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
 
 /*---------------------------------------------------------------------------*/
 
-int ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result){
-    if(ecc_add(x, y, result, arrayLength)){ //add prime if carry is still set!
-        uint32_t temp[8];
-        ecc_add(result, reducer, temp, arrayLength);
-        ecc_copy(result, temp);
+static void ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result) {
+    if (ecc_add(x, y, result, arrayLength)) { //add prime if carry is still set!
+        ecc_add(result, reducer, result, arrayLength);
     }
-    return 0;
 }
 
-int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result){
-    if(ecc_sub(x, y, result, arrayLength)){ //add modulus if carry is set
-        uint32_t temp[8];
-        ecc_add(result, modulus, temp, arrayLength);
-        ecc_copy(result, temp);
+static void ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result) {
+    if (ecc_sub(x, y, result, arrayLength)) { //add modulus if carry is set
+        ecc_add(result, modulus, result, arrayLength);
     }
-    return 0;
-}
-
-__attribute__((always_inline)) static void special(uint32_t a[2], uint32_t b[2], const uint32_t x[1], const uint32_t y[1]) {
-    asm volatile(
-        // a[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
-            "ldrh r4, [%[x], #0] \n\t"
-            "ldrh r5, [%[y], #0] \n\t"
-            "mul r4, r5 \n\t"
-            "str r4, [%[a], #0] \n\t"
-        // b[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
-            "ldrh r4, [%[x], #2] \n\t"
-            "mul r4, r5 \n\t"
-            "str r4, [%[b], #0] \n\t"
-        // a[1] = (x[0]>>16) * (y[0]>>16);
-            "ldrh r4, [%[x], #2] \n\t"
-            "ldrh r5, [%[y], #2] \n\t"
-            "mul r4, r5 \n\t"
-            "str r4, [%[a], #4] \n\t"
-        // b[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
-            "ldrh r4, [%[x], #0] \n\t"
-            "mul r4, r5 \n\t"
-            // "str r4, [%[b], #4] \n\t" // nicht notwendig
-        // b[0] += b[1]
-            "ldr r5, [%[b], #0] \n\t"
-            "add r5, r5, r4 \n\t"
-        // zustand: r5 = b[0] und b[1] wird verworfen
-        // b[1] = carry << 16 | b[0] >> 16;
-            "mov r4, #0 \n\t"
-            "bcc .nocarry \n\t"
-            "mov r4, #1 \n\t"
-        ".nocarry: \n\t"
-            "strh r4, [%[b], #6] \n\t"
-            "lsr r4, r5, #16 \n\t"
-            "strh r4, [%[b], #4] \n\t"
-        // b[0] = b[0] << 16;
-            "lsl r4, r5, #16 \n\t"
-            "str r4, [%[b], #0] \n\t"
-    : // out
-    : // in
-        [a] "l" (a),
-        [b] "l" (b),
-        [x] "l" (x),
-        [y] "l" (y)
-    : // clobber list
-        "r4", "r5", "memory"
-    );
-}
-
-int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length){
-    uint32_t AB[length*2];
-    uint32_t C[length*2];
-
-    if (length == 1) {
-/*
-        AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
-        AB[1] = (x[0]>>16) * (y[0]>>16);
-        C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
-        C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
-        carry = ecc_add(&C[0], &C[1], C, 1);
-        C[1] = carry << 16 | C[0] >> 16;
-        C[0] = C[0] << 16;
-*/
-        special(AB, C, x, y);
-        ecc_add(AB, C, result, 2);
-    } else {
-        uint32_t carry;
-        ecc_fieldMult(&x[0], &y[0], &AB[0], length/2);
-        ecc_fieldMult(&x[length/2], &y[length/2], &AB[length], length/2);
-        ecc_fieldMult(&x[0], &y[length/2], &C[0], length/2);
-        ecc_fieldMult(&x[length/2], &y[0], &C[length], length/2);
-        carry = ecc_add(&C[0], &C[length], &C[0], length);
-        ecc_setZero(&C[length], length);
-        ecc_lshift(C, length*2, length/2);
-        C[length+(length/2)] = carry;
-        ecc_add(AB, C, result, length*2);
-    }
-    return 0;
 }
 
 //TODO: maximum:
 //fffffffe00000002fffffffe0000000100000001fffffffe00000001fffffffe00000001fffffffefffffffffffffffffffffffe000000000000000000000001_16
-void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
+static void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm[8];
     uint32_t tempm2[8];
 
@@ -541,7 +529,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
 /*
  * Inverse A and output to B
  */
-void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B){
+static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B){
     uint32_t u[8],v[8],x1[8];
     uint32_t tempm[8];
     ecc_setZero(tempm, 8);
@@ -594,7 +582,7 @@ void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *re
 }
 
 
-void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy){
+static void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, const uint32_t *qy, uint32_t *Sx, uint32_t *Sy){
     uint32_t tempC[8];
     uint32_t tempD[16];
 
@@ -622,21 +610,21 @@ void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *qx, cons
     ecc_fieldSub(py, qy, ecc_prime_m, Sx);
     ecc_fieldSub(px, qx, ecc_prime_m, Sy);
     ecc_fieldInv(Sy, ecc_prime_m, ecc_prime_r, Sy);
-    ecc_fieldMult(Sx, Sy, tempD, arrayLength); 
+    ecc_mult(Sx, Sy, tempD, arrayLength); 
     ecc_fieldModP(tempC, tempD); //tempC = lambda
 
-    ecc_fieldMult(tempC, tempC, tempD, arrayLength); //Sx = lambda^2
+    ecc_mult(tempC, tempC, tempD, arrayLength); //Sx = lambda^2
     ecc_fieldModP(Sx, tempD);
     ecc_fieldSub(Sx, px, ecc_prime_m, Sy); //lambda^2 - Px
     ecc_fieldSub(Sy, qx, ecc_prime_m, Sx); //lambda^2 - Px - Qx
 
     ecc_fieldSub(qx, Sx, ecc_prime_m, Sy);
-    ecc_fieldMult(tempC, Sy, tempD, arrayLength);
+    ecc_mult(tempC, Sy, tempD, arrayLength);
     ecc_fieldModP(tempC, tempD);
     ecc_fieldSub(tempC, qy, ecc_prime_m, Sy);
 }
 
-void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy){
+static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_t *Dy){
     uint32_t tempB[8];
     uint32_t tempC[8];
     uint32_t tempD[16];
@@ -647,26 +635,26 @@ void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, uint32_
         return;
     }
 
-    ecc_fieldMult(px, px, tempD, arrayLength);
+    ecc_mult(px, px, tempD, arrayLength);
     ecc_fieldModP(Dy, tempD);
     ecc_setZero(tempB, 8);
     tempB[0] = 0x00000001;
     ecc_fieldSub(Dy, tempB, ecc_prime_m, tempC); //tempC = (qx^2-1)
     tempB[0] = 0x00000003;
-    ecc_fieldMult(tempC, tempB, tempD, arrayLength);
+    ecc_mult(tempC, tempB, tempD, arrayLength);
     ecc_fieldModP(Dy, tempD);//Dy = 3*(qx^2-1)
     ecc_fieldAdd(py, py, ecc_prime_r, tempB); //tempB = 2*qy
     ecc_fieldInv(tempB, ecc_prime_m, ecc_prime_r, tempC); //tempC = 1/(2*qy)
-    ecc_fieldMult(Dy, tempC, tempD, arrayLength); //tempB = lambda = (3*(qx^2-1))/(2*qy)
+    ecc_mult(Dy, tempC, tempD, arrayLength); //tempB = lambda = (3*(qx^2-1))/(2*qy)
     ecc_fieldModP(tempB, tempD);
 
-    ecc_fieldMult(tempB, tempB, tempD, arrayLength); //tempC = lambda^2
+    ecc_mult(tempB, tempB, tempD, arrayLength); //tempC = lambda^2
     ecc_fieldModP(tempC, tempD);
     ecc_fieldSub(tempC, px, ecc_prime_m, Dy); //lambda^2 - Px
     ecc_fieldSub(Dy, px, ecc_prime_m, Dx); //lambda^2 - Px - Qx
 
     ecc_fieldSub(px, Dx, ecc_prime_m, Dy); //Dy = qx-dx
-    ecc_fieldMult(tempB, Dy, tempD, arrayLength); //tempC = lambda * (qx-dx)
+    ecc_mult(tempB, Dy, tempD, arrayLength); //tempC = lambda * (qx-dx)
     ecc_fieldModP(tempC, tempD);
     ecc_fieldSub(tempC, py, ecc_prime_m, Dy); //Dy = lambda * (qx-dx) - px
 }
