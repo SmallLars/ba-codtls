@@ -227,6 +227,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         // *r = (uint64_t) x[0] * (uint64_t) y[0];
 
         // Version 2: Ähnlich groß aber ineffektiv
+        // uint32_t carry;
         // uint32_t AB[length*2];
         // uint32_t C[length*2];
         // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
@@ -247,19 +248,19 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "mul r3, r6 \n\t"               // r3 *= r6                 r3 = C[0]
                 "ldrh r4, [%[y], #2] \n\t"      // r4 = (y[0] >> 16)
                 "mul r6, r4 \n\t"               // r6 *= r4                 r6 = AB[1]
-            // register %[y] wird nun nicht mehr benötigt und im folgenden ry genannt
+            // %[y] wird nun nicht mehr benötigt und überschrieben (folgenden ry genannt)
                 "ldrh %[y], [%[x], #0] \n\t"    // ry = (x[0] & 0x0000FFFF)
                 "mul r4, %[y] \n\t"             // r4 *= ry                 r4 = C[1]
                 "add %[y], r3, r4 \n\t"         // ry = r3 + r4             ry = C[0] + C[1]
-            // register C[1] (r4) wird nun nicht mehr benötigt
+            // C[1] (r4) wird nun nicht mehr benötigt und überschrieben
                 "mov r4, #0 \n\t"               // r4 = 0
                 "bcc .nocarry \n\t"             // jump falls carry clear
                 "mov r4, #1 \n\t"               // r4 = 1
                 "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
-            ".nocarry: \n\t"                    //                          r4 = 0x000c0000
+            ".nocarry: \n\t"                    //                          r4 = 0x000c0000 = (carry << 16)
                 "lsr r3, %[y], #16 \n\t"        // r3 = (ry >> 16)
-                "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh'
-                "lsl r3, %[y], #16 \n\t"        // r3 = (ry << 16)          r3 = 0x'ryl'0000
+                "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh' = (carry << 16 | ry >> 16)
+                "lsl r3, %[y], #16 \n\t"        // r3 = (ry << 16)          r3 = 0x'ryl'0000 = (ry << 16)
                 "add r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[r]!, {r3, r4} \n\t"
