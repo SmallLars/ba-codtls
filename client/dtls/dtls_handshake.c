@@ -301,6 +301,14 @@ void dtls_handshake(uint8_t ip[16]) {
     }
 
     memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
+    #if DEBUG_FIN
+        printf("Nonce zum Entschlüsseln von Finished: ");
+        for (i = 0; i < 12; i++) printf("%02X", nonce[i]);
+        printf("\n");
+        printf("Key zum Entschlüsseln von Finished: ");
+        for (i = KEY_BLOCK_SERVER_KEY; i < KEY_BLOCK_SERVER_KEY + 16; i++) printf("%02X", key_block[i]);
+        printf("\n");
+    #endif
     aes_decrypt((uint8_t *) buffer + 3, 14, key_block + KEY_BLOCK_SERVER_KEY, nonce);
 
     #if DEBUG_FIN

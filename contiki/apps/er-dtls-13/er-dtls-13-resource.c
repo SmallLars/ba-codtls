@@ -20,8 +20,8 @@
 #define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
-#define DEBUG_PRF 1
-#define DEBUG_FIN 1
+#define DEBUG_PRF 0
+#define DEBUG_FIN 0
 
 #if DEBUG || DEBUG_COOKIE || DEBUG_ECC || DEBUG_PRF || DEBUG_FIN
     #include <stdio.h>
@@ -59,7 +59,7 @@ uip_ipaddr_t src_addr[1];
 coap_separate_t request_metadata[1];
 
 uint8_t big_msg[128];
-size_t big_msg_len;
+size_t big_msg_len = 0;
 
 uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. zurück auf 0 bei ersten daten
 uint16_t created_offset;
@@ -90,7 +90,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             if (content->type != client_hello) {
                 PRINTF("Erwartetes ClientHello nicht erhalten\n");
                 generateAlert(response, buffer, illegal_parameter);
-                return;
+                goto dtls_handler_end;
             }
 
             ClientHello_t *clienthello = (ClientHello_t *) (content->payload + content->len);
@@ -127,7 +127,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 if (checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len))) {
                     PRINTF("ClientHello enthält keine unterstützten Werte\n");
                     generateAlert(response, buffer, handshake_failure);
-                    return;
+                    goto dtls_handler_end;
                 }
 
                 coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
@@ -143,13 +143,13 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             if (getSessionData(buf, src_addr, session_id) < 0 || memcmp(buf, uri_path + 5, 8)) {
                 PRINTF("Ressource existiert nicht\n");
                 coap_set_status_code(response, NOT_FOUND_4_04);
-                return;
+                goto dtls_handler_end;
             }
 
             if (content->type != client_key_exchange) {
                 PRINTF("Erwartetes ClientKeyExchange nicht erhalten\n");
                 generateAlert(response, buffer, illegal_parameter);
-                return;
+                goto dtls_handler_end;
             }
 
             coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
@@ -174,10 +174,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 // Da keine Antwort an den Clienten gesendet werden kann,
                 // ist es nicht möglich irgendwas zu tun :(
                 // Vielleicht nach einiger Zeit nochmal probieren ?
-                return;
+                goto dtls_handler_end;
             }
 
-            coap_packet_t response[1];
             coap_separate_resume(response, request_metadata, CHANGED_2_04);
             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
 
@@ -199,21 +198,30 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                     printBytes("Nonce zum Entschlüsseln von Finished", buf + 24, 12);
                     printBytes("Key zum Entschlüsseln von Finished", buf + 36, 16);
                 #endif
+                memcpy(buf + 52, ((uint8_t *) content) + 14, MAC_LEN);
                 aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 0);
-                // TODO MAC-Check     description: bad_record_mac
+                aes_crypt((uint8_t *) content, 14, buf + 36, buf + 24, 1);
+                if (memcmp(buf + 52, ((uint8_t *) content) + 14, MAC_LEN)) {
+                    PRINTF("DTLS-MAC-Fehler im Finished. Paket ungültig\n");
+                    generateAlert(response, buffer, decrypt_error); // nicht bad_record_mac weil finished betroffen
+                    goto dtls_handler_end;
+                }
 
                 if (content->type != finished) {
                     PRINTF("Erwartetes Finished nicht erhalten\n");
                     generateAlert(response, buffer, illegal_parameter);
-                    return;
+                    goto dtls_handler_end;
                 }
 
                 #if DEBUG_FIN
                     printBytes("Client Finished gefunden", ((uint8_t *) content) + 2, 12);
                 #endif
 
-                // TODO vergleich des clientfinished
-                // bei ungleich :    description: decrypt_error
+                if (memcmp(buf, ((uint8_t *) content) + 2, 12)) {
+                    PRINTF("Erhaltenes Client-Finished stimmt nicht\n");
+                    generateAlert(response, buffer, decrypt_error);
+                    goto dtls_handler_end;
+                }
 
                 // Antworten generieren
 
@@ -249,9 +257,11 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             transaction->callback = NULL;
             coap_send_transaction(transaction);
         }
-
-        big_msg_len = 0; // TODO ACHTUNG wird nicht immer erreicht ?
     }
+ 
+    dtls_handler_end: ;
+
+    big_msg_len = 0;
 }
 
 /* ------------------------------------------------------------------------- */

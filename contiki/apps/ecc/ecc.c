@@ -413,11 +413,69 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     return 0;
 }
 
+__attribute__((always_inline)) static void special(uint32_t a[2], uint32_t b[2], const uint32_t x[1], const uint32_t y[1]) {
+    asm volatile(
+        // a[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
+            "ldrh r4, [%[x], #0] \n\t"
+            "ldrh r5, [%[y], #0] \n\t"
+            "mul r4, r5 \n\t"
+            "str r4, [%[a], #0] \n\t"
+        // b[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
+            "ldrh r4, [%[x], #2] \n\t"
+            "mul r4, r5 \n\t"
+            "str r4, [%[b], #0] \n\t"
+        // a[1] = (x[0]>>16) * (y[0]>>16);
+            "ldrh r4, [%[x], #2] \n\t"
+            "ldrh r5, [%[y], #2] \n\t"
+            "mul r4, r5 \n\t"
+            "str r4, [%[a], #4] \n\t"
+        // b[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
+            "ldrh r4, [%[x], #0] \n\t"
+            "mul r4, r5 \n\t"
+            "str r4, [%[b], #4] \n\t" //tmp
+/*
+        // b[0] += b[1]
+            "ldr r5, [%[b], #0] \n\t"
+            "add r5, r5, r4 \n\t"
+        // zustand: r5 = b[0] und b[1] wird verworfen
+        // b[1] = carry << 16 | b[0] >> 16;
+            "mov r4, #0 \n\t"
+            "bcc .nocarry \n\t"
+            "mov r4, #1 \n\t"
+            "lsl r4, r4, #16 \n\t"
+        ".nocarry: \n\t"
+            "strh r4, [%[b], #6] \n\t"
+            "strh r5, [%[b], #4] \n\t"
+        // b[0] = b[0] << 16;
+            "lsl r4, r5, #16 \n\t"
+            "str r4, [%[b], #0] \n\t"
+*/
+    : // out
+    : // in
+        [a] "l" (a),
+        [b] "l" (b),
+        [x] "l" (x),
+        [y] "l" (y)
+    : // clobber list
+        "r4", "r5", "memory"
+    );
+
+    uint32_t carry;
+//    a[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
+//    b[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
+//    a[1] = (x[0]>>16) * (y[0]>>16);
+//    b[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
+    carry = ecc_add(&b[0], &b[1], b, 1);
+    b[1] = carry << 16 | b[0] >> 16;
+    b[0] = b[0] << 16;
+}
+
 int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length){
     uint32_t AB[length*2];
     uint32_t C[length*2];
-    uint32_t carry;
-    if(length==1){
+
+    if (length == 1) {
+/*
         AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
         AB[1] = (x[0]>>16) * (y[0]>>16);
         C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
@@ -425,8 +483,11 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, const 
         carry = ecc_add(&C[0], &C[1], C, 1);
         C[1] = carry << 16 | C[0] >> 16;
         C[0] = C[0] << 16;
+*/
+        special(AB, C, x, y);
         ecc_add(AB, C, result, 2);
     } else {
+        uint32_t carry;
         ecc_fieldMult(&x[0], &y[0], &AB[0], length/2);
         ecc_fieldMult(&x[length/2], &y[length/2], &AB[length], length/2);
         ecc_fieldMult(&x[0], &y[length/2], &C[0], length/2);

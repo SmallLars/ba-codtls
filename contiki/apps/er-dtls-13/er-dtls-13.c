@@ -71,62 +71,65 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
     }
 
     // Bei Bedarf entschlüsseln
-    uint32_t key_block;
-    if ((key_block = getKeyBlock(addr, EPOCH, 1))) {
-        len -= MAC_LEN;
-        uint8_t oldMAC[MAC_LEN];
-        memcpy(oldMAC, payload + len, MAC_LEN);
-        uint8_t key[16];
-        nvm_getVar(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
-        nvm_getVar(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
-        #if DEBUG
-            uint32_t i;
-            PRINTF("Bei Paketempfang berechnete Nonce:");
-            for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
-            PRINTF("\n");
-        #endif
-        aes_crypt(payload, len, key, nonce, 0);
-        aes_crypt(payload, len, key, nonce, 1);
-        uint32_t check = memcmp(oldMAC, payload + len, MAC_LEN);
-        if (check) {
-            PRINTF("DTLS-MAC fehler. Paket ungültig.\n");
-            sendAlert(addr, UIP_UDP_BUF->srcport, fatal, bad_record_mac);
-        } else {
-            coapdata->valid = 1;
-            coapdata->data = payload;
-            coapdata->data_len = len;
-        }
-    } else {
-        if (EPOCH == 0) {
-            uint16_t known_epoch = 0;
-            getSessionData((uint8_t *) &known_epoch, addr, session_epoch);
-            if (known_epoch > 0) {
-                PRINTF("Angriff auf Session oder Client hat Daten verloren\n");
-                // Leider nicht zu unterscheiden. Bei Datenverlust ist Reset notwendig.
+    if (EPOCH > 0) {
+        uint32_t key_block;
+        if ((key_block = getKeyBlock(addr, EPOCH, 1))) {
+            len -= MAC_LEN;
+            uint8_t oldMAC[MAC_LEN];
+            memcpy(oldMAC, payload + len, MAC_LEN);
+            uint8_t key[16];
+            nvm_getVar(key, key_block + KEY_BLOCK_CLIENT_KEY, 16);
+            nvm_getVar(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+            #if DEBUG
+                uint32_t i;
+                PRINTF("Bei Paketempfang berechnete Nonce:");
+                for (i = 0; i < 12; i++) PRINTF(" %02X", nonce[i]);
+                PRINTF("\n");
+            #endif
+            aes_crypt(payload, len, key, nonce, 0);
+            aes_crypt(payload, len, key, nonce, 1);
+            if (memcmp(oldMAC, payload + len, MAC_LEN)) {
+                PRINTF("DTLS-MAC-Fehler. Paket ungültig.\n");
+                sendAlert(addr, UIP_UDP_BUF->srcport, fatal, bad_record_mac);
                 return;
-            }
-
-            if (type == handshake) {
-                if (checkCoapURI(payload, len)) {
-                    sendAlert(addr, UIP_UDP_BUF->srcport, fatal, illegal_parameter);
-                    return;
-                }
-
-                coapdata->valid = 1;
-                coapdata->data = payload;
-                coapdata->data_len = len;
-            } else {
-                sendAlert(addr, UIP_UDP_BUF->srcport, fatal, unexpected_message);
             }
         } else {
             sendAlert(addr, UIP_UDP_BUF->srcport, fatal, decode_error);
+            return;
+        }
+    } else {
+        uint16_t known_epoch = 0;
+        getSessionData((uint8_t *) &known_epoch, addr, session_epoch);
+        if (known_epoch > 0) {
+            PRINTF("Angriff auf Session oder Client hat Daten verloren\n");
+            // Leider nicht zu unterscheiden. Bei Datenverlust ist Reset notwendig.
+            return;
+        }
+
+        if (type == application_data) {
+            PRINTF("Anwendungsdaten werden in Epoche 0 nicht akzeptiert\n");
+            sendAlert(addr, UIP_UDP_BUF->srcport, fatal, unexpected_message);
+            return;
+        }
+    }
+
+    if (type == handshake) {
+        if (checkCoapURI(payload, len)) {
+            PRINTF("Im Handshake ist nur die Ressource /dtls erlaubt\n");
+            sendAlert(addr, UIP_UDP_BUF->srcport, fatal, illegal_parameter);
+            return;
         }
     }
 
     if (type == alert) {
         PRINTF("Alert erhalten.\n");
         // TODO Alert-Auswertung
+        return;
     }
+
+    coapdata->valid = 1;
+    coapdata->data = payload;
+    coapdata->data_len = len;
 }
 
 void dtls_send_message(struct uip_udp_conn *conn, const void *data, uint8_t len) {
@@ -197,8 +200,8 @@ __attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, si
     packet += (4 + (packet[0] & 0x0F));         // 4 Byte Header und Tokenlength. packet zeigt nun auf Options
     int option = 0;
     while (1) {
-        option += ((packet[0] & 0xF0) >> 4); // Da 11 gesucht ist es nicht notwendig Extendet-Delta zu berücksichten
-        if (option > 11) {                // Da Payload-Marker an dieser Stelle 15 wäre, erledigt sich Ende-Check von selbst
+        option += ((packet[0] & 0xF0) >> 4);    // Da 11 gesucht ist es nicht notwendig Extendet-Delta zu berücksichten
+        if (option > 11) {                      // Da Payload-Marker an dieser Stelle 15 wäre, erledigt sich Ende-Check von selbst
             packet = 0;
             break;
         }
