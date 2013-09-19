@@ -221,13 +221,13 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 }
 
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
-    if (length == 1) {
-        uint64_t *r = (uint64_t *) result;
-        *r = (uint64_t) x[0] * (uint64_t) y[0];
+    uint32_t AB[length*2];
 
-        //uint32_t AB[length*2];
-        //uint32_t C[length*2];
-        // Nachfolgender Assembler-Code steht für:
+    if (length == 1) {
+//        uint64_t *r = (uint64_t *) result;
+//        *r = (uint64_t) x[0] * (uint64_t) y[0];
+
+
         // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
         // AB[1] = (x[0]>>16) * (y[0]>>16);
         // C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
@@ -235,28 +235,26 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         // carry = ecc_add(&C[0], &C[1], C, 1);
         // C[1] = carry << 16 | C[0] >> 16;
         // C[0] = C[0] << 16;
-        /*
+        // ecc_add(AB, C, result, 2);
         asm volatile(
             // AB[0] = (x[0]&0x0000FFFF) * (y[0]&0x0000FFFF);
                 "ldrh r4, [%[x], #0] \n\t"
-                "ldrh r5, [%[y], #0] \n\t"
-                "mul r4, r5 \n\t"
-                "str r4, [%[a], #0] \n\t"
+                "ldrh r3, [%[y], #0] \n\t"
+                "mul r4, r3 \n\t"
+                "str r4, [%[r], #0] \n\t"
             // C[0] = (x[0]>>16) * (y[0]&0x0000FFFF);
                 "ldrh r4, [%[x], #2] \n\t"
-                "mul r4, r5 \n\t"
-                "str r4, [%[b], #0] \n\t"
+                "mul r3, r4 \n\t"
             // AB[1] = (x[0]>>16) * (y[0]>>16);
-                "ldrh r4, [%[x], #2] \n\t"
                 "ldrh r5, [%[y], #2] \n\t"
                 "mul r4, r5 \n\t"
-                "str r4, [%[a], #4] \n\t"
+                "str r4, [%[r], #4] \n\t"
             // C[1] = (x[0]&0x0000FFFF) * (y[0]>>16);
                 "ldrh r4, [%[x], #0] \n\t"
                 "mul r4, r5 \n\t"
+            // zustand: r3 = C[0] und r4 = C[1]
             // C[0] += C[1]
-                "ldr r5, [%[b], #0] \n\t"
-                "add r5, r5, r4 \n\t"
+                "add r5, r4, r3 \n\t"
             // zustand: r5 = C[0] und C[1] wird verworfen
             // C[1] = carry << 16 | C[0] >> 16;
                 "mov r4, #0 \n\t"
@@ -271,19 +269,17 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "str r4, [%[b], #0] \n\t"
         : // out
         : // in
-            [a] "l" (AB),
-            [b] "l" (C),
             [x] "l" (x),
-            [y] "l" (y)
+            [y] "l" (y),
+            [r] "l" (result),
+            [b] "l" (AB)
         : // clobber list
-            "r4", "r5", "memory"
+            "r3", "r4", "r5", "memory"
         );
-        ecc_add(AB, C, result, 2);
-        */
+        ecc_add(result, AB, result, length*2);
     } else {
-        uint32_t AB[length*2];
-        uint32_t C[length*2];
         uint32_t carry;
+        uint32_t C[length*2];
         ecc_mult(&x[0], &y[0], &AB[0], length/2);
         ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
         ecc_mult(&x[0], &y[length/2], &C[0], length/2);
