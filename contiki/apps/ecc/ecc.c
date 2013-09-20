@@ -280,7 +280,31 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
         ecc_mult(&x[0], &y[length/2], &C[0], length/2);
         ecc_mult(&x[length/2], &y[0], &C[length], length/2);
-        carry = ecc_add(&C[0], &C[length], &C[0], length);
+/*
+        if (length == 2) {
+            asm volatile(
+                    "ldm %[a]!, {r3-r6} \n\t"
+                    "sub %[a], %[a], #16 \n\t"
+                    "add r3, r3, r5 \n\t"
+                    "adc r4, r4, r6 \n\t"
+                    "stm %[a]!, {r3,r4} \n\t"
+                    "bcc 1f \n\t"
+                    "mov %[c], #1 \n\t"
+                    "b 2f \n\t"
+                "1: \n\t"
+                    "mov %[c], #0 \n\t"
+                "2: \n\t"
+            : // out
+                [c] "=l" (carry)
+            : // in
+                [a] "l" (C)
+            : // clobber list
+                "r3", "r4", "r5", "r6", "memory"
+            );
+        } else {
+*/
+            carry = ecc_add(&C[0], &C[length], &C[0], length);
+//        }
         ecc_setZero(&C[length], length);
         ecc_lshift(C, length*2, length/2);
         C[length+(length/2)] = carry;
