@@ -6,10 +6,8 @@
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
 //  1 | ASM          |   -24 | Mittel          | Funktioniert
-//  2 | ASM 8,4,2,16 |  +116 | Schnell         | Funktioniert
+//  2 | ASM 4,8,16   |   +88 | Schnell         | Funktioniert
 //  3 | ASM nur 8    |   -24 | Schnell         | Funktioniert - Unbrauchbar für ECC da nur 256-bit-Addition nicht ausreicht
-
-//124946, 32500, 26000, 1625
 
 uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length) {
 #if ALGO == 0
@@ -84,37 +82,17 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
 
     asm volatile(
             "cmp %[l], #8 \n\t"
-            "bne .add.2.4.16 \n\t"
-        ".add8: \n\t"
-            "ldm %[x]!, {r4,r5} \n\t"
-            "ldm %[y]!, {r6,r7} \n\t"
-            "add r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r]!, {r4,r5} \n\t"
-            "ldm %[x]!, {r4,r5} \n\t"
-            "ldm %[y]!, {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r]!, {r4,r5} \n\t"
-            "ldm %[x]!, {r4,r5} \n\t"
-            "ldm %[y]!, {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r]!, {r4,r5} \n\t"
-            "ldm %[x]!, {r4,r5} \n\t"
-            "ldm %[y]!, {r6,r7} \n\t"
-            "adc r4, r4, r6 \n\t"
-            "adc r5, r5, r7 \n\t"
-            "stm %[r]!, {r4,r5} \n\t"
-            "b .foot \n\t"
-        ".add.2.4.16: \n\t"
-            "cmp %[l], #4 \n\t"
-            "beq .add4 \n\t"
+            "beq .add8 \n\t"
             "bhi .add16 \n\t"
-        ".add2: \n\t"
+        ".add4: \n\t"
             "ldm %[x]!, {r4,r5} \n\t"
             "ldm %[y]!, {r6,r7} \n\t"
             "add r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
             "adc r5, r5, r7 \n\t"
             "stm %[r]!, {r4,r5} \n\t"
             "b .foot \n\t"
@@ -160,10 +138,20 @@ uint8_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t
             "adc r5, r5, r7 \n\t"
             "stm %[r]!, {r4,r5} \n\t"
             "b .foot \n\t"
-        ".add4: \n\t"
+        ".add8: \n\t"
             "ldm %[x]!, {r4,r5} \n\t"
             "ldm %[y]!, {r6,r7} \n\t"
             "add r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
             "adc r5, r5, r7 \n\t"
             "stm %[r]!, {r4,r5} \n\t"
             "ldm %[x]!, {r4,r5} \n\t"

@@ -141,7 +141,7 @@ ssize_t dtls_recvfrom(int sockfd, void *buf, size_t max_len, int flags, struct s
         uint8_t oldCode[MAC_LEN];
         memcpy(oldCode, payload + len, MAC_LEN);
 
-        uint8_t *key_block = getKeyBlock(ip, record->epoch);
+        uint8_t *key_block = getKeyBlock(ip, (nonce[4] << 8) + nonce[5]);
         memcpy(nonce, key_block + KEY_BLOCK_SERVER_IV, 4);
 
         uint8_t key[16];

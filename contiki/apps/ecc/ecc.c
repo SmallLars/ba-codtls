@@ -280,7 +280,6 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
         ecc_mult(&x[0], &y[length/2], &C[0], length/2);
         ecc_mult(&x[length/2], &y[0], &C[length], length/2);
-/*
         if (length == 2) {
             asm volatile(
                     "ldm %[a]!, {r3-r6} \n\t"
@@ -302,9 +301,8 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "r3", "r4", "r5", "r6", "memory"
             );
         } else {
-*/
             carry = ecc_add(&C[0], &C[length], &C[0], length);
-//        }
+        }
         ecc_setZero(&C[length], length);
         ecc_lshift(C, length*2, length/2);
         C[length+(length/2)] = carry;
