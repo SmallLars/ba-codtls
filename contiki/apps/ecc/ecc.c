@@ -226,7 +226,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         // uint64_t *r = (uint64_t *) result;
         // *r = (uint64_t) x[0] * (uint64_t) y[0];
 
-        // Version 2: Ähnlich groß aber ineffektiv
+        // Version 2: Ähnlich groß wie Version 1 aber ineffektiv
         // uint32_t carry;
         // uint32_t AB[length*2];
         // uint32_t C[length*2];
@@ -239,7 +239,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         // C[0] = C[0] << 16;
         // ecc_add(AB, C, result, 2);
 
-        // Version 3: Extrem klein aber genau so schnell wie Version 1
+        // Version 3: 56 Byte kleiner als Version 1 aber genau so schnell
         asm volatile(
                 "ldrh r5, [%[x], #0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
                 "ldrh r3, [%[y], #0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
@@ -259,7 +259,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
             ".nocarry: \n\t"                    //                          r4 = 0x000c0000 = (carry << 16)
                 "lsr r3, %[y], #16 \n\t"        // r3 = (ry >> 16)
-                "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh' = (carry << 16 | ry >> 16)
+                "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh' = (r4 | ry >> 16)
                 "lsl r3, %[y], #16 \n\t"        // r3 = (ry << 16)          r3 = 0x'ryl'0000 = (ry << 16)
                 "add r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
