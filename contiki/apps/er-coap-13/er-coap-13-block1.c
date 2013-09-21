@@ -59,37 +59,36 @@ int coap_block1_handler(void* request, void* response, uint8_t *target, size_t *
   const uint8_t *payload = 0;
   int pay_len = REST.get_request_payload(request, &payload);
 
-  coap_packet_t *packet = (coap_packet_t *) request;
-
-  if (!IS_OPTION(packet, COAP_OPTION_BLOCK1)) {
-    if (pay_len && payload && pay_len <= max_len) {
-      memcpy(target, payload, pay_len);
-      *len = pay_len;
-    }
+  if (!pay_len || !payload) {
+    coap_error_code = REST.status.BAD_REQUEST;
+    coap_error_message = "NoPayload";
     return -1;
   }
 
-  PRINTF("Blockwise: block 1 request: Num: %u, More: %u, Size: %u, Offset: %u\n",
-    packet->block1_num,
-    packet->block1_more,
-    packet->block1_size,
-    packet->block1_offset);
+  coap_packet_t *packet = (coap_packet_t *) request;
 
   if (packet->block1_offset + pay_len > max_len) {
-    coap_error_code = REQUEST_ENTITY_TOO_LARGE_4_13;
+    coap_error_code = REST.status.REQUEST_ENTITY_TOO_LARGE;
     coap_error_message = "Message to big";
     return -1;
   }
 
-  if (pay_len && payload) {
+  if (target && len) {
     memcpy(target + packet->block1_offset, payload, pay_len);
     *len = packet->block1_offset + pay_len;
   }
 
-  coap_set_header_block1(response, packet->block1_num, packet->block1_more, packet->block1_size);
+  if (IS_OPTION(packet, COAP_OPTION_BLOCK1)) {
+    PRINTF("Blockwise: block 1 request: Num: %u, More: %u, Size: %u, Offset: %u\n",
+      packet->block1_num,
+      packet->block1_more,
+      packet->block1_size,
+      packet->block1_offset);
 
-  if (packet->block1_more) {
-    return 1;
+    coap_set_header_block1(response, packet->block1_num, packet->block1_more, packet->block1_size);
+    if (packet->block1_more) {
+      return 1;
+    }
   }
 
   return 0;
