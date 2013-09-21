@@ -324,9 +324,50 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
     memcpy(dst, mac, 8);
 }
 
-__attribute__((always_inline)) static  int checkClientHello(ClientHello_t *clientHello, size_t len) {
-    // TODO
+__attribute__((always_inline)) static int checkClientHello(ClientHello_t *clientHello, size_t len) {
+    uint8_t *p = clientHello->data + 1;
+    uint8_t *end;
+    uint32_t check = 0;
+
+    // Ciphersuite checken
+    end = p + (p[0] << 8) + p[1] + 2;
+    p += 2;
+    for (; p < end; p+=2) {
+        if ((p[0] << 8) + p[1] == TLS_PSK_ECDH_WITH_AES_128_CCM_8) {
+            check = 1;
+        }
+    }
+    if (check == 0) return -1;
+
+    // CompressionMethod checken
+    check = 0;
+    end = p + p[0] + 1;
+    p += 1;
+    for (; p < end; p++) {
+        if (p[0] == null) {
+            check = 1;
+        }
+    }
+    if (check == 0) return -1;
+
+    // TODO Extensions checken
+
     return 0;
+/*
+struct {
+    ProtocolVersion client_version;
+    Random random;
+    opaque cookie<0..2^8-1>;
+    CipherSuite cipher_suites<2..2^16-2>;
+    CompressionMethod compression_methods<1..2^8-1>;
+    select (extensions_present) {
+        case false:
+            struct {};
+        case true:
+            Extension extensions<0..2^16-1>;
+    };
+} ClientHello;
+*/
 }
 
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf) {
@@ -348,7 +389,7 @@ __attribute__((always_inline)) static void generateServerHello(uint32_t *buf) {
     sh->random.gmt_unix_time = uip_htonl(getTime());
     random_x(sh->random.random_bytes, 28);
     sh->session_id.len = getSessionData(sh->session_id.session_id, src_addr, session_id);
-    sh->cipher_suite = TLS_ECDH_anon_WITH_AES_128_CCM_8;
+    sh->cipher_suite = UIP_HTONS(TLS_PSK_ECDH_WITH_AES_128_CCM_8);
     sh->compression_method = null;
     sh->extensions[0] = 0x00;        // Länge der Extensions
     sh->extensions[1] = 0x08;        // Länge der Extensions

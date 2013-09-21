@@ -23,8 +23,8 @@ size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *c
 
     clientHello->data[data_index++] = 0x00;        // Länge der Cyphersuits
     clientHello->data[data_index++] = 0x02;        // Länge der Cyphersuits
-    clientHello->data[data_index++] = 0xff;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
-    clientHello->data[data_index++] = 0x03;        // Cyphersuit: TLS_ECDH_anon_WITH_AES_128_CCM_8
+    clientHello->data[data_index++] = 0xff;        // Cyphersuit: TLS_PSK_ECDH_WITH_AES_128_CCM_8
+    clientHello->data[data_index++] = 0x01;        // Cyphersuit: TLS_PSK_ECDH_WITH_AES_128_CCM_8
     clientHello->data[data_index++] = 0x01;        // Länge der Compression Methods
     clientHello->data[data_index++] = 0x00;        // Keine Compression
     clientHello->data[data_index++] = 0x00;        // Länge der Extensions

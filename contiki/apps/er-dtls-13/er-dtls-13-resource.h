@@ -80,12 +80,8 @@ typedef struct {
     uint8_t session_id[8];
 } __attribute__ ((packed)) SessionID;
 
-// Schon in Network Byte Order hinterlegt
 typedef enum {
-    TLS_ECDH_anon_WITH_AES_128_CCM = 0x01ff,
-    TLS_ECDH_anon_WITH_AES_256_CCM = 0x02ff,
-    TLS_ECDH_anon_WITH_AES_128_CCM_8 = 0x03ff,
-    TLS_ECDH_anon_WITH_AES_256_CCM_8 = 0x04ff
+    TLS_PSK_ECDH_WITH_AES_128_CCM_8 = 0xFF01
     // max = 0xffff
 } __attribute__ ((packed)) CipherSuite;
 

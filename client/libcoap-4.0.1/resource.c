@@ -618,12 +618,14 @@ coap_check_notify(coap_context_t *context) {
 
 void
 coap_handle_failed_notify(coap_context_t *context, const coap_address_t *peer, const str *token) {
-  coap_resource_t *r;
-  coap_subscription_t *obs;
-
 #ifndef WITH_CONTIKI
+  context = context;
+  peer = peer;
+  token = token;
   ;
 #else /* WITH_CONTIKI */
+  coap_resource_t *r;
+  coap_subscription_t *obs;
   int i;
   
   r = (coap_resource_t *)resource_storage.mem;
