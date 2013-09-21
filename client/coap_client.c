@@ -214,14 +214,13 @@ resolve_address(const str *server, struct sockaddr *dst) {
 }
 
 static inline coap_opt_t *
-get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_iter) {
+get_block(coap_pdu_t *pdu, coap_opt_iterator_t *opt_iter, unsigned char type) {
   coap_opt_filter_t f;
   
   assert(pdu);
 
   memset(f, 0, sizeof(coap_opt_filter_t));
-  coap_option_setb(f, COAP_OPTION_BLOCK1);
-  coap_option_setb(f, COAP_OPTION_BLOCK2);
+  coap_option_setb(f, type);
 
   coap_option_iterator_init(pdu, opt_iter, f);
   return coap_option_next(opt_iter);
@@ -277,7 +276,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
             ;
     }
 
-    block_opt = get_block(received, &opt_iter);
+    block_opt = get_block(received, &opt_iter, COAP_OPTION_BLOCK1);
     if (received->hdr->type == COAP_MESSAGE_ACK && opt_iter.type == COAP_OPTION_BLOCK1 && COAP_OPT_BLOCK_MORE(block_opt)) {
         debug("got block ack for block nr. %u\n", COAP_OPT_BLOCK_NUM(block_opt));
         // do nothing, user need to call coap_request again with next block
@@ -302,9 +301,8 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
             set_timeout(&obs_wait, obs_seconds);
         }
         
-        /* Got some data, check if block option is set. Behavior is undefined if
-         * both, Block1 and Block2 are present. */
-        block_opt = get_block(received, &opt_iter);
+        /* Got some data, check if block 2 option is set. */
+        block_opt = get_block(received, &opt_iter, COAP_OPTION_BLOCK2);
         if (opt_iter.type != COAP_OPTION_BLOCK2) {
             /* There is no block option set, just read the data and we are done. */
             if (coap_get_data(received, &len, &databuf)) {
@@ -388,7 +386,7 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
     /* our job is done, we can exit at any time */
     ready = coap_check_option(received, COAP_OPTION_SUBSCRIPTION, &opt_iter) == NULL;
 
-    block_opt = get_block(received, &opt_iter);
+    block_opt = get_block(received, &opt_iter, COAP_OPTION_BLOCK2);
     if (opt_iter.type == COAP_OPTION_BLOCK2 && expected_blocks != received_blocks) {
         ready = 0;
     }

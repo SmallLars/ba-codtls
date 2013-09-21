@@ -53,24 +53,33 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
 __attribute__((always_inline)) static void generateFinished(uint8_t *buf);
 
 void sendServerHello(void *data, void* resp);
-int8_t readServerHello(void *target, uint8_t offset, uint8_t size);
+__attribute__((always_inline)) static int readServerHello(void *target, uint8_t offset, uint8_t size);
 
-uip_ipaddr_t src_addr[1];
-coap_separate_t request_metadata[1];
+static uip_ipaddr_t src_addr[1];
+static coap_separate_t request_metadata[1];
 
-uint8_t big_msg[128];
-size_t big_msg_len = 0;
+static uint8_t big_msg[128];
+static size_t big_msg_len = 0;
 
-uint8_t handshake_step = 0; // 1 Handshake zur Zeit. 1 = created, 2 = changed. zurück auf 0 bei ersten daten
-uint16_t created_offset;
-uint16_t changed_offset;
-uint16_t client_random_offset;
-uint16_t server_random_offset;
+static uint8_t resource_busy = 0;
+static uint16_t created_offset;
+static uint16_t changed_offset;
+static uint16_t client_random_offset;
+static uint16_t server_random_offset;
 
 /*************************************************************************/
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
+    if (resource_busy) {
+        if (!uip_ipaddr_cmp(src_addr, &UIP_IP_BUF->srcipaddr)) {
+            coap_error_code = SERVICE_UNAVAILABLE_5_03;
+            coap_error_message = "AlreadyInUse";
+            return;
+        }
+    }
+
+    resource_busy = 1;
     uip_ipaddr_copy(src_addr, &UIP_IP_BUF->srcipaddr);
 
     if (coap_block1_handler(request, response, big_msg, &big_msg_len, 128)) {
@@ -551,7 +560,7 @@ void sendServerHello(void *data, void* resp) {
     }
 }
 
-int8_t readServerHello(void *target, uint8_t offset, uint8_t size) {
+__attribute__((always_inline)) static int readServerHello(void *target, uint8_t offset, uint8_t size) {
     uint8_t length = stack_size() - created_offset;
 
     if (offset >= length) return -1;
