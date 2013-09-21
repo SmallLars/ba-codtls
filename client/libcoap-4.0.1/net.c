@@ -247,6 +247,7 @@ coap_new_context(const coap_address_t *listen_addr) {
   coap_register_option(c, COAP_OPTION_URI_QUERY);
   coap_register_option(c, COAP_OPTION_PROXY_URI);
   coap_register_option(c, COAP_OPTION_PROXY_SCHEME);
+  coap_register_option(c, COAP_OPTION_BLOCK1);
 
 #ifndef WITH_CONTIKI
   c->sockfd = socket(listen_addr->addr.sa.sa_family, SOCK_DGRAM, 0);
@@ -399,18 +400,6 @@ coap_send_ack(coap_context_t *context,
   if (request && request->hdr->type == COAP_MESSAGE_CON) {
     response = coap_pdu_init(COAP_MESSAGE_ACK, 0, request->hdr->id,
 			     sizeof(coap_pdu_t));
-
-    // Block2 - if it was a confirmable block2 from a post request we need to Ack with block2
-    coap_opt_iterator_t opt_iter;
-    coap_opt_filter_t f;
-    memset(f, 0, sizeof(coap_opt_filter_t));
-    coap_option_setb(f, COAP_OPTION_BLOCK2);
-    coap_option_iterator_init(request, &opt_iter, f);
-    coap_opt_t *block_opt = coap_option_next(&opt_iter);
-    if (block_opt != NULL) {
-        coap_add_option(response, COAP_OPTION_BLOCK2, COAP_OPT_LENGTH(block_opt), COAP_OPT_VALUE(block_opt));
-    }
-    // Block2 - end
 
     if (response) {
       result = coap_send(context, dst, response);

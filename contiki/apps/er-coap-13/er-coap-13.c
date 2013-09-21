@@ -327,6 +327,9 @@ coap_serialize_message(void *packet, uint8_t *buffer)
   coap_pkt->buffer[2] = (uint8_t) ((coap_pkt->mid)>>8);
   coap_pkt->buffer[3] = (uint8_t) (coap_pkt->mid);
 
+  /* empty packet, dont need to do more stuff */
+  if (!coap_pkt->code) return 4;
+
   /* set Token */
   PRINTF("Token (len %u)", coap_pkt->token_len);
   option = coap_pkt->buffer + COAP_HEADER_LEN;

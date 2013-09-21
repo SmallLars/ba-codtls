@@ -188,11 +188,6 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
 
             coap_separate_resume(response, request_metadata, CHANGED_2_04);
             coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
-            /* Add Block 1 Option if Request used Block 1 */
-            coap_packet_t *packet = (coap_packet_t *) request;
-            if (IS_OPTION(packet, COAP_OPTION_BLOCK1)) {
-                coap_set_header_block1(response, packet->block1_num, packet->block1_more, packet->block1_size);
-            }
             if (content->type == c_change_cipher_spec) {
                 content += 3;
 
@@ -555,13 +550,6 @@ void sendServerHello(void *data, void* resp) {
         coap_separate_resume(response, request_metadata, CREATED_2_01);
         coap_set_header_content_type(response, APPLICATION_OCTET_STREAM);
         coap_set_payload(response, buffer, read == 0 ? request_metadata->block2_size : read);
-        if (request_metadata->block2_num == 0) {
-            /* Add Block 1 Option if Request used Block 1 */
-            coap_packet_t *packet = (coap_packet_t *) resp;
-            if (IS_OPTION(packet, COAP_OPTION_BLOCK1)) {
-                coap_set_header_block1(response, packet->block1_num, packet->block1_more, packet->block1_size);
-            }
-        }
         coap_set_header_block2(response, request_metadata->block2_num, read == 0 ? 1 : 0, request_metadata->block2_size);
         // TODO Warning: No check for serialization error.
         transaction->packet_len = coap_serialize_message(response, transaction->packet);
