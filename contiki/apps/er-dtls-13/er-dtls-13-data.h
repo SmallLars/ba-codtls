@@ -41,14 +41,16 @@ typedef enum {
 
 // ----------------------------------------------------------------------------
 
-int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr);
+int createSession(uint32_t *buf, uip_ipaddr_t *addr);
 
-int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type);
+int getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type);
+
+int deleteSession(uip_ipaddr_t *addr);
 
 // ----------------------------------------------------------------------------
 
-int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block);
+int insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block);
 
-fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update);
+fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, int update);
 
 #endif /* __ER_DTLS_13_DATA_H__ */

@@ -46,12 +46,12 @@ uint32_t seq_num[10];
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
-int8_t getIndexOf(uip_ipaddr_t *addr);
-__attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uint16_t epoch);
+int getIndexOf(uip_ipaddr_t *addr);
+__attribute__((always_inline)) static void checkEpochIncrease(unsigned int index, uint16_t epoch);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
+int createSession(uint32_t *buf, uip_ipaddr_t *addr) {
     uint32_t i;
 
     Session_t *session = (Session_t *) (buf + 8);
@@ -98,8 +98,8 @@ int8_t createSession(uint32_t *buf, uip_ipaddr_t *addr) {
     return 0;
 }
 
-int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
-    int8_t i = getIndexOf(addr);
+int getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
+    int i = getIndexOf(addr);
     if (i == -1) {
         PRINTF("getSessionData: Keine Daten zur gesuchten IP gefunden\n");
         return -1;
@@ -129,8 +129,20 @@ int8_t getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
     return 0;
 }
 
-int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {
-    int8_t index = getIndexOf(addr);
+int deleteSession(uip_ipaddr_t *addr) {
+    int index = getIndexOf(addr);
+    if (index == -1) {
+        PRINTF("delete Session: Ip nicht gefunden\n");
+        return -1;
+    }
+
+    seq_num[index] = 0;
+    Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
+    nvm_setVar(&seq_num[index], (fpoint_t) &s[index].epoch, 2);
+}
+
+int insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {
+    int index = getIndexOf(addr);
     if (index == -1) {
         PRINTF("insertKeyBlock: Ip nicht gefunden\n");
         return -1;
@@ -145,10 +157,10 @@ int8_t insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {
     return 0;
 }
 
-fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update) {
+fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, int update) {
     if (epoch == 0) return 0;
 
-    int8_t index = getIndexOf(addr);
+    int index = getIndexOf(addr);
     if (index == -1) return 0;
 
     if (update) checkEpochIncrease(index, epoch);
@@ -168,19 +180,19 @@ fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, uint8_t update) {
 
 /* Private Funktionen ------------------------------------------------------ */
 
-int8_t getIndexOf(uip_ipaddr_t *addr) {
+int getIndexOf(uip_ipaddr_t *addr) {
     uint8_t list_len;
     nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
 
     Session_t *s = (Session_t *) RES_SESSION_LIST;
-    uint8_t i;
+    unsigned int i;
     for (i = 0; i < list_len; i++) {
         if (nvm_cmp(addr, (fpoint_t) &s[i].addr, sizeof(uip_ipaddr_t)) == 0) return i;
     }
     return -1;
 }
 
-__attribute__((always_inline)) static void checkEpochIncrease(uint8_t index, uint16_t epoch) {
+__attribute__((always_inline)) static void checkEpochIncrease(unsigned int index, uint16_t epoch) {
     epoch--;
     Session_t *s = (Session_t *) RES_SESSION_LIST;
 
