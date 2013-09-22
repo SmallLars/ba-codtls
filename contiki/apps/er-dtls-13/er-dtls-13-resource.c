@@ -17,7 +17,7 @@
 #include "ecc.h"
 #include "flash-store.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
 #define DEBUG_PRF 0
@@ -47,7 +47,7 @@
 // Durch den gesparten Funktionsaufruf nimmt jedoch die Größe des benötigten Stacks erheblich ab.
 __attribute__((always_inline)) static void generateHelloVerifyRequest(uint8_t *dst, uint8_t *cookie, size_t cookie_len);
 __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSContent_t *data, size_t *data_len);
-__attribute__((always_inline)) static  int checkClientHello(ClientHello_t *clientHello, size_t len);
+__attribute__((always_inline)) static AlertDescription checkClientHello(ClientHello_t *clientHello, size_t len);
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf);
 __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_t *cke, uint8_t *buf);
 __attribute__((always_inline)) static void generateFinished(uint8_t *buf);
@@ -133,9 +133,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             } else {
                 PRINTF("ClientHello mit korrektem Cookie erhalten\n");
 
-                if (checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len))) {
-                    PRINTF("ClientHello enthält keine unterstützten Werte\n");
-                    generateAlert(response, buffer, handshake_failure);
+                AlertDescription alert = checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len));
+                if (alert) {
+                    PRINTF("ClientHello falsche oder nicht unterstützte Werte\n");
+                    generateAlert(response, buffer, alert);
                     goto dtls_handler_end;
                 }
 
@@ -324,10 +325,16 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
     memcpy(dst, mac, 8);
 }
 
-__attribute__((always_inline)) static int checkClientHello(ClientHello_t *clientHello, size_t len) {
+__attribute__((always_inline)) static AlertDescription checkClientHello(ClientHello_t *clientHello, size_t len) {
     uint8_t *p = clientHello->data + 1;
     uint8_t *end;
     uint32_t check = 0;
+
+    // Version checken
+    if (clientHello->client_version.major != 3 || clientHello->client_version.minor != 3) {
+        PRINTF("ClientHello: Nicht unterstützte Protokollversion\n");
+        return protocol_version;
+    }
 
     // Ciphersuite checken
     end = p + (p[0] << 8) + p[1] + 2;
@@ -337,7 +344,10 @@ __attribute__((always_inline)) static int checkClientHello(ClientHello_t *client
             check = 1;
         }
     }
-    if (check == 0) return -1;
+    if (check == 0) {
+        PRINTF("ClientHello: Keine geeignete Ciphersuit\n");
+        return handshake_failure;
+    }
 
     // CompressionMethod checken
     check = 0;
@@ -348,26 +358,47 @@ __attribute__((always_inline)) static int checkClientHello(ClientHello_t *client
             check = 1;
         }
     }
-    if (check == 0) return -1;
+    if (check == 0) {
+        PRINTF("ClientHello: Keine geeignete CompressionMethod\n");
+        return handshake_failure;
+    }
 
-    // TODO Extensions checken
+    // Extensions checken
+    check = 0;
+    p += 2;
+    while (p < ((uint8_t *) clientHello) + len) {
+        PRINTF("Check: 0x%02X\nAktuelle Extension: %02X %02X %02X %02X %02X %02X\n", check, p[0], p[1], p[2], p[3], p[4], p[5]);
+        if (p[0] == 0x00) {
+            if (p[1] == 0x0A) { // Supported Elliptic Curves
+                end = p + (p[4] << 8) + p[5] + 6;
+                for (p += 6; p < end; p+=2) {
+                    if ((p[0] << 8) + p[1] == secp256r1) {
+                        check |= 0x01;
+                    }
+                }
+                continue;
+            }
+            if (p[1] == 0x0B) { // Supported Point Formats
+                end = p + p[4] + 5;
+                for (p += 5; p < end; p++) {
+                    if (p[0] == 0x00) { // Uncompressed Point
+                        check |= 0x10;
+                    }
+                }
+                continue;
+            }
+        }
+
+        PRINTF("ClientHello: Unbekannte Extension\n");
+        return unsupported_extension;
+    }
+    PRINTF("Check: 0x%02X\n", check);
+    if (check != 0x11) {
+        PRINTF("ClientHello: Benötigte Extensions nicht vorhanden\n");
+        return handshake_failure;
+    }
 
     return 0;
-/*
-struct {
-    ProtocolVersion client_version;
-    Random random;
-    opaque cookie<0..2^8-1>;
-    CipherSuite cipher_suites<2..2^16-2>;
-    CompressionMethod compression_methods<1..2^8-1>;
-    select (extensions_present) {
-        case false:
-            struct {};
-        case true:
-            Extension extensions<0..2^16-1>;
-    };
-} ClientHello;
-*/
 }
 
 __attribute__((always_inline)) static void generateServerHello(uint32_t *buf) {

@@ -107,37 +107,36 @@ typedef enum {
     // max = 255
 } __attribute__ ((packed)) ECCurveType;
 
-// Schon in Network Byte Order hinterlegt
 typedef enum {
-    sect163k1 = 0x0100,
-    sect163r1 = 0x0200,
-    sect163r2 = 0x0300,
-    sect193r1 = 0x0400,
-    sect193r2 = 0x0500,
-    sect233k1 = 0x0600,
-    sect233r1 = 0x0700,
-    sect239k1 = 0x0800,
-    sect283k1 = 0x0900,
-    sect283r1 = 0x1000,
-    sect409k1 = 0x1100,
-    sect409r1 = 0x1200,
-    sect571k1 = 0x1300,
-    sect571r1 = 0x1400,
-    secp160k1 = 0x1500,
-    secp160r1 = 0x1600,
-    secp160r2 = 0x1700,
-    secp192k1 = 0x1800,
-    secp192r1 = 0x1900,
-    secp224k1 = 0x2000,
-    secp224r1 = 0x2100,
-    secp256k1 = 0x2200,
-    secp256r1 = 0x2300,
-    secp384r1 = 0x2400,
-    secp521r1 = 0x2500,
-    // reserved = 0x00fe..0xfffe     0xAABB AA zählt hoch wegen NBO
-    arbitrary_explicit_prime_curves = 0x01ff,
-    arbitrary_explicit_char2_curves = 0x02ff,
-    // max = 0xffff
+    sect163k1 = 0x0001,
+    sect163r1 = 0x0002,
+    sect163r2 = 0x0003,
+    sect193r1 = 0x0004,
+    sect193r2 = 0x0005,
+    sect233k1 = 0x0006,
+    sect233r1 = 0x0007,
+    sect239k1 = 0x0008,
+    sect283k1 = 0x0009,
+    sect283r1 = 0x0010,
+    sect409k1 = 0x0011,
+    sect409r1 = 0x0012,
+    sect571k1 = 0x0013,
+    sect571r1 = 0x0014,
+    secp160k1 = 0x0015,
+    secp160r1 = 0x0016,
+    secp160r2 = 0x0017,
+    secp192k1 = 0x0018,
+    secp192r1 = 0x0019,
+    secp224k1 = 0x0020,
+    secp224r1 = 0x0021,
+    secp256k1 = 0x0022,
+    secp256r1 = 0x0023,
+    secp384r1 = 0x0024,
+    secp521r1 = 0x0025,
+    // reserved = 0xFE00..0xFEFF
+    arbitrary_explicit_prime_curves = 0xFF01,
+    arbitrary_explicit_char2_curves = 0xFF02,
+    // max = 0xFFFF
 } __attribute__ ((packed)) NamedCurve;
 
 typedef struct {

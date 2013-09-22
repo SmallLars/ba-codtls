@@ -133,7 +133,7 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
 
     if (type == alert) {
         PRINTF("Alert erhalten.\n");
-        // TODO Alert-Auswertung
+        deleteSession(addr);
         return;
     }
 
