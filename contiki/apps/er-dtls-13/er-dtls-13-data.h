@@ -48,6 +48,8 @@ int createSession(uint32_t *buf, uip_ipaddr_t *addr);
 
 int getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type);
 
+int checkReadNum(uip_ipaddr_t *addr, uint8_t seq_num[6]);
+
 int deleteSession(uip_ipaddr_t *addr);
 
 // ----------------------------------------------------------------------------

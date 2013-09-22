@@ -9,7 +9,8 @@
 
 /*---------------------------------------------------------------------------*/
 
-uint32_t seq_num[SESSION_LIST_LEN];
+uint32_t seq_num_r[SESSION_LIST_LEN];
+uint32_t seq_num_w[SESSION_LIST_LEN];
 
 #define DEBUG 0
 
@@ -28,7 +29,7 @@ uint32_t seq_num[SESSION_LIST_LEN];
         for (i = 0; i < 16; i++) printf("%02X", ((uint8_t *) &session->addr)[i]);
         printf("\n    Epoch: %u\n    Valid: %u\n    Private-Key: ", session->epoch, session->valid);
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(session->private_key[i]));
-        printf("\n    Sequenznummer: %u", seq_num[index]);
+        printf("\n    Sequenznummer: Read: %u Write %u", seq_num_r[index], seq_num_w[index]);
 
         KeyBlock_t *kb = (KeyBlock_t *) RES_KEY_BLOCK_LIST;
         nvm_getVar(buffer, (fpoint_t) &kb[2 * index], sizeof(KeyBlock_t));
@@ -91,7 +92,8 @@ int createSession(uint32_t *buf, uip_ipaddr_t *addr) {
         nvm_setVar(session, (fpoint_t) &s[index], sizeof(Session_t));
         PRINTF("Session erstellt:\n");
         PRINTSESSION(index);
-        seq_num[index] = 1;
+        seq_num_r[index] = 1;
+        seq_num_w[index] = 1;
     }
 
     return 0;
@@ -120,11 +122,33 @@ int getSessionData(uint8_t *dst, uip_ipaddr_t *addr, SessionDataType type) {
             nvm_getVar(dst, (fpoint_t) &s[i].private_key, 32);
             return 32;
         case session_num_write:
-            num_buf = uip_htonl(seq_num[i]);
+            num_buf = uip_htonl(seq_num_w[i]);
             memcpy(dst + 2, &num_buf, 4);
-            seq_num[i]++;
+            seq_num_w[i]++;
             return 6;
     }
+    return 0;
+}
+
+int checkReadNum(uip_ipaddr_t *addr, uint8_t seq_num[6]) {
+    int index = getIndexOf(addr);
+    if (index == -1) {
+        PRINTF("checkReadNum: Keine Daten zur gesuchten IP gefunden\n");
+        // Ohne Session ist Epoch 0. seq_num irrelevant -> immer ok
+        return 0;
+    }
+
+    // Überlauf bei Subtraktion produziert große Zahl
+    uint32_t diff = 0;
+    diff += (seq_num[2] << 24);
+    diff += (seq_num[3] << 16);
+    diff += (seq_num[4] <<  8);
+    diff += (seq_num[5] <<  0);
+    diff -= seq_num_r[index];
+    PRINTF("checkReadNum: diff: %u\n", diff + 10);
+    if ((diff + 10) > 110) return -1; // Gültig ist  (seq_num_r - 10) bis (seq_num_r + 100)
+
+    seq_num_r[index] += (diff + 1);
     return 0;
 }
 
@@ -212,7 +236,8 @@ __attribute__((always_inline)) static void checkEpochIncrease(unsigned int index
         memset(buf + sizeof(KeyBlock_t), 0, sizeof(KeyBlock_t));
         nvm_setVar(buf, (fpoint_t) &kb[2 * index], 2 * sizeof(KeyBlock_t));
 
-        seq_num[index] = 1;
+        seq_num_r[index] = 1;
+        seq_num_w[index] = 1;
 
         PRINTF("Daten nach Epoch-Increase:\n");
         PRINTSESSION(index);

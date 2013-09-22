@@ -51,6 +51,7 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
         payload += 2;
     }
     if (record->version != dtls_1_2) {
+        PRINTF("Ungültige Protokollversion erhalten\n");
         sendAlert(addr, UIP_UDP_BUF->srcport, fatal, protocol_version);
         return;
     }
@@ -70,10 +71,19 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
         payload += record->length;
     }
 
+    uint32_t key_block = getKeyBlock(addr, EPOCH, 1);
+
+    // Durch getKeyBlock wurde eventuell die Epoche weitergeschaltet
+    // Deswegen wird erst jetzt die Sequenznummer geprüft
+    if (checkReadNum(addr, nonce + 6)) {
+        PRINTF("Ungültige Sequenznummer erhalten\n");
+        sendAlert(addr, UIP_UDP_BUF->srcport, fatal, decode_error);
+        return;
+    }
+
     // Bei Bedarf entschlüsseln
     if (EPOCH > 0) {
-        uint32_t key_block;
-        if ((key_block = getKeyBlock(addr, EPOCH, 1))) {
+        if (key_block) {
             len -= MAC_LEN;
             uint8_t oldMAC[MAC_LEN];
             memcpy(oldMAC, payload + len, MAC_LEN);
@@ -89,7 +99,7 @@ void dtls_parse_message(DTLSRecord_t *record, uint8_t len, CoapData_t *coapdata)
             aes_crypt(payload, len, key, nonce, 0);
             aes_crypt(payload, len, key, nonce, 1);
             if (memcmp(oldMAC, payload + len, MAC_LEN)) {
-                PRINTF("DTLS-MAC-Fehler. Paket ungültig.\n");
+                PRINTF("DTLS-MAC-Fehler. Paket ungültig\n");
                 sendAlert(addr, UIP_UDP_BUF->srcport, fatal, bad_record_mac);
                 return;
             }
