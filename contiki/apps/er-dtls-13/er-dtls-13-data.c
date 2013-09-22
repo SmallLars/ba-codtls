@@ -9,6 +9,8 @@
 
 /*---------------------------------------------------------------------------*/
 
+uint32_t seq_num[SESSION_LIST_LEN];
+
 #define DEBUG 0
 
 #if DEBUG
@@ -24,7 +26,7 @@
         nvm_getVar(buffer, (fpoint_t) &s[index], sizeof(Session_t));
         printf("    Index: %u \n    Session-ID: %.*s\n    IP: ", index, 8, session->session);
         for (i = 0; i < 16; i++) printf("%02X", ((uint8_t *) &session->addr)[i]);
-        printf("\n    Epoch: %u\n    Private-Key: ", session->epoch);
+        printf("\n    Epoch: %u\n    Valid: %u\n    Private-Key: ", session->epoch, session->valid);
         for (i = 0; i < 8; i++) printf("%08X", uip_htonl(session->private_key[i]));
         printf("\n    Sequenznummer: %u", seq_num[index]);
 
@@ -42,11 +44,9 @@
     #define PRINTSESSION(i)
 #endif
 
-uint32_t seq_num[10];
-
 /* Private Funktionsprototypen --------------------------------------------- */
 
-int getIndexOf(uip_ipaddr_t *addr);
+static int getIndexOf(uip_ipaddr_t *addr);
 __attribute__((always_inline)) static void checkEpochIncrease(unsigned int index, uint16_t epoch);
 
 /* Öffentliche Funktionen -------------------------------------------------- */
@@ -56,7 +56,7 @@ int createSession(uint32_t *buf, uip_ipaddr_t *addr) {
 
     Session_t *session = (Session_t *) (buf + 8);
     Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
-    int32_t index = getIndexOf(addr);
+    int index = getIndexOf(addr);
 
     // Ein neuer private Key für ECDH wird in jedem Fall generiert
     nvm_getVar(buf, RES_ECC_ORDER, LEN_ECC_ORDER);
@@ -77,22 +77,21 @@ int createSession(uint32_t *buf, uip_ipaddr_t *addr) {
         PRINTF("Session aktualisiert:\n");
         PRINTSESSION(index);
     } else {
+        index = getIndexOf(NULL);;
+        if (index < 0)
+            return -1;
+
         uip_ipaddr_copy(&session->addr, addr);
         for (i = 0; i < 8; i++) {
             nvm_getVar(session->session + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
         }
         session->epoch = 0;
+        session->valid = 1;
 
-        uint8_t list_len;
-        nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
-        if (list_len == 10)
-            return -1;
-        nvm_setVar(session, (fpoint_t) &s[list_len], sizeof(Session_t));
+        nvm_setVar(session, (fpoint_t) &s[index], sizeof(Session_t));
         PRINTF("Session erstellt:\n");
-        PRINTSESSION(list_len);
-        list_len++;
-        nvm_setVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
-        seq_num[list_len] = 1;
+        PRINTSESSION(index);
+        seq_num[index] = 1;
     }
 
     return 0;
@@ -136,9 +135,9 @@ int deleteSession(uip_ipaddr_t *addr) {
         return -1;
     }
 
-    seq_num[index] = 0;
+    uint16_t valid = 0;
     Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
-    nvm_setVar(&seq_num[index], (fpoint_t) &s[index].epoch, 2);
+    nvm_setVar(&valid, (fpoint_t) &s[index].valid, 2);
 }
 
 int insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {
@@ -180,14 +179,18 @@ fpoint_t getKeyBlock(uip_ipaddr_t *addr, uint16_t epoch, int update) {
 
 /* Private Funktionen ------------------------------------------------------ */
 
-int getIndexOf(uip_ipaddr_t *addr) {
-    uint8_t list_len;
-    nvm_getVar(&list_len, RES_SESSION_LEN, LEN_SESSION_LEN);
-
+static int getIndexOf(uip_ipaddr_t *addr) {
     Session_t *s = (Session_t *) RES_SESSION_LIST;
+    uint16_t valid = (addr == NULL ? 0 : 1);
+
     unsigned int i;
-    for (i = 0; i < list_len; i++) {
-        if (nvm_cmp(addr, (fpoint_t) &s[i].addr, sizeof(uip_ipaddr_t)) == 0) return i;
+    for (i = 0; i < SESSION_LIST_LEN; i++) {
+        if (nvm_cmp(&valid, (fpoint_t) &s[i].valid, 2) == 0) {
+            if (addr == NULL) return i;
+            if (nvm_cmp(addr, (fpoint_t) &s[i].addr, sizeof(uip_ipaddr_t)) == 0) {
+                return i;
+            }
+        }
     }
     return -1;
 }

@@ -18,7 +18,7 @@
 // 0x1B000 - 0x1BFFF Random Zugriff Block 2.2
 // 0x1C000 - 0x1CFFF Stack ohne Pop-Funktion
 // 0x1D000 - 0x1DFFF Fehlermeldungen
-// 0x1E000 - 0x1EFFF MAC, UUID, PSK, ECC-Base-Point, Name, Model, Flashzeitpunkt
+// 0x1E000 - 0x1EFFF MAC, UUID, PSK, PSK-Zeichen, ECC-Base-Point, Name, Model, Flashzeitpunkt
 // 0x1F000 - 0x1FFFF Systemreserviert
 
 //Read Only Fehlermeldungen

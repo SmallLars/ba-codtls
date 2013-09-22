@@ -61,19 +61,14 @@
 #define RES_NEWPSK             2
 #define LEN_NEWPSK            16
 
-#define RES_SESSION_LEN       18
-#define LEN_SESSION_LEN        1
+#define SESSION_LIST_LEN      10
+#define RES_SESSION_LIST      18
+#define LEN_SESSION_LIST     600
 
-#define RES_SESSION_LIST      19
-#define LEN_SESSION_LIST     580
-
-#define RES_KEY_BLOCK_LEN    599
-#define LEN_KEY_BLOCK_LEN      1
-
-#define RES_KEY_BLOCK_LIST   600
+#define RES_KEY_BLOCK_LIST   618
 #define LEN_KEY_BLOCK_LIST   800
 
-#define LEN_BLOCK_1         1400
+#define LEN_BLOCK_1         1418
 #define LEN_BLOCK_2            1
 
 typedef uint32_t fpoint_t;   // Adresse im Flash-Speicher
