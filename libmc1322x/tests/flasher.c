@@ -163,6 +163,8 @@ void main(void) {
 	dbg_put_hex32(len);
 	dbg_putstr("\n\r");
 
+	putstr("flasher done\n\r");
+
 	state = SCAN_X; addr=0;
 	while((c=getc())) {
 		if(state == SCAN_X) {
@@ -199,8 +201,6 @@ void main(void) {
 			state=SCAN_X;
 		}
 	}
-
-	putstr("flasher done\n\r");
 
 	while(1) {continue;};
 }

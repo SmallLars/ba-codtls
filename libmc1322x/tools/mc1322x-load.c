@@ -261,15 +261,15 @@ int main(int argc, char **argv) {
     }
   }
 
+  /* Wait for flasher done */
+  waitFor("flasher done", 0);
+
   /* Send the remaining arguments */
   if (args) {
     printf("Sending %s\n", args);
     r = write(pfd, (const void*)args, strlen(args));
     r = write(pfd, (const void*)",", 1);
   }
-
-  /* Wait for flasher done */
-  waitFor("flasher done", 0);
 
   /* Drop in echo mode */
   if (!do_exit) {
