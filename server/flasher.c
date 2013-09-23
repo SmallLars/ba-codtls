@@ -48,19 +48,8 @@ void flasher_handler(void* request, void* response, uint8_t *buffer, uint16_t pr
             #if DEBUG
                 printflash();
             #endif
-            // nvm_init(); Bei Bedarf auch Random Zugriff Flash löschen
-            uint32_t reset = 0x80003050;
-            uint32_t value;
-            asm volatile(
-                "ldr %[v], [%[r]] \n\t"
-                "str %[v], [%[r]] \n\t"
-            : /* out */
-                [v] "+r" (value)
-            : /* in */
-                [r] "r" (reset)
-            : /* clobber list */
-                "memory"
-            );
+            // nvm_init(); Bei Bedarf auch RW-Flash löschen. Wird momentan eh bei Systemstart erledigt.
+            soft_reset();
         } else {
             if (block == 0) {
                 f_block = 0;
