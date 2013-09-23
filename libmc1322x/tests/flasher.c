@@ -161,6 +161,43 @@ void main(void) {
 
 	putstr("flasher done");
 
+	state = SCAN_X; addr=0;
+	while((c=getc())) {
+		if(state == SCAN_X) {
+			/* read until we see an 'x' */
+			if(c==0) { break; }
+			if(c!='x'){ continue; } 	
+			/* go to read_chars once we have an 'x' */
+			state = READ_CHARS;
+			i = 0; 
+		}
+		if(state == READ_CHARS) {
+			/* read all the chars up to a ',' */
+			((uint8_t *)buf)[i++] = c;
+			/* after reading a ',' */
+			/* goto PROCESS state */
+			if((c == ',') || (c == 0)) { state = PROCESS; }				
+		}
+		if(state == PROCESS) {
+			if(addr==0) {
+				/*interpret the string as the starting address */
+				addr = to_u32(buf);				
+			} else {
+				/* string is data to write */
+				data = to_u32(buf);
+				putstr("writing addr ");
+				put_hex32(addr);
+				putstr(" data ");
+				put_hex32(data);
+				putstr("\n\r");
+				err = nvm_write(gNvmInternalInterface_c, 1, (uint8_t *)&data, addr, 4);
+				addr += 4;
+			}
+			/* look for the next 'x' */
+			state=SCAN_X;
+		}
+	}
+
 	while(1) {continue;};
 }
 
