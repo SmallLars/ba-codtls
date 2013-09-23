@@ -39,7 +39,7 @@
 #include "tests.h"
 #include "config.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG
 #define dbg_putchr(...) putchr(__VA_ARGS__)
 #define dbg_putstr(...) putstr(__VA_ARGS__)
