@@ -50,7 +50,7 @@ upload:
 	-s $(CONTIKI_PROJECT)_e_redbee-econotag.bin \
 	-c 'sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset' \
 	-t /dev/ttyUSB1 -l -e \
-
+	
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
 listen:
