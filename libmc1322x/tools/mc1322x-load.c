@@ -51,6 +51,7 @@ int first_delay = 50;
 int second_delay = 100;
 int do_exit = 0;
 int zerolen = 0;
+int ownlen = 0;
 char *args = NULL;
 
 struct stat sbuf;
@@ -96,7 +97,7 @@ int main(int argc, char **argv) {
   opterr = 0;
 
   /* Parse options */
-  while ((c = getopt(argc, argv, "f:s:zt:vu:r:c:a:b:eh")) != -1) {
+  while ((c = getopt(argc, argv, "f:s:zlt:vu:r:c:a:b:eh")) != -1) {
     switch (c)
     {
       case 'f':
@@ -107,6 +108,9 @@ int main(int argc, char **argv) {
         break;
       case 'z':
         zerolen = 1;
+        break;
+      case 'l':
+        ownlen = 1;
         break;
       case 't':
         term = optarg;
@@ -249,11 +253,22 @@ int main(int argc, char **argv) {
         printf("Cannot open secondary file %s!\n", second);
         return -1;
       }
-      s = sbuf.st_size;
-      printf("Sending %s (%i bytes)...\n", second, s);
-      r = write(pfd, (const void*)&s, 4);
-      i = 0;
+
+      if (ownlen) {
+        s = sbuf.st_size;
+        r = write(pfd, (const void*) &s, 4);
+        printf("Sending %s (%i bytes)...\n", second, s);
+        r = read(sfd, &s, 4);
+      } else {
+        s = sbuf.st_size + 4;
+        r = write(pfd, (const void*) &s, 4);
+        s = sbuf.st_size;
+        printf("Sending len (4 bytes) + %s (%i bytes)...\n", second, s);
+      }
+      r = write(pfd, (const void*) &s, 4);
+
       r = read(sfd, buf, 1);
+      i = 4;
       while (r > 0) {
         do {
           usleep(second_delay);
@@ -297,6 +312,7 @@ void help(void)
   printf("       -f required: binary file to load\n");
   printf("       -s optional: secondary binary file to send\n");
   printf("       -z optional: send a zero length file as secondary\n");
+  printf("       -l optional: secondary file contains len in first 4 Bytes (little endian)\n");
   printf("       -t, terminal default: /dev/ttyUSB0\n");
   printf("       -u, baud rate default: 115200\n");
   printf("       -r [none|rts] flow control default: rts\n");
