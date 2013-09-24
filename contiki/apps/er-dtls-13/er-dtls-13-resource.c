@@ -77,14 +77,17 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             coap_error_message = "AlreadyInUse";
             return;
         }
+    } else {
+        resource_busy = 1;
+        uip_ipaddr_copy(src_addr, &UIP_IP_BUF->srcipaddr);
     }
-
-    resource_busy = 1;
-    uip_ipaddr_copy(src_addr, &UIP_IP_BUF->srcipaddr);
 
     if (coap_block1_handler(request, response, big_msg, &big_msg_len, 128)) {
         return;
     }
+
+    // Busy wird zunächst aufgehoben. Block 1 Nachricht ist vollständig. Neue Block 1 Nachricht kann eintreffen.
+    resource_busy = 0;
 
     if (big_msg_len > 0) {
         DTLSContent_t *content = (DTLSContent_t *) big_msg;
@@ -109,7 +112,9 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             uint8_t *new_cookie = buf + 8;
 
             if (cookie_len > 0) {
-                // Abspeichern für Finished-Hash
+                // Abspeichern für Finished-Hash. Kritisch, da Cookie noch nicht geprüft.
+                // Derzeit nicht anders möglich, da generateCookie den alten Cookie entfernt,
+                // dieser aber zur Berechnung des Finished-Hash benötigt wird.
                 stack_init();
                 stack_push(big_msg, big_msg_len);
                 client_random_offset = (uint32_t) clienthello->random.random_bytes - (uint32_t) big_msg;
@@ -132,6 +137,10 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
                 coap_set_payload(response, buffer + 1, buffer[0]);
             } else {
                 PRINTF("ClientHello mit korrektem Cookie erhalten\n");
+
+                // Zustand wird erzeugt, der erst mit der nächsten Anfrage abgearbeitet ist.
+                // Bis dahin sind keine weiteren Anfragen möglich.
+                resource_busy = 1;
 
                 AlertDescription alert = checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len));
                 if (alert) {
@@ -269,8 +278,7 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
     }
  
     dtls_handler_end: ;
-
-    big_msg_len = 0;
+        big_msg_len = 0;
 }
 
 /* ------------------------------------------------------------------------- */

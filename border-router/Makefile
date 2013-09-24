@@ -51,16 +51,13 @@ upload:
 	
 	sudo ../libmc1322x/tools/ftditools/bbmc -l redbee-econotag -i 0 reset
 
-border:
-	sudo ../contiki/tools/tunslip6 -s /dev/ttyUSB1 aaaa::1/64
-
-include $(CONTIKI)/Makefile.include
-
 $(CONTIKI)/tools/tunslip6:	$(CONTIKI)/tools/tunslip6.c
 	(cd $(CONTIKI)/tools && $(MAKE) tunslip6)
 
-connect-router:	$(CONTIKI)/tools/tunslip6
-	sudo $(CONTIKI)/tools/tunslip6 $(PREFIX)
+border: $(CONTIKI)/tools/tunslip6
+	sudo $(CONTIKI)/tools/tunslip6 -s /dev/ttyUSB1 $(PREFIX)
 
-connect-router-cooja:	$(CONTIKI)/tools/tunslip6
+border-cooja: $(CONTIKI)/tools/tunslip6
 	sudo $(CONTIKI)/tools/tunslip6 -a 127.0.0.1 $(PREFIX)
+
+include $(CONTIKI)/Makefile.include

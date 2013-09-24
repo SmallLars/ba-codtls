@@ -1,6 +1,6 @@
 
 #include <mc1322x.h>
-//#include <board.h>
+#include <board.h>
 
 #include "gpio-util.h"
 
