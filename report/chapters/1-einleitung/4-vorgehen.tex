@@ -1,27 +1,24 @@
 \section{Vorgehensweise}
 
 Im Vordergrund soll die Implementierung eines Sicherheitsprotokolls stehen, das sich an den Prinzipien von \acr{dtls} orientiert
-und einige der Vorschläge aus dem Internet-Entwurf von K. Hartke und O. Bergmann, und/oder eigene Ideen, realisiert.
-Dabei liegt ein besonderes Interesse darauf den Handshake über \acr{coap} \cite{draftcoap13} zu realisieren und somit einige in \acr{dtls} eingefügte
-Konzepte überflüssig zu machen. Die Implementierung wird im Anschluss durch einen Vergleich mit \acr{dtls} evaluiert, wobei folgende Punkte eine
-Rolle spielen sollen: Volumen des generierten Traffics, Größe/Komplexität des Quellcodes und die vom Protokoll benötigte Speichermenge.
+und Vorschläge aus dem \acr{ietf}-Draft "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} aufgreift.
+Ein besonderes Interesse liegt darauf, den Handshake über \acr{coap} \cite{draftcoap13} zu realisieren und somit einige in \acr{dtls} eingefügte
+Mechanismen überflüssig zu machen. Die Implementierung wird im Anschluss durch einen Vergleich mit \acr{dtls} evaluiert, wobei folgende Punkte eine
+Rolle spielen: Volumen des generierten Datenaufkommens, Umfang des Quellcodes und die vom Protokoll benötigte Speichermenge.
 
-Die Implementierung besteht aus dem Clienten auf einem gängigen PC/Laptop, bei dem es keine speziellen Einschränkungen an Energie,
-Speicher oder Effizienz gibt, und aus dem Server, der für einen Redbee Econotag \cite{econotag} mit dem \glos{mc1322}
-Mikrocontroller \cite{mc1322} optimiert werden soll. Da der genannte Mikrocontroller die Verschlüsselung mit dem \acr{aes} im \acr{ctr}- und \acr{cbc}-Mode
-in Hardware unterstützt und die Rechenleistung sowie der Speicher beschränkt ist, soll nur eine \glos{ciphersuite} "`TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8"',
-in Anlehnung an den RFC 6655 \cite{rfc6655}, realisiert werden. Dieses gibt einen Schlüsselaustausch mit
-Hilfe elliptischer Kurven vor, die mit kleineren Zahlen genau so sicher sind wie ein standard Diffie-Hellman-Schlüsselaustausch und sich somit
-effizient berechnen lassen. Zusätzlich wird auch ein \acr{psk} verwendet, damit der Verbindungsaufbau nur den Clienten möglich ist, die über diesen
-Schlüssel verfügen. Die Verschlüsselung der Anwendungsdaten erfolgt dann im "`\acr{aead}"' Modus \cite{rfc5116}
-wobei sich hier "`\acr{ccm}"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht
-aus einer Verschlüsselung der Daten durch \acr{aes} im \acr{ctr}-Modus während der dazugehörende \acr{mac} durch \acr{aes} im \acr{cbc}-Modus berechnet wird.
-Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
-Die dafür notwendigen verbindungsspezifischen Daten wie bspw. der Key-Block, sollen dabei im Flash-Speicher des Redbee Econotags
-abgelegt werden, so dass nur die für das aktuelle Paket benötigten Daten im RAM-Speicher befinden. Auf diese Weise lässt sich
-die Anzahl der möglichen sicheren Verbindungen trotz Beschränkung maximieren.
+Die Implementierung besteht aus dem Client auf einem gängigen PC, bei dem es keine speziellen Einschränkungen an Energie,
+Speicher oder Effizienz gibt, und aus dem Server, der für einen Redbee Econotag \cite{econotag} mit dem \glos{mc1322} \cite{mc1322}
+Mikrocontroller optimiert werden soll. Da der genannte Mikrocontroller die Verschlüsselung mit dem \acr{aes} im \acr{ctr}- und \acr{cbc}-Mode
+in Hardware unterstützt und die Rechenleistung sowie der Speicher beschränkt ist, soll nur eine \glos{ciphersuite} realisiert werden.
+Für diese dient "`TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8"' aus RFC 6655 \cite{rfc6655} als Grundlage, wobei dort, aufgrund von Erfahrungen
+aus dem Bachelorprojekt, Anpassungen notwendig sind. Durch diese wird für den Verbindungsaufbau ein Schlüsselaustausch vorgegeben, wobei zusätzlich
+ein \acr{psk} verwendet wird, damit sich die Kommunikationspartner gegenseitig authentifzieren können. Ein Verbindungsaufbau ist somit nur möglich,
+wenn beide Kommunikationspartner vorher einen gemeinsamen \acr{psk} vereinbart haben. Die Verschlüsselung der Anwendungsdaten erfolgt dann im Modus
+"`\acr{aead}"' \cite{rfc5116} wobei sich hier "`\acr{ccm}"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht
+aus einer Verschlüsselung der Daten mit \acr{aes} im \acr{ctr}-Modus, während der dazugehörende \acr{mac} durch \acr{aes} im \acr{cbc}-Modus
+berechnet wird. Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
 
 Bei der Evaluation soll die Datenmenge der Header-Daten sowohl beim Verbindungsaufbau als auch bei der Übertragung von Anwendungsdaten
-mit einer reinen \acr{dtls}-Implementierung verglichen werden. Dabei werden nicht nur fehlerfreie Verbindungen betrachtet sondern auch Paketverluste
+mit einer reinen \acr{dtls}-Implementierung verglichen werden. Dabei werden nicht nur fehlerfreie Übertragungen betrachtet, sondern auch Paketverluste
 mit einbezogen. Verglichen wird auch der notwendige Speicherbedarf bei Verbindungsaufbau und Übertragung der Anwendungsdaten.
-Ebenso soll die Größe/Komplexität des zugrunde liegenden Quellcodes bewertet werden.
+Ebenso soll der Umfang des zugrunde liegenden Quellcodes bewertet werden.
