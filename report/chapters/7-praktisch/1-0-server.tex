@@ -51,9 +51,9 @@ Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementie
 zu einer Fragmentierung auf IP-Ebene kommt. Da diese Funktion für den \acr{dtls}-Handshake notwendig ist, wurde sie für Datenmengen bis 128 Byte nachgerüstet,
 wobei dieser Wert in der Datei "`contiki/apps/er-coap-13/er-coap-13.h"' durch Änderung von "`COAP\_BLOCK1\_BUFFER\_SIZE"' eingestellt werden kann. Übertragen
 werden mit Hilfe der Option ein ClientHello oder ClientKeyExchange + ChangeCipherSpec + Finished, wobei die Länge von letzterem mit insgesamt 112 Byte
-(87 + 3 + 22), durch die einzig definierte Ciphersuit, fest ist. Anders ist dies bei dem ClientHello, welches durch eine Vielzahl, vom Client beherrschter
-Ciphersuits, sehr viel größer als 128 Byte werden kann. Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`5.01 NOT IMPLEMENTED"' mit einem
-Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an Ciphersuits reduzieren kann, um der maximalen Größe gerecht zu werden.
+(87 + 3 + 22), durch die einzig definierte \glos{ciphersuite}, fest ist. Anders ist dies bei dem ClientHello, welches durch eine Vielzahl, vom Client beherrschter
+\glospl{ciphersuite}, sehr viel größer als 128 Byte werden kann. Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`5.01 NOT IMPLEMENTED"' mit einem
+Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an \glospl{ciphersuite} reduzieren kann, um der maximalen Größe gerecht zu werden.
 
 Während bisher jede \acr{coap}-Anfrage in der \acr{coap} 13 Implementierung zu einem Aufruf des entsprechenden Ressource-Handlers geführt hat, verhält sich
 dies bei einer \acr{coap}-Anfrage mit der Block 1-Option anders. Hier werden die Daten zunächst in einem Buffer gesammelt und ein Aufruf des Ressource-Handlers

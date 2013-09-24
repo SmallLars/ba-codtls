@@ -105,7 +105,7 @@ den \acr{psk} realsiert werden soll und auf die Zertifikate verzichtet wird, um 
   \label{fig:handshake}
 \end{figure}
 
-Eingeleitet wird der Handshake mit einem ClientHello, in dem der Client seine Möglichkeiten bekannt gibt. Dazu gehören u.a. die unterstützten Protokollversionen, \glospl{ciphersuit}
+Eingeleitet wird der Handshake mit einem ClientHello, in dem der Client seine Möglichkeiten bekannt gibt. Dazu gehören u.a. die unterstützten Protokollversionen, \glospl{ciphersuite}
 und Kompressionsmethoden. Während der Server bei TSL nun direkt mit einem ServerHello und weiteren Handshake-Paketen antworten kann, lässt sich das bei DTLS so nicht
 realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem Absender versendet werden. Auf diese Art könnte ein \acr{dos} Angriff
 durchgeführt werden, in dem zahllose Pakete mit unterschiedlichen Absendern an den Server gesendet werden, welche alle ein ClientHello enthalten. Problematisch ist

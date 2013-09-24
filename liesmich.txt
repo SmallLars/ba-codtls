@@ -5,6 +5,7 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
         Für client:            uuid-dev, libssl-dev
         Für blaster:           uuid-dev, libqrencode-dev
         Für ftditools:         libftdi-dev
+        Zum Flashen mit Perl:  libdevice-serialport-perl, libterm-readkey-perl
 
     Kompiler:
         arm-2008q3-66-arm-none-eabi-i686-pc-linux-gnu.tar.bz2 entpacken
@@ -15,7 +16,6 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
         libmc1322x/tests:           make TARGET=redbee-econotag
         libmc1322x/tools:           gcc mc1322x-load.c -o mc1322x-load
         libmc1322x/tools/ftditools: make
-        contiki/tools:              make tunslip6
 
 client kompilieren:
     client/libcoap-4.0.1: ./configure
@@ -31,7 +31,7 @@ border-router und econotag:
     Flash löschen: make clear
 
     Nur bei server: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
-    Nur bei border-router: "make border" zur Aktivierung von Tunslip über /dev/ttyUSB3
+    Nur bei border-router: "make border" zur Aktivierung von Tunslip über /dev/ttyUSB1
 
     make clear löscht in beiden Fällen das Gerät an Index 0
     make upload verwendet in beiden Fällen /dev/ttyUSB1
@@ -41,6 +41,3 @@ border-router und econotag:
 --- TODO vielleicht. Ist noch zu testen ob sinnvoll ->
 usermod -aG dialout lars
 groups lars
-
-Ausgebaut weil nun C-Flasher verwendet wird:
-Für das Flashen:       libdevice-serialport-perl, libterm-readkey-perl

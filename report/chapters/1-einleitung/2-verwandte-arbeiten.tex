@@ -27,7 +27,7 @@ automatisch geschlossen werden um neue Verbindungen zu ermöglichen.
 \subsection{A Hitchhiker's Guide to the (Datagram) Transport Layer Security Protocol}
 Im Internet-Entwurf "`A Hitchhiker's Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} haben H. Tschofenig, S.S. Kumar
 und S. Keoh zunächst die Unterschiede von \acr{tls} 1.0, 1.1 und 1.2 erläutert und klargestellt, dass die Details beim \glos{handshake} von der Wahl des
-\glos{ciphersuit}{s} abhängen. Anhand einiger Beispiele erläutern sie, dass es wichtig ist, sich der Position eines Gerätes in einer Verbindung bewusst zu sein.
+\glospl{ciphersuite} abhängen. Anhand einiger Beispiele erläutern sie, dass es wichtig ist, sich der Position eines Gerätes in einer Verbindung bewusst zu sein.
 So kann ein Sensor mit beschränkten Ressourcen sowohl als Server als auch als Client realisiert werden wobei es auch auf die Anzahl der möglichen
 Verbindungen ankommt. Ein Sensor der als Client agiert wird mit großer Wahrscheinlichkeit immer nur einen Server kontaktieren um dort neue Sensordaten
 zu hinterlegen, während ein als Server realisierter Sensor durchaus auch Anfragen von mehreren Clienten erhalten kann. Je klarer die Position und die
@@ -36,10 +36,10 @@ Umgebung des Sensors ist, desto weniger flexibel kann dieser Implementiert werde
 Im weiteren Verlauf gehen sie auf wichtige Design-Entscheidungen ein und Erläutern deren Bedeutung und mögliche Auswirkungen.
 
 Kernstück des Entwurfs ist die Auswertung des Speicherverbrauchs, sowohl im \acr{rom} als auch im \acr{ram}, und die Menge der Übertragenen Daten bei einem \glos{handshake}.
-Anhand eines modifizierten Prototypens zeigen sie dort auf, welche grundlegenden Teile von \acr{dtls}, ohne Berücksichtigung der \glos{ciphersuit} spezifischen Funktionen,
+Anhand eines modifizierten Prototypens zeigen sie dort auf, welche grundlegenden Teile von \acr{dtls}, ohne Berücksichtigung der \glos{ciphersuite} spezifischen Funktionen,
 wieviel Speicher verbrauchen und werten die Menge der übertragenen Daten in einem kompletten \glos{handshake} für die unterschiedlichen Protokollschichten aus.
 Des weiteren haben sie die Codegrößen von bspw. Hash-Funktionen und anderen für \acr{tls} notwendigen Berechnungen ausgewertet, wie sie in unterschiedlichen
-\glos{ciphersuit}{s} verwendet werden.
+\glospl{ciphersuite} verwendet werden.
 
 Abschließend stellen sie fest, dass sie \acr{tls}/\acr{dtls} durchaus auf eingeschränkte Umgebungen zuscheiden lässt, wobei mehr Flexibilität aber zu einem
 größeren Programmcode führt.

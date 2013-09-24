@@ -1,13 +1,14 @@
 \section{Motivation}
-Während es im Internet schon seit Mitte der 90er Jahre das  "`\acr{tls} Protocol"' \cite{rfc5246} (früher SSL) gibt, um den Datenverkehr
-über das "`\acr{tcp}"' abzusichern fehlte lange Zeit ein Standard um den Datenverkehr über das "`\acr{udp}"' zu sichern, während die
-Beliebtheit des Protokolls, unter anderem im Bereich der Onlinespiele, zunahm \cite[Kapitel 1]{rfc6347}. Um diese Lücke zu schließen begann
-die \acr{ietf} 2004 damit ein Protokoll nach dem Vorbild von \acr{tls} zu entwickeln, was 2006 schließlich zu der Standardisierung des
-"`\acr{dtls} Protocol"' \cite{rfc6347} führte. Dieses ist fast identisch mit \acr{tls}, wurde jedoch um Mechanismen ergänzt, die in \acr{udp}
-im Gegensatz zu \acr{tcp} fehlen. Dazu gehört insbesondere die Zuverlässigkeit der Datenübertragung die beim Verbindungsaufbau und somit der
-Aushandlung der Sicherheitsmechanismen notwendig ist. \acr{tls} und \acr{dtls} haben sich im Internet bewährt, sind jedoch zu einer Zeit
-entstanden, als das "`\acr{wot}"' noch nicht vertreten war. Die dort verwendeten Geräte haben nur sehr wenig Ressourcen zur Verfügung.
-Dies betrifft neben wenig Rechenleistung und Speicher auch den Energievorrat. Etabliert hat sich dort das "`\acr{coap}"' \cite{draftcoap13}
-über \acr{udp} aufgrund seines schlanken Designs. Passend zu \acr{udp} ist das umfangreiche \acr{dtls}-Protokoll, das sich jedoch nicht so
-einfach auf "`kleinen"' Endgeräten realisieren lässt. Genau hier soll diese Arbeit ansetzen und \acr{dtls} entsprechend Anpassen damit es
-auch auf Geräten mit wenig Ressourcen funktionieren kann.
+Während es im Internet schon seit Mitte der 1990 Jahre das \acr{ssl} gibt, um den Datenverkehr
+über das \acr{tcp} abzusichern, fehlte lange Zeit ein Standard, um den Datenverkehr über das \acr{udp} zu sichern.
+Während \acr{ssl} weiterentwickelt, und schließlich in \acr{tls} \cite{rfc5246} umbenannt wurde, nahm die
+Beliebtheit von \acr{udp}, unter anderem im Bereich der Onlinespiele, zu \cite[Kapitel 1]{rfc6347}. Um dort ebenfalls
+eine sichere Datenübertragung zu ermöglichen, begann die \acr{ietf} 2004 damit, ein Protokoll nach dem Vorbild von \acr{tls} zu entwickeln,
+was 2006 schließlich zu der Standardisierung des \acr{dtls} \cite{rfc6347} führte. Dieses ist fast identisch mit \acr{tls}, wurde jedoch um
+Mechanismen ergänzt, die in \acr{udp} im Gegensatz zu \acr{tcp} fehlen. Dazu gehört insbesondere die Zuverlässigkeit der Datenübertragung,
+die beim Verbindungsaufbau und somit der Aushandlung der Sicherheitsmechanismen notwendig ist. \acr{tls} und \acr{dtls} haben sich im Internet
+bewährt, sind jedoch zu einer Zeit entstanden, als das \acr{wot} noch nicht vertreten war. Die dort verwendeten Endgeräte haben nur sehr wenig
+Ressourcen zur Verfügung. Dies betrifft neben wenig Rechenleistung und Speicher, der vielfach unter 100 KiB liegt, auch den Energievorrat, der
+über eine Batterie realisiert wird. Etabliert hat sich dort das \acr{coap} \cite{draftcoap13} über \acr{udp} aufgrund seines schlanken Designs.
+Passend zu \acr{udp} ist \acr{dtls}, das sich, aufgrund seines Umfangs, jedoch nicht so einfach auf den vorher beschriebenen Endgeräten realisieren
+lässt. Genau hier soll diese Arbeit ansetzen und \acr{dtls} entsprechend anpassen damit es auch auf Geräten mit wenig Ressourcen funktionieren kann.

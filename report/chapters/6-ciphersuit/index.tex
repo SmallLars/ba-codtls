@@ -1,16 +1,16 @@
-\chapter{Definition des Ciphersuits}
+\chapter{Definition des Cipher-Suites}
 
-Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des Handshakes ist es notwendig ein geeignetes Ciphersuit zu definieren.
+Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des Handshakes ist es notwendig eine geeignete \glos{ciphersuite} zu definieren.
 Dieses gibt vor, welche Mechanismen für die Authentisierung genutzt werden und auf Grundlage welcher Algorithmen diese durchgeführt wird. Auch kann
 ein Verfahren zum Schlüsselaustausch definiert werden. Für die Übertragung von Anwendungsdaten ist schließlich ein Verschlüsselungsverfahren festgelegt,
-das Vertraulichkeit und/oder Integrität sicherstellen soll. Das Ciphersuit beeinflusst somit wesentlich, welche und wieviel Daten während des Handshakes
+das Vertraulichkeit und/oder Integrität sicherstellen soll. Die \glos{ciphersuite} beeinflusst somit wesentlich, welche und wieviel Daten während des Handshakes
 ausgetauscht werden und welche Berechnungen notwendig sind. Je nach Verfahren können diese sehr Umfangreich werden und sind somit insbesondere für eingeschränkte
 Umgebungen nicht immer geeignet.
 
 Da der Mikrocontroller die Verschlüsselung mit \acr{aes}-128 im CTR- und CBC-Mode in Hardware unterstützt, kommen zunächst die im RFC 6655 \cite{rfc6655}
-aufgeführten Ciphersuits in Frage. Diese nutzen für die Verschlüsselung den \acr{ccm}-Modus der durch die Hardware einfach und effizient realisiert werden
-kann. Während in Kapitel 3 einige Ciphersuits definiert sind, die zur Berechnung des Schlüssels das rechenaufwendige \glos{rsa} benutzen, sind in Kapitel 4
-einige Ciphersuits für \acr{aes}-128 definiert, die einen \acr{psk} verwenden und von RFC 4279 \cite{rfc4279} abgleitet wurden. Der einzige Unterschied besteht
+aufgeführten \glospl{ciphersuite} in Frage. Diese nutzen für die Verschlüsselung den \acr{ccm}-Modus der durch die Hardware einfach und effizient realisiert werden
+kann. Während in Kapitel 3 einige \glospl{ciphersuite} definiert sind, die zur Berechnung des Schlüssels das rechenaufwendige \glos{rsa} benutzen, sind in Kapitel 4
+einige \glospl{ciphersuite} für \acr{aes}-128 definiert, die einen \acr{psk} verwenden und von RFC 4279 \cite{rfc4279} abgleitet wurden. Der einzige Unterschied besteht
 hier darin, dass für die Berechnung des MAC in RFC 4279 der \acr{sha} verwendet wird.
 \begin{enumerate}
   \item TLS\_PSK\_WITH\_AES\_128\_CCM
@@ -21,9 +21,9 @@ hier darin, dass für die Berechnung des MAC in RFC 4279 der \acr{sha} verwendet
 Während 1 und 2 einen 16 Byte langen MAC benutzen, ist dieser bei 3 und 4 nur 8 Byte lang. Da der MAC an jedes verschlüsselte Datenpaket angehangen wird um die
 Integrität sicherzustellen, verkürzt sich dadurch die ohnehin geringe Menge an Anwendungsdaten (siehe Kapitel \ref{sec:handshake}). Zwar ist es leichter
 einen 8 Byte langen MAC zu fälschen, da dieser anstatt $ 2^128 $ Werten, wie bei einem 16 Byte MAC, nur $ 2^64 $ Werte annehmen kann, aber dennoch fällt die
-Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Version womit Ciphersuit 1 und 2 nicht weiter betrachtet werden.
+Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Version womit \glos{ciphersuite} 1 und 2 nicht weiter betrachtet werden.
 
-Im Unterschied zu Ciphersuit 3 wird bei Ciphersuit 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
+Im Unterschied zu \glos{ciphersuite} 3 wird bei \glos{ciphersuite} 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
 Diffie-Hellman-Schlüsselaustausch durchgeführt und dessen Ergebnis mit dem \acr{psk} kombiniert. Der große Unterschied besteht darin, dass
 ein Angreifer mit Kenntnis des \acr{psk} ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch jederzeit in der Lage ist den Schlüssel zu
 berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des Handshakes gelauscht hat.
@@ -31,7 +31,7 @@ Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs ist er nich
 entschlüssel. Problematisch bleibt nur ein \glos{mitma} während des Handshakes. Verhindert ein Angreifer die direkte
 Kommunikation und leitet den Handshake über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
 zukünftigen Datenverkehr mitlesen. Dies fällt erst dann auf, wenn der Angreifer verschwindet, da die beiden Parteien ohne ihn nicht
-direkt kommunizieren können. Die Verwendung von Ciphersuit 3 kommt somit nicht in Frage, womit Chipersuit 4 hier zunächst das Mittel
+direkt kommunizieren können. Die Verwendung von \glos{ciphersuite} 3 kommt somit nicht in Frage, womit \glos{ciphersuite} 4 hier zunächst das Mittel
 der Wahl ist.
 
 Problematisch ist jedoch, dass ein Diffie-Hellman-Schlüsselaustausch sehr rechenintensiv ist. Ein Versuch innerhab des GOBI-Projektes hat
@@ -43,21 +43,21 @@ Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} v
 2.928 Byte für \acr{hmac} und 2.432 Byte für \acr{sha} benötigt. \acr{sha}2 ist hier leider nicht mit aufgeführt. Zu Beachten ist bei diesen Angaben
 jedoch, dass es sich hier um 64-Bit-Code handelt. Da der in dieser Arbeit benutzte Mikrocontroller jedoch mit 16-Bit-Code betrieben wird, ist hier
 eher eine Größe von ca 1200 - 1500 Byte zu berücksichtigen, die nur für die \acr{prf} benötigt wird. Um diese Probleme zu lösen bzw. die benötigte
-Codegröße und Rechenleistung zu reduzieren wird nun ein neues Ciphersuit definiert.
+Codegröße und Rechenleistung zu reduzieren wird nun eine neue \glos{ciphersuite} definiert.
 
 \section{TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8}
 
-In Ahnlehnung an das Ciphersuit 4 soll nun zunächst die Effizienz des öffentlichen Schlüsselaustauschs verbessert werden. Um das zu realisieren
+In Ahnlehnung an das \glos{ciphersuite} 4 soll nun zunächst die Effizienz des öffentlichen Schlüsselaustauschs verbessert werden. Um das zu realisieren
 wird hier nun die \acr{ecc} gemäß RFC 4492 \cite{rfc4492} für einen Diffie-Hellman-Schlüsselaustausch verwendet werden. Bei der Verwendung von
 256-Bit-Zahlen ist hier eine höhere Sicherheit gegeben als bei der Verwendung von 2048-Bit-Zahlen in einem gewöhnlichen Diffie-Hellman-Schlüsselaustausch.
 \acr{ecc} und \acr{aes}-\acr{ccm} wurden zwar Internet-Entwurf "`AES-CCM ECC Cipher Suites for TLS"' \cite{draftaesecc} schon kombiniert, jedoch
 werden hier Zertifikate anstatt eines \acr{psk} verwendet, die hier nicht genutzt werden sollen.
 
-Durch die Verwendung von \acr{ecc} bekommt das Ciphersuit nun seinen Namen:
+Durch die Verwendung von \acr{ecc} bekommt die \glos{ciphersuite} nun ihren Namen:
 \begin{itemize}
   \item TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8
 \end{itemize}
-Da dieses kein offizielles Ciphersuit gemäß den "`Transport Layer Security (TLS) Parameters"' \cite{tlsparams} ist, wird hier die Nummer
+Da dieses keine offizielle \glos{ciphersuite} gemäß den "`Transport Layer Security (TLS) Parameters"' \cite{tlsparams} ist, wird hier die Nummer
 \{0xFF,0x01\} benutzt, da diese für die private Nutzung reserviert ist.
 
 Alle weiteren für einen Diffie-Hellman-Schlüsselaustausch unter Verwendung von \acr{ecc} sind Teil der Aushandlung im Handshake und müssen
@@ -100,7 +100,7 @@ Da sich die Länge der Nonce durch 15 - L ergibt, und die Länge der Nonce berei
 Damit ist die Länge beschränkt auf 3 MiB, was aber mehr als ausreicht, da in dem betrachteten Umfeld ein Paket maximal 127 Byte groß sein kann, und die zu
 verschlüsselnde Datenmenge aufgrund der abzuziehenden Header noch weit darunter liegt.
 
-Um auf \acr{hmac} und \acr{sha}2 verzichten zu können wird nun noch die \acr{prf} für dieses Ciphersuit definiert.
+Um auf \acr{hmac} und \acr{sha}2 verzichten zu können wird nun noch die \acr{prf} für diese \glos{ciphersuite} definiert.
 Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
 \begin{description}
   \item[master\_secret] PRF(pre\_master\_secret, "`master secret"', client\_random + server\_random)

@@ -45,7 +45,7 @@ handelt, wie bei dem vorausgehenden \acr{dtls}-Paket innerhalb des gleichen \acr
 
 Für die Sequenz-Nummer (S) sind mit drei Bit 8 Zustände möglich. Während mit den Werten 1 bi 6 die Länge in Byte der angehängten Sequenz-Nummer angegeben wird,
 kann durch den Wert 0 die Angabe unterbunden werden. Im Allgemeinen wird die Sequenz-Nummer in Verbindung mit der Epoche zur Berechnung des \acr{mac}s herangezogen.
-Jedoch gibt es \glospl{ciphersuit} die andere Mechanismen verwenden, so dass keine Sequenz-Nummer notwendig ist. Falls mehrere \acr{dtls}-Pakete innerhalb eines
+Jedoch gibt es \glospl{ciphersuite} die andere Mechanismen verwenden, so dass keine Sequenz-Nummer notwendig ist. Falls mehrere \acr{dtls}-Pakete innerhalb eines
 \acr{udp}-Pakets enthalten sind, kann die Sequenz-Nummer durch den Wert 7 auch relativ zum Vorgänger-Paket (+1) angegeben werden.
 
 Schließlich folgt noch ein zwei Bit Wert für die Länge. Falls im \acr{udp}-Paket nur ein \acr{dtls}-Paket enthalten ist, kann hier der Wert 0 gesetzt werden, wodurch

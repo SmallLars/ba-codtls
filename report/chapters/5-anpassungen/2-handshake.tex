@@ -146,5 +146,5 @@ verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den
 Handshake ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei das das Finished-Paket durch das
 ChangeCipherSpec-Paket, welches einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Daten abgegrenzt wird.
 Das ChangeCipherSpec-Paket kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
-Je nach Ciphersuit wird dadurch die in \acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen
+Je nach \glos{ciphersuite} wird dadurch die in \acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen
 wie Nonce und MAC hinzukommen.
