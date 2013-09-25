@@ -1,3 +1,35 @@
 \subsection{Contiki-App: "`aes"'}
 
-aes beschreiben
+Um die \acr{aes}-Funktionen des \glos{mc1322} \cite{mc1322} zu nutzen, dient diese Contiki-App. Die bereits beschriebene \glos{ciphersuite}
+verwendet in der \acr{psr} AES-CMAC \cite{rfc4493}. Außerdem wird für die Verschlüsselung AES-CCM \cite{rfc3610} verwendet. Beide Verfahren
+werden vom \glos{mc1322} nicht direkt unterstützt. Bereitgestellt wird nur der reine \acr{AES} Verschlüsselungsprozess im \acr{ctr}- und \acr{cbc}-Mode.
+
+Um die \acr{aes}-Hardware nutzen zu können, muss diese zunächst initialisiert werden. Die dafür notwendige Methode wurde zum Großteil aus dem Bachelorprojekt GOBI
+übernommen und leicht modifiziert. Neben der Aktivierung der \acr{aes}-Hardware wir dort ein Selbsttest mit einem internen Schlüssel durchgeführt. Ist dieser
+erfolgreich, werden die beiden Modi \acr{ctr} und \acr{cbc}, für die spätere Nutzung, aktiviert.
+
+
+% 	uint32_t KEY0;
+% 	uint32_t KEY1;
+% 	uint32_t KEY2;
+% 	uint32_t KEY3;
+% 	uint32_t DATA0;
+% 	uint32_t DATA1;
+% 	uint32_t DATA2;
+% 	uint32_t DATA3;
+% 	uint32_t CTR0;
+% 	uint32_t CTR1;
+% 	uint32_t CTR2;
+% 	uint32_t CTR3;
+% 	uint32_t CTR0_RESULT;
+% 	uint32_t CTR1_RESULT;
+% 	uint32_t CTR2_RESULT;
+% 	uint32_t CTR3_RESULT;
+% 	uint32_t CBC0_RESULT;
+% 	uint32_t CBC1_RESULT;
+% 	uint32_t CBC2_RESULT;
+% 	uint32_t CBC3_RESULT;
+% 	uint32_t MAC0;
+% 	uint32_t MAC1;
+% 	uint32_t MAC2;
+% 	uint32_t MAC3;
