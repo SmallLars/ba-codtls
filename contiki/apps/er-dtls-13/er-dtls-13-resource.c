@@ -17,7 +17,7 @@
 #include "ecc.h"
 #include "flash-store.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
 #define DEBUG_PRF 0

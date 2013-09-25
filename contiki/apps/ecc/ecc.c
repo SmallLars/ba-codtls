@@ -220,6 +220,7 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 */
 }
 
+/*
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length){
     uint32_t r[3] = {0, 0, 0};
     int k, i, j;
@@ -280,8 +281,8 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
     }
     result[(2*length)-1] = r[0];
 }
+*/
 
-/*
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
     if (length == 1) {
         // Version 1: 56 Byte größer als die Assembler-Version
@@ -371,7 +372,6 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_add(AB, C, result, length*2);
     }
 }
-*/
 
 __attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize) {
     int32_t i;
