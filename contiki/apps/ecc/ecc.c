@@ -220,6 +220,68 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 */
 }
 
+static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length){
+    uint32_t r[3] = {0, 0, 0};
+    int k, i, j;
+    for (k=0; k<15; k++) {
+        for (i=0; i<8; i++) {
+            for (j=0; j<8; j++) {
+                if(i+j==k){
+//                  tempP[0] = (uint64_t) x[i] * (uint64_t) y[j];
+//                  ecc_add(r, temp, r, 3);
+                    asm volatile(
+                            "ldrh r5, [%[x], #0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
+                            "ldrh r3, [%[y], #0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
+                            "mul r5, r3 \n\t"               // r5 *= r3                 r5 = AB[0]
+                            "ldrh r6, [%[x], #2] \n\t"      // r6 = (x[0] >> 16)
+                            "mul r3, r6 \n\t"               // r3 *= r6                 r3 = C[0]
+                            "ldrh r4, [%[y], #2] \n\t"      // r4 = (y[0] >> 16)
+                            "mul r6, r4 \n\t"               // r6 *= r4                 r6 = AB[1]
+                        // %[y] wird nun nicht mehr benötigt und überschrieben (folgenden ry genannt)
+                            "ldrh %[y], [%[x], #0] \n\t"    // ry = (x[0] & 0x0000FFFF)
+                            "mul r4, %[y] \n\t"             // r4 *= ry                 r4 = C[1]
+                            "add %[y], r3, r4 \n\t"         // ry = r3 + r4             ry = C[0] + C[1]
+                        // C[1] (r4) wird nun nicht mehr benötigt und überschrieben
+                            "mov r4, #0 \n\t"               // r4 = 0
+                            "bcc .nocarry \n\t"             // jump falls carry clear
+                            "mov r4, #1 \n\t"               // r4 = 1
+                            "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
+                        ".nocarry: \n\t"                    //                          r4 = 0x000c0000 = (carry << 16)
+                            "lsr r3, %[y], #16 \n\t"        // r3 = (ry >> 16)
+                            "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh' = (r4 | ry >> 16)
+                            "lsl r3, %[y], #16 \n\t"        // r3 = (ry << 16)          r3 = 0x'ryl'0000 = (ry << 16)
+                            "add r3, r3, r5 \n\t"
+                            "adc r4, r4, r6 \n\t"
+                        // Ergebnis der Multiplikation liegt nun in r3, r4
+                            "ldm %[r]!, {r5,r6} \n\t"
+                            "sub %[r], %[r], #8 \n\t"
+                            "add r5, r5, r3 \n\t"
+                            "adc r6, r6, r4 \n\t"
+                            "stm %[r]!, {r5,r6} \n\t"
+                            "ldr r3, [%[r],#0] \n\t"
+                            "mov r4, #0 \n\t"
+                            "adc r3, r3, r4 \n\t"
+                            "str r3, [%[r],#0] \n\t"
+                    : // out
+                    : // in
+                        [x] "l" (&x[i]),
+                        [y] "l" (&y[j]),
+                        [r] "l" (r)
+                    : // clobber list
+                        "r3", "r4", "r5", "r6", "memory"
+                    );
+                }
+            }
+        }
+        result[k] = r[0];
+        r[0] = r[1];
+        r[1] = r[2];
+        r[2] = 0;
+    }
+    result[(2*length)-1] = r[0];
+}
+
+/*
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length) {
     if (length == 1) {
         // Version 1: 56 Byte größer als die Assembler-Version
@@ -309,6 +371,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_add(AB, C, result, length*2);
     }
 }
+*/
 
 __attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize) {
     int32_t i;
