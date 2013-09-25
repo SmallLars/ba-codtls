@@ -9,11 +9,11 @@
 #include "er-dtls-13.h"
 #include "er-dtls-13-data.h"
 #include "er-dtls-13-random.h"
-#include "er-dtls-13-aes.h"
 #include "er-dtls-13-prf.h"
 #include "er-dtls-13-psk.h"
 #include "er-dtls-13-alert.h"
 #include "time.h"
+#include "aes.h"
 #include "ecc.h"
 #include "flash-store.h"
 
@@ -328,8 +328,10 @@ __attribute__((always_inline)) static void generateCookie(uint8_t *dst, DTLSCont
 
     uint8_t mac[16];
     memset(mac, 0, 16);
-    aes_cmac(mac, src_addr->u8, 16, 0);
-    aes_cmac(mac, (uint8_t *) data, *data_len, 1);
+    uint8_t psk[16];
+    getPSK(psk);
+    aes_cmac(mac, src_addr->u8, 16, psk, 0);
+    aes_cmac(mac, (uint8_t *) data, *data_len, psk, 1);
     memcpy(dst, mac, 8);
 }
 
@@ -584,13 +586,14 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
 __attribute__((always_inline)) static void generateFinished(uint8_t *buf) {
     memcpy(buf + 24, buf + 160, 48);
     memset(buf + 87, 0, 16);
-    nvm_getVar(buf + 104, RES_STACK, 16);
+    getPSK(buf + 104);
+    nvm_getVar(buf + 120, RES_STACK, 16);
     int i;
     for (i = 16; i < stack_size(); i+=16) {
-        aes_cmac(buf + 87, buf + 104, 16, 0);
-        nvm_getVar(buf + 104, RES_STACK + i, 16);
+        aes_cmac(buf + 87, buf + 120, 16, buf + 104, 0);
+        nvm_getVar(buf + 120, RES_STACK + i, 16);
     }
-    aes_cmac(buf + 87, buf + 104, stack_size() + 16 - i, 1);
+    aes_cmac(buf + 87, buf + 120, stack_size() + 16 - i, buf + 104, 1);
     //  0                   1                   2                   3                   4                   5
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // |#|#|#|#|#|#|     Master-Secret     |#|#|#|#| C-MAC |#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|#|

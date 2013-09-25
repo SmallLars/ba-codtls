@@ -8,14 +8,15 @@ Die im vorigen Kapitel definierte \glos{ciphersuite} hängt grundlegend vom \acr
 der Lage, während eines Handshakes einen \glos{mitma} durchzuführen oder Werte der \acr{prf} zu Berechnen, da diese auf dem \acr{psk} basiert.
 Jedes Endgerät wird bei Herstellung mit einem eigenen \acr{psk} ausgerüstet. Dies wird durch ein Programm namens "`Blaster"' realisiert, das
 im Bachelor-Projekt GOBI entstanden ist und für die Verwendung in dieser Arbeit angepasst wurde. Während in GOBI eine \acr{pin} generiert wurde,
-die nach Erstellung einer sicheren Verbindung zur Authentifizierung des Besitzers des Endgeräts benutzt wurde, wird hier nun ein \acr{psk}
+die nach Erstellung einer sicheren Verbindung, zur Authentifizierung des Besitzers des Endgeräts, benutzt wurde, wird hier nun ein \acr{psk}
 generiert. Blaster kommt zum Einsatz, nachdem der Quellcode des Endgeräts kompiliert wurde und erweitert die Binärdatei um Daten, die nach dem,
 maximal \textasciitilde 96 KiB großen, Programmcode folgen. Diese, maximal 28 KiB, werden nicht mit in den RAM-Speicher kopiert und können zur
 Ablage von Daten genutzt werden, die auch bei einem Batterie-Wechsel erhalten bleiben sollen. Neben dem \acr{psk} wird auch ein \acr{uuid}
 generiert um das Endgerät eindeutig zu identifizieren. Da diese Daten für den Aufbau der \acr{dtls}-Verbindung genutzt werden, müssen diese
 einem Endgerät beigelegt werden, was durch einen Aufkleber auf der Verpackung realisiert werden könnte. Um einem Benutzer das Einbinden neuer
-Endgeräte möglichst einfach zu machen, wurde Blaster so erweitert, dass bei Ausführung auch ein QR-Code generiert wird. So kann der QR-Code
-frühzeitig in einem \acr{dtls}-Clienten hinterlegt werden, so dass die Daten bei einem Verbindungsaufbau direkt verfügbar sind. Dieses System hat
+Endgeräte möglichst einfach zu machen, wurde Blaster so erweitert, dass bei Ausführung auch ein QR-Code generiert wird. So können die Daten, mit
+Hilfe des kann der QR-Code, frühzeitig in einem \acr{dtls}-Clienten hinterlegt werden, so dass die Daten bei einem Verbindungsaufbau direkt
+verfügbar sind. Dieses System hat
 den Nachteil, dass der \acr{psk} unter Umständen mindestens einem Vorbesitzer des Endgeräts bekannt ist. Dieser soll aber nach Veräußerung eines
 Endgeräts keinen Zugriff mehr darauf bekommen. Um dem Vorzubeugen ist der dem Endgerät beiliegende \acr{psk} nur für einen Verbindungsaufbau
 gültigt. Ist dieser erfolgreich abgeschlossen, wird automatisch ein neuer \acr{psk} generiert und bei einem weiteren Verbindungsaufbau benutzt.

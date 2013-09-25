@@ -16,5 +16,5 @@ Um den Bezug zur Realzeit herzustellen, wird die aktuelle Unixzeit vom Blaster g
 Diese Zeit spiegelt somit den Herstellungszeitpunkt wieder. Wird die aktuelle Zeit benötigt, kann diese durch Addition der von Contiki
 ermittelten Sekunden und der Unixzeit berechnet werden. Das funktioniert natürlich nur so lange, wie der Redbee Econotag nach dem Flashen
 ununterbrochen mit Strom versorgt wird. Um eine Korrektur zu ermöglichen, bietet die App eine Methode an, um die aktuelle Uhrzeit zu setzen.
-Diese wird mit der alten Zeit vergleichen um einen Korrekturwert zu ermitteln der in einer globalen Variablen hinterlegt wird. Hier macht es
-keinen Sinn diesen im Flash-Speicher abzulegen, da er nach einem Batteriewechsel direkt wieder veraltert wäre.
+Diese wird mit der alten Zeit vergleichen um einen Korrekturwert zu ermitteln, der in einer globalen Variablen hinterlegt wird. Hier macht es
+keinen Sinn, diesen im Flash-Speicher abzulegen, da er nach einem Batteriewechsel direkt wieder veraltert wäre.

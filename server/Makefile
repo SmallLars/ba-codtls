@@ -25,6 +25,7 @@ APPS += er-dtls-13
 APPS += er-coap-13
 APPS += erbium
 APPS += flash-store
+APPS += aes
 APPS += ecc
 APPS += time
 

@@ -37,8 +37,8 @@ Für die Addition und Subtraktion sind weitere Varianten verfügbar. Da die Subt
 was acht 32-bit-Blöcken entspricht, ist es möglich, die acht Subtraktionen direkt hintereinander auszuführen, so dass das Carry-Bit ohne weitere
 Eingriffe direkt berücksichtigt wird. Die Programmgröße nimmt dabei, im Vergleich zum C-Code, um \textasciitilde 32 Byte ab und die
 Berechnungsgeschwindigkeit nimmt wesentlich zu. Anders verhält es sich bei der Addition, da Werte unterschiedlicher Größe addiert werden.
-Notwendig sind hier 32, 64, 128, 256 und 512 Bit. Für jede dieser Größen ist nun ein eigener Additionsblock vorhanden. Bei Aufruf der Funktion wird
-die Größe überprüft und der richtige Block ausgewählt. Dies bietet eine maximale Geschwindigkeit, erhöht jedoch die Größe des Programms um 116 Byte.
+Notwendig sind hier 128, 256 und 512 Bit. Für jede dieser Größen ist nun ein eigener Additionsblock vorhanden. Bei Aufruf der Funktion wird
+die Größe überprüft und der richtige Block ausgewählt. Dies bietet eine maximale Geschwindigkeit, erhöht jedoch die Größe des Programms um 88 Byte.
 
 Um weitere 96 Byte einzusparen, sind 3 benötigte Konstanten im Flash-Speicher hinterlegt. Dazu gehören die X- und Y- Koordinate des Basis-Punkts, der für
 den Diffie-Hellman-Schlüsselaustausch verwendet wird, und die Ordnung der verwendeten elliptischen Kurve. Die Ordnung wird nur verwendet, um zu überprüfen,

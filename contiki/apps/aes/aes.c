@@ -1,11 +1,9 @@
-#include "er-dtls-13-aes.h"
+#include "aes.h"
 
 #include "mc1322x.h"
 #include "../../core/net/uip.h"
 
 #include <string.h>
-
-#include "er-dtls-13-psk.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -135,7 +133,7 @@ void aes_crypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[N
     for (i = 0; i < MAC_LEN; i++) data[data_len + i] ^= abs_0[i];
 }
 
-void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) {
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t finish) {
     uint32_t i;
 
     #if DEBUG
@@ -147,20 +145,17 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
             printf("aes_cmac: Ungütiger Aufruf. Bei finish == 0 muss data_len ein Vielfaches der Blockgröße sein.\n");
             return;
         }
-    #endif
 
-    uint8_t buf[16];
-    getPSK(buf);
-    #if DEBUG
         printf("Key      ");
-        print_hex(buf, 16);
+        print_hex(key, 16);
         printf("\n");
     #endif
 
     ASM->CONTROL0bits.CLEAR = 1;
     
-    aes_setData((uint32_t *) &(ASM->KEY0), buf, 16);
+    aes_setData((uint32_t *) &(ASM->KEY0), key, 16);
 
+    uint8_t buf[16];
     if (finish) {
         aes_setData((uint32_t *) &(ASM->DATA0), NULL, 0);
         aes_round();

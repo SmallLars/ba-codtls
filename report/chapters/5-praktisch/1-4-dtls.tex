@@ -12,3 +12,12 @@ seq\_num wird im ram gehalten da bei flash update bei jedem paket hoher verschle
 sollte seq\_num je 0 sein, wird sie mit der seq\_num der anfrage "`wiederhergestellt"' (erläuterung: ist nicht exakt)
 
 uri syntax \cite{rfc3986}. beachten wegen session-id
+
+Übertragen werden mit Hilfe der Option ein ClientHello oder ClientKeyExchange + ChangeCipherSpec + Finished, wobei die Länge von Letzterem mit
+insgesamt 114 (87 + 3 + 22) Byte, durch die einzig definierte \glos{ciphersuite}, fest ist. Anders ist dies bei dem ClientHello, welches durch
+eine Vielzahl, vom Client beherrschter \glospl{ciphersuite}, sehr viel größer werden kann.
+
+Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO LARGE"' mit einem Hinweis auf die begrenzte Maximalgröße,
+so dass ein Client sein Angebot an \glospl{ciphersuite} reduzieren kann, um der maximalen Größe gerecht zu werden.
+
+auswertung cookie -> query. cookie in packet ist doof

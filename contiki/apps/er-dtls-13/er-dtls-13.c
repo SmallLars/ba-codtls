@@ -4,8 +4,9 @@
 
 #include "er-coap-13.h"
 #include "er-dtls-13-data.h"
-#include "er-dtls-13-aes.h"
 #include "er-dtls-13-alert.h"
+
+#include "aes.h"
 
 /*---------------------------------------------------------------------------*/
 
