@@ -62,7 +62,6 @@ static void ecc_setZero(uint32_t *A, const uint32_t length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
 static unsigned int ecc_isX(const uint32_t* A, const uint32_t X);
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length);
-__attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize);
 
 //ecc_fieldModP-Helper
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src);
@@ -336,10 +335,9 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         );
     } else {
         uint32_t carry;
-        uint32_t AB[length*2];
         uint32_t C[length*2];
-        ecc_mult(&x[0], &y[0], &AB[0], length/2);
-        ecc_mult(&x[length/2], &y[length/2], &AB[length], length/2);
+        ecc_mult(&x[0], &y[0], &result[0], length/2);
+        ecc_mult(&x[length/2], &y[length/2], &result[length], length/2);
         ecc_mult(&x[0], &y[length/2], &C[0], length/2);
         ecc_mult(&x[length/2], &y[0], &C[length], length/2);
         if (length == 2) {
@@ -365,21 +363,89 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         } else {
             carry = ecc_add(&C[0], &C[length], &C[0], length);
         }
-        ecc_setZero(&C[length], length);
-        ecc_lshift(C, length*2, length/2);
-        C[length+(length/2)] = carry;
-        ecc_add(AB, C, result, length*2);
-    }
-}
-
-__attribute__((always_inline)) static void ecc_lshift(uint32_t *x, const int32_t length, const int32_t shiftSize) {
-    int32_t i;
-    for(i = ((length/2) + shiftSize)-1; i>=0; --i){
-        if(i-shiftSize < 0){
-            x[i] = 0;
-        } else {
-            x[i] = x[i-shiftSize];
-        }
+        ecc_setZero(&C[length], length/2);
+        C[length] = carry;
+        asm volatile(
+                "cmp %[l], #2 \n\t"
+                "beq .add3 \n\t"
+                "cmp %[l], #4 \n\t"
+                "beq .add6 \n\t"
+            ".add12: \n\t"
+                // ecc_add(result + 4, C, result + 4, 12);
+                "add %[r], %[r], #16 \n\t"
+                "mov %[l], %[r] \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "add r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "b 0f \n\t"
+            ".add6: \n\t"
+                // ecc_add(result + 2, C, result + 2, 6);
+                "add %[r], %[r], #8 \n\t"
+                "mov %[l], %[r] \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "add r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "adc r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "stm %[l]!, {r3,r4} \n\t"
+                "b 0f \n\t"
+            ".add3: \n\t"
+                // ecc_add(result + 1, C, result + 1, 3);
+                "add %[r], %[r], #4 \n\t"
+                "mov %[l], %[r] \n\t"
+                "ldm %[r]!, {r3,r4} \n\t"
+                "ldm %[c]!, {r5,r6} \n\t"
+                "add r3, r3, r5 \n\t"
+                "adc r4, r4, r6 \n\t"
+                "ldr r5, [%[r], #0] \n\t"
+                "ldr r6, [%[c], #0] \n\t"
+                "adc r5, r5, r6 \n\t"
+                "stm %[l]!, {r3-r5} \n\t"
+            "0: \n\t"
+        : // out
+        : // in
+            [r] "l" (result),
+            [c] "l" (C),
+            [l] "l" (length)
+        : // clobber list
+            "r3", "r4", "r5", "r6", "memory"
+        );
     }
 }
 

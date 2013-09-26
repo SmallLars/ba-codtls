@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define ALGO 2
+#define ALGO 1
 // NR | Beschreibung | Größe | Geschwindigkeit | Status auf Econotag
 //  0 | C-Code       |     0 | Langsam         | Funktioniert
 //  1 | ASM          |   -24 | Mittel          | Funktioniert
