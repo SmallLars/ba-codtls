@@ -1,5 +1,39 @@
 \subsection{Contiki-App: "`er-13-dtls"'}
 
+Um diese Contiki-App zu realisieren, sind zunächst einige Anpassungen in er-coap-13 notwendig. Um nach wie vor einen Betrieb ohne \acr{dtls} realsisieren zu können,
+werden diese Anpassungen nur dann aktiv, wenn die Compiler-Anweisung WITH\_DTLS gesetzt ist, was im Makefile für ein Contiki-Programm durch "`CFLAGS += -DWITH\_DTLS=1"'
+realisiert werden kann. Bei der Verwendung von \acr{dtls} wird der Port gemäß \cite[Seite 93]{portnumbers} von 5683 auf 5684 geändert. Außerdem wird der Datenverkehr
+über \acr{dtls}-Funktionen geleitet, die den Record-Layer realisieren und die Daten bei Bedarf ent- oder verschlüsseln. Kernstück ist die Ressource "`/dtls"', die für
+die Durchführung des Handshakes in CoAP eingebunden wird.
+
+Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige Module notwendig, die im Folgenden zunächst beschrieben werden.
+
+\begin{description}
+  \item[er-dtls-13-alert.{$[$h|c$]$}] Stellt zwei Funktionen für den Versand einer Alert-Nachricht zur Verfügung.
+					Während die eine, ohne Verwendung con CoAP, eine Nachricht an den Kommunikationspartner sendet,
+					konfiguriert die andere eine CoAP-Antwort. Dieser Unterschied ist notwendig, da einige Fehler während
+					des Handshakes auftauchen, und per CoAP kommentiert werden, damit es nicht zu einer neuen Anfrage kommt.
+					Würden diese Nachrichten direkt mit dem Record-Protokoll versand, müsste sich der Empfänger darum kümmern,
+					die Anfrage aus dem CoAP-Layer zu entfernen.
+  \item[er-dtls-13-data.{$[$h|c$]$}] Erstellt und verwaltet Sessionspezifische Daten. Die Anzahl der Sessions ist hier auf maximal zehn begrenzt.
+					Damit die dafür notwendigen 1400 Byte nicht dauerhaft den RAM-Speicher belegen, sind diese im Flash-Speicher
+					abgelegt. Die Ausnahme bilden hier die beiden Werte für die Sequenznummern zum Lesen und Schreiben.
+					Während letztere bei jedem Datenaustausch geändert werden, werden die grundlegenden Session-Daten nur während
+					des Handshakes geschrieben, so dass hier die Nutzung des Flash-Speichers sinnvoll ist. Dafür wird der RW-Block
+					verwendet, der durch die Contiki-App flash-store zur Verfügung gestellt wird. Die laber liste statisch valid oder nicht valid \TODO{crap}
+					
+					
+					Da die Sequenznummern im RAM-Speicher
+					abgelegt sind, gehen diese bei einem Batteriewechsel, oder Neustart des Endgeräts, verloren, womit die Session nicht
+					fortgesetzt werden kann. Da es keine sinnvolle Lösung gibt, diese ohne Sicherheitslücken wiederherzustellen,
+					wird bei einem Start des Endgeräts der RW-Block des Flash-Speichers zurückgesetzt, wodurch alle Sessiondaten gelöscht
+					werden. Bei einer folgenden Anfrage wird der Client zunächst eine Alert-Nachricht bekommen, was aber dann zu einem
+					neuen Handshake führt.
+  \item[er-dtls-13-prf.{$[$h|c$]$}] lala
+  \item[er-dtls-13-psk.{$[$h|c$]$}] lala
+  \item[er-dtls-13-random.{$[$h|c$]$}] lala
+\end{description}
+
 es kann nur ein handshake zur zeit stattfinden\\
 psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\
@@ -9,7 +43,6 @@ für hello verify cookie: cmac(client-ip + clienthello)
 
 verschlüsselung von finish mit seq\_num 0. erste app daten beginnen also bei seq\_num 1.\\
 seq\_num wird im ram gehalten da bei flash update bei jedem paket hoher verschleiß.\\
-sollte seq\_num je 0 sein, wird sie mit der seq\_num der anfrage "`wiederhergestellt"' (erläuterung: ist nicht exakt)
 
 uri syntax \cite{rfc3986}. beachten wegen session-id
 
@@ -21,3 +54,5 @@ Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO
 so dass ein Client sein Angebot an \glospl{ciphersuite} reduzieren kann, um der maximalen Größe gerecht zu werden.
 
 auswertung cookie -> query. cookie in packet ist doof
+
+problem: handshake: uri prüfen !

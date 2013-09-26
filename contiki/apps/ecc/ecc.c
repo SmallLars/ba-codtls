@@ -103,12 +103,11 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     ecc_setZero(Qy, 8);
 
     int i;
-    for (i = 256;i--;){
+    for (i = 256;i--;) {
         ecc_ec_double(Qx, Qy, resultx, resulty);
-        ecc_copy(Qx, resultx);
-        ecc_copy(Qy, resulty);
-        if ((((secret[i/32])>>(i%32)) & 0x01) == 1){ //<- TODO quark, muss anders gemacht werden
-            ecc_ec_add(Qx, Qy, px, py, resultx, resulty); //eccAdd
+        if ((((secret[i/32])>>(i%32)) & 0x01) == 1) {
+            ecc_ec_add(resultx, resulty, px, py, Qx, Qy);
+        } else {
             ecc_copy(Qx, resultx);
             ecc_copy(Qy, resulty);
         }

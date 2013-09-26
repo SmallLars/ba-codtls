@@ -85,7 +85,7 @@ int createSession(uint32_t *buf, uip_ipaddr_t *addr) {
         uip_ipaddr_copy(&session->addr, addr);
         for (i = 0; i < 8; i++) {
             nvm_getVar(session->session + i, RES_ANSCHARS + (random_8() & 0x3F), 1);
-        }
+        } // TODO session-id auf doppel prüfen
         session->epoch = 0;
         session->valid = 1;
 

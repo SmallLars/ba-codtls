@@ -17,7 +17,7 @@
 #include "ecc.h"
 #include "flash-store.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #define DEBUG_COOKIE 0
 #define DEBUG_ECC 0
 #define DEBUG_PRF 0
@@ -71,7 +71,7 @@ static uint16_t server_random_offset;
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    if (resource_busy) {
+    if (resource_busy) { // TODO auh zeit speichern nach deren ablauf busy verfällt
         if (!uip_ipaddr_cmp(src_addr, &UIP_IP_BUF->srcipaddr)) {
             coap_error_code = SERVICE_UNAVAILABLE_5_03;
             coap_error_message = "AlreadyInUse";
