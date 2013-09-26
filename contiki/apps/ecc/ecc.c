@@ -40,10 +40,6 @@
 
 #include <string.h>
 
-#include "ecc_add.h"
-#include "ecc_sub.h"
-#include "ecc_rshift.h"
-
 /*---------------------------------------------------------------------------*/
 
 #define keyLengthInBytes 32
@@ -60,7 +56,10 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 //simple functions to work with the big numbers
 static void ecc_setZero(uint32_t *A, const uint32_t length);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
-static unsigned int ecc_isX(const uint32_t* A, const uint32_t X);
+static uint32_t ecc_isX(const uint32_t* A, const uint32_t X);
+static void ecc_rshift(uint32_t *A);
+static uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result);
+static uint32_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result);
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length);
 
 //ecc_fieldModP-Helper
@@ -130,17 +129,17 @@ static void ecc_setZero(uint32_t *A, const uint32_t length) {
             "mov r2, $0 \n\t"
             "stm %[a]!, {r2} \n\t"
             "cmp %[l], #1 \n\t"
-            "beq .endZero \n\t"
+            "beq 0f \n\t"
             "stm %[a]!, {r2} \n\t"
             "cmp %[l], #2 \n\t"
-            "beq .endZero \n\t"
+            "beq 0f \n\t"
             "mov r3, $0 \n\t"
             "stm %[a]!, {r2,r3} \n\t"
             "cmp %[l], #4 \n\t"
-            "beq .endZero \n\t"
+            "beq 0f \n\t"
             "stm %[a]!, {r2-r3} \n\t"
             "stm %[a]!, {r2-r3} \n\t"
-        ".endZero: \n\t"
+        "0: \n\t"
     : // out
     : // in
         [a] "l" (A),
@@ -168,7 +167,7 @@ static void ecc_copy(uint32_t *dst, const uint32_t *src) {
     );
 }
 
-static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
+static uint32_t ecc_isX(const uint32_t* A, const uint32_t X) {
     if (A[0] != X) return 0;
 
     uint8_t n; 
@@ -216,6 +215,117 @@ static unsigned int ecc_isX(const uint32_t* A, const uint32_t X) {
 
     return result;
 */
+}
+
+static void ecc_rshift(uint32_t *A) {
+    uint32_t index = 32;
+    uint32_t carry = 0;
+
+    asm volatile(
+        "0: \n\t"
+            "sub %[i], %[i], #4 \n\t"     // index -= 4
+            "mov r4, %[c] \n\t"           // result = carry
+            "ldr r3, [%[a],%[i]] \n\t"    // value = a[index]
+            "lsl %[c], r3, #31 \n\t"      // carry = value << 31
+            "lsr r3, r3, #1 \n\t"         // value >>= 1
+            "orr r4, r4, r3 \n\t"         // result |= value
+            "str r4, [%[a],%[i]] \n\t"    // a[index] = result
+            "cmp %[i], #0 \n\t"           // index == 0
+            "bne 0b \n\t"                 // != ? next loop
+    : // out
+    : // in
+        [a] "r" (A),
+        [i] "r" (index),
+        [c] "r" (carry)
+    : // clobber list
+        "r3", "r4", "memory"
+    );
+}
+
+static uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result) {
+    uint32_t carry;
+
+    asm volatile(
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "add r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "adc r4, r4, r6 \n\t"
+            "adc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "bcc 0f \n\t"
+            "mov %[c], #1 \n\t"
+            "b 1f \n\t"
+        "0: \n\t"
+            "mov %[c], #0 \n\t"
+        "1: \n\t"
+    : /* out */
+        [c] "=l" (carry)
+    : /* in */
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result)
+    : /* clobber list */
+        "r4", "r5", "r6", "r7", "memory"
+    );
+
+    return carry;
+}
+
+static uint32_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result) {
+    uint32_t carry;
+
+    asm volatile(
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "sub r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "ldm %[x]!, {r4,r5} \n\t"
+            "ldm %[y]!, {r6,r7} \n\t"
+            "sbc r4, r4, r6 \n\t"
+            "sbc r5, r5, r7 \n\t"
+            "stm %[r]!, {r4,r5} \n\t"
+            "bcs 0f \n\t"
+            "mov %[c], #1 \n\t"
+            "b 1f \n\t"
+        "0: \n\t"
+            "mov %[c], #0 \n\t"
+        "1: \n\t"
+    : /* out */
+        [c] "=l" (carry)
+    : /* in */
+        [x] "l" (x),
+        [y] "l" (y),
+        [r] "l" (result)
+    : /* clobber list */
+        "r4", "r5", "r6", "r7", "memory"
+    );
+
+    return carry;
 }
 
 /*
@@ -315,10 +425,10 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "add %[y], r3, r4 \n\t"         // ry = r3 + r4             ry = C[0] + C[1]
             // C[1] (r4) wird nun nicht mehr benötigt und überschrieben
                 "mov r4, #0 \n\t"               // r4 = 0
-                "bcc .nocarry \n\t"             // jump falls carry clear
+                "bcc 0f \n\t"                   // jump falls carry clear
                 "mov r4, #1 \n\t"               // r4 = 1
                 "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
-            ".nocarry: \n\t"                    //                          r4 = 0x000c0000 = (carry << 16)
+            "0: \n\t"                           //                          r4 = 0x000c0000 = (carry << 16)
                 "lsr r3, %[y], #16 \n\t"        // r3 = (ry >> 16)
                 "orr r4, r4, r3 \n\t"           // r4 |= r3                 r4 = 0x000c'ryh' = (r4 | ry >> 16)
                 "lsl r3, %[y], #16 \n\t"        // r3 = (ry << 16)          r3 = 0x'ryl'0000 = (ry << 16)
@@ -341,7 +451,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
         ecc_mult(x, y + (length/2), C, length/2);
         ecc_mult(x + (length/2), y, C + length, length/2);
         if (length == 8) {
-            carry = ecc_add(C, C + length, C, length);
+            carry = ecc_add(C, C + length, C);
         } else {
             asm volatile(
                     "cmp %[l], #2 \n\t"
@@ -634,14 +744,14 @@ __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint
 /*---------------------------------------------------------------------------*/
 
 static void ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result) {
-    if (ecc_add(x, y, result, arrayLength)) { //add prime if carry is still set!
-        ecc_add(result, reducer, result, arrayLength);
+    if (ecc_add(x, y, result)) { //add prime if carry is still set!
+        ecc_add(result, reducer, result);
     }
 }
 
 static void ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result) {
-    if (ecc_sub(x, y, result, arrayLength)) { //add modulus if carry is set
-        ecc_add(result, modulus, result, arrayLength);
+    if (ecc_sub(x, y, result)) { //add modulus if carry is set
+        ecc_add(result, modulus, result);
     }
 }
 
@@ -678,14 +788,14 @@ static void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
 }
 
 static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, const uint32_t *reducer, uint32_t* result){
-    uint32_t n = ecc_add(x, modulus, result, arrayLength);
+    uint32_t n = ecc_add(x, modulus, result);
     ecc_rshift(result);
     if (n) { //add prime if carry is still set!
         result[7] |= 0x80000000;//add the carry
         if (ecc_compare(result, modulus) == 1) {
             uint32_t tempas[8];
             ecc_setZero(tempas, 8);
-            ecc_add(result, reducer, tempas, 8);
+            ecc_add(result, reducer, tempas);
             ecc_copy(result, tempas);
         }
         
@@ -731,13 +841,13 @@ static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint3
             }
             
         } 
-        t=ecc_sub(u,v,tempm,arrayLength);               /* tempm=u-v */
+        t=ecc_sub(u,v,tempm);                           /* tempm=u-v */
         if (t==0) {                         /* If u > 0 */
             ecc_copy(u, tempm);                  /* u=u-v */
             ecc_fieldSub(x1,B,modulus,tempm);           /* tempm=x1-x2 */
             ecc_copy(x1, tempm);                 /* x1=x1-x2 */
         } else {
-            ecc_sub(v,u,tempm,arrayLength);             /* tempm=v-u */
+            ecc_sub(v,u,tempm);                         /* tempm=v-u */
             ecc_copy(v, tempm);                  /* v=v-u */
             ecc_fieldSub(B,x1,modulus,tempm);           /* tempm=x2-x1 */
             ecc_copy(B, tempm);                  /* x2=x2-x1 */

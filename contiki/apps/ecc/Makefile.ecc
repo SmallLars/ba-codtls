@@ -1,1 +1,1 @@
-ecc_src = ecc.c ecc_add.c ecc_sub.c ecc_rshift.c
+ecc_src = ecc.c
