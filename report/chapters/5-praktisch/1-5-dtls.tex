@@ -47,6 +47,14 @@ Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige
 					das durch Contiki bereits initialisiert wurde. Durch Auslesen des Registers können beliebig viele Zufallswerte erzeugt werden.
 \end{description}
 
+Im Record-Layer wird nun das Modul für die Sessionverwaltung und das Modul für die Alert-Nachrichten genutzt. Bei der Bearbeitung einer Nachricht, werden die benötigten
+Session-Daten angerufen und zur Bearbeitung der Nachricht genutzt. Sollten dabei Fehler auftreten, wird eine Alert-Nachricht an den Client gesendet und das Paket verworfen.
+Zu beachten ist bei eingehenden Daten, dass sowohl Handshake-Nachrichten als auch Anwendungsdaten \acr{coap}-Pakete enthalten. Während Handshake-Nachrichten in
+Epoche 0, ohne Verschlüsselung, gestattet sind, ist dies bei Anwendungsdaten nicht erlaubt. Bei Handshake-Nachrichten wird somit sichergestellt, dass die erste,
+im \acr{coap}-Paket enthaltene, \acr{uri} "`dtls"' entspricht, da ein Angreifer ansonsten beliebige \acr{coap}-Anfragen als Handshake tarnen könnte.
+
+\TODO{handshake erläuter - beachte nachfolgende punkte}
+
 es kann nur ein handshake zur zeit stattfinden\\
 psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\
