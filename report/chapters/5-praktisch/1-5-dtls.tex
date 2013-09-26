@@ -15,23 +15,36 @@ Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige
 					des Handshakes auftauchen, und per CoAP kommentiert werden, damit es nicht zu einer neuen Anfrage kommt.
 					Würden diese Nachrichten direkt mit dem Record-Protokoll versand, müsste sich der Empfänger darum kümmern,
 					die Anfrage aus dem CoAP-Layer zu entfernen.
-  \item[er-dtls-13-data.{$[$h|c$]$}] Erstellt und verwaltet Sessionspezifische Daten. Die Anzahl der Sessions ist hier auf maximal zehn begrenzt.
+  \item[er-dtls-13-data.{$[$h|c$]$}] Erstellt und verwaltet sessionspezifische Daten. Die Anzahl der Sessions ist hier auf maximal zehn begrenzt.
 					Damit die dafür notwendigen 1400 Byte nicht dauerhaft den RAM-Speicher belegen, sind diese im Flash-Speicher
 					abgelegt. Die Ausnahme bilden hier die beiden Werte für die Sequenznummern zum Lesen und Schreiben.
 					Während letztere bei jedem Datenaustausch geändert werden, werden die grundlegenden Session-Daten nur während
 					des Handshakes geschrieben, so dass hier die Nutzung des Flash-Speichers sinnvoll ist. Dafür wird der RW-Block
-					verwendet, der durch die Contiki-App flash-store zur Verfügung gestellt wird. Die laber liste statisch valid oder nicht valid \TODO{crap}
-					
-					
-					Da die Sequenznummern im RAM-Speicher
-					abgelegt sind, gehen diese bei einem Batteriewechsel, oder Neustart des Endgeräts, verloren, womit die Session nicht
-					fortgesetzt werden kann. Da es keine sinnvolle Lösung gibt, diese ohne Sicherheitslücken wiederherzustellen,
-					wird bei einem Start des Endgeräts der RW-Block des Flash-Speichers zurückgesetzt, wodurch alle Sessiondaten gelöscht
-					werden. Bei einer folgenden Anfrage wird der Client zunächst eine Alert-Nachricht bekommen, was aber dann zu einem
-					neuen Handshake führt.
-  \item[er-dtls-13-prf.{$[$h|c$]$}] lala
-  \item[er-dtls-13-psk.{$[$h|c$]$}] lala
-  \item[er-dtls-13-random.{$[$h|c$]$}] lala
+					verwendet, der durch die Contiki-App flash-store zur Verfügung gestellt wird. Die Sessions sind dort in einem
+					Array hinterlegt, wobei die genutzten Stellen entsprechend gekennzeichnet sind. Dadurch werden bei der Suche
+					nach Sessions unter Umständen auch leere Stellen durchlaufen, jedoch bleibt der Aufwand erspart die Liste zu
+					defragmentieren oder Zeiger einer verketteten Liste zu aktualisieren. Da pro Session zwei Keyblöcke benötigt werden,
+					falls es zu einem erneuten Handshake kommt, sind diese in einem separaten Array mit der Länge 20 hinterlegt.
+					Der Index der Keyblöcke ergibt sich dabei aus dem Index der Session. Liegt diese im ersten Array an Index $ i $,
+					Sind die dazu gehörenden Keyblöcke an Index $ i\cdot2 $ und $ i\cdot2+1 $ hinterlegt. Dabei liegt der derzeit gültige
+					Keyblock immer an Index $ i\cdot2 $. Bei einer Weiterentwicklung der Epoche, wird der 2. Keyblock an den Index
+					des ersten kopiert. Da die Sequenznummern im RAM-Speicher abgelegt sind, gehen diese bei einem Batteriewechsel,
+					oder Neustart des Endgeräts, verloren, womit die Session nicht fortgesetzt werden kann. Da es keine sinnvolle Lösung gibt,
+					diese ohne Sicherheitslücken wiederherzustellen, wird bei einem Start des Endgeräts der RW-Block des Flash-Speichers
+					zurückgesetzt, wodurch alle Sessiondaten gelöscht werden. Bei einer folgenden Anfrage wird der Client zunächst eine
+					Alert-Nachricht bekommen, was aber dann zu einem neuen Handshake führt.
+  \item[er-dtls-13-prf.{$[$h|c$]$}] Enthält die im \glos{ciphersuite} definierte \acr{prf}. Die größte Datenmenge wird für die Berechnung des Master-Secrets
+					benötigt. Dort gehen 153 Byte in die Berechnung ein. Dieses ist ausreichend klein um die Berechnung mit einem
+					Funktionsaufruf durchzuführen, womit der Programmcode klein gehalten wird, da kein Zustand für eine Fortsetzung
+					der Berechnung gespeichert und genutzt werden muss.
+  \item[er-dtls-13-psk.{$[$h|c$]$}] Verwaltet den \acr{psk} und generiert bei Bedarf einen neuen. Der \acr{psk} wird im Vorfeld durch das Programm Blaster
+					generiert und im Flash-Speicher abgelegt. Soll ein neuer \acr{psk} generiert werden, um den Werks-\acr{psk} zu deaktivieren,
+					wird ein Byte im RW-Block des Flash-Speichers gesetzt und dort ebenfalls ein neuer \acr{psk} hinterelgt. Wird der \acr{psk}
+					abgerufen, kann anhand des gesetzten Bytes erkannt werden, ob der Werks-\acr{psk} gilt oder ein neuer Verfügbar ist.
+					Kommt es zu einem Batteriewechsel oder Neustart des Endgeräts, ist der Werks-\acr{psk} wieder gültigt, da der RW-Block
+					zurückgesetzt wurde.
+  \item[er-dtls-13-random.{$[$h|c$]$}] Bietet Funktionen für die Generierung von Zufallszahlen an. Dieses Modul benutzt das MACA\_RANDOM Register des \glos{mc1322},
+					das durch Contiki bereits initialisiert wurde. Durch Auslesen des Registers können beliebig viele Zufallswerte erzeugt werden.
 \end{description}
 
 es kann nur ein handshake zur zeit stattfinden\\
