@@ -53,11 +53,11 @@ const uint32_t ecc_prime_r[8] = {0x00000001, 0x00000000, 0x00000000, 0xffffffff,
 
 /* Private Funktionsprototypen --------------------------------------------- */
 
-//simple functions to work with the big numbers
-static void ecc_setZero(uint32_t *A, const uint32_t length);
+//simple functions to work with 256 bit numbers
+static void ecc_setZero(uint32_t *a);
 static void ecc_copy(uint32_t *dst, const uint32_t *src);
-static uint32_t ecc_isX(const uint32_t* A, const uint32_t X);
-static void ecc_rshift(uint32_t *A);
+static uint32_t ecc_isX(const uint32_t* a, const uint32_t x);
+static void ecc_rshift(uint32_t *a);
 static uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result);
 static uint32_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result);
 static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, const uint32_t length);
@@ -72,7 +72,7 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src);
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src);
 
-//field functions for big numbers
+//field functions for 256 bit numbers
 static void ecc_fieldAdd(const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result);
 static void ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result);
 static void ecc_fieldModP(uint32_t *A, const uint32_t *B);
@@ -85,11 +85,11 @@ static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, 
 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
-signed int ecc_compare(const uint32_t *A, const uint32_t *B) {
+signed int ecc_compare(const uint32_t *a, const uint32_t *b) {
     int i;
     for (i = 7; i >= 0; i--) {
-        if (A[i] > B[i]) return 1; 
-        if (A[i] < B[i]) return -1;
+        if (a[i] > b[i]) return 1; 
+        if (a[i] < b[i]) return -1;
     }
     return 0;
 }
@@ -97,8 +97,8 @@ signed int ecc_compare(const uint32_t *A, const uint32_t *B) {
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
     uint32_t Qx[8];
     uint32_t Qy[8];
-    ecc_setZero(Qx, 8);
-    ecc_setZero(Qy, 8);
+    ecc_setZero(Qx);
+    ecc_setZero(Qy);
 
     int i;
     for (i = 256;i--;) {
@@ -116,36 +116,19 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
 
 /* Private Funktionen ------------------------------------------------------ */
 
-static void ecc_setZero(uint32_t *A, const uint32_t length) {
-/*
-    int i;
-
-    for (i = 0; i < length; ++i)
-    {
-        A[i] = 0;
-    }
-*/
+static void ecc_setZero(uint32_t *a) {
     asm volatile(
-            "mov r2, $0 \n\t"
-            "stm %[a]!, {r2} \n\t"
-            "cmp %[l], #1 \n\t"
-            "beq 0f \n\t"
-            "stm %[a]!, {r2} \n\t"
-            "cmp %[l], #2 \n\t"
-            "beq 0f \n\t"
-            "mov r3, $0 \n\t"
-            "stm %[a]!, {r2,r3} \n\t"
-            "cmp %[l], #4 \n\t"
-            "beq 0f \n\t"
-            "stm %[a]!, {r2-r3} \n\t"
-            "stm %[a]!, {r2-r3} \n\t"
-        "0: \n\t"
+        "mov r1, $0 \n\t"
+	    "mov r2, r1 \n\t"
+        "mov r3, r2 \n\t"
+	    "mov r4, r3 \n\t"
+        "stm %[a]!, {r1-r4} \n\t"
+        "stm %[a]!, {r1-r4} \n\t"
     : // out
     : // in
-        [a] "l" (A),
-        [l] "l" (length)
+        [a] "l" (a)
     : // clobber list
-        "r2", "r3", "memory"
+        "r1", "r2", "r3", "r4", "memory"
     );
 }
 
@@ -167,12 +150,12 @@ static void ecc_copy(uint32_t *dst, const uint32_t *src) {
     );
 }
 
-static uint32_t ecc_isX(const uint32_t* A, const uint32_t X) {
-    if (A[0] != X) return 0;
+static uint32_t ecc_isX(const uint32_t* a, const uint32_t x) {
+    if (a[0] != x) return 0;
 
     uint8_t n; 
     for (n = 1; n < 8; n++) 
-        if (A[n] != 0) 
+        if (a[n] != 0) 
             return 0;
 
     return 1;
@@ -184,31 +167,31 @@ static uint32_t ecc_isX(const uint32_t* A, const uint32_t X) {
             "ldm %[a]!, {r2-r5} \n\t"
             "cmp r2, %[x] \n\t"
             "bne 0f \n\t"
-            "cmp r3, #0 \n\t"
+            "cmp r3, $0 \n\t"
             "bne 0f \n\t"
-            "cmp r4, #0 \n\t"
+            "cmp r4, $0 \n\t"
             "bne 0f \n\t"
-            "cmp r5, #0 \n\t"
+            "cmp r5, $0 \n\t"
             "bne 0f \n\t"
             "ldm %[a]!, {r2-r5} \n\t"
-            "cmp r2, #0 \n\t"
+            "cmp r2, $0 \n\t"
             "bne 0f \n\t"
-            "cmp r3, #0 \n\t"
+            "cmp r3, $0 \n\t"
             "bne 0f \n\t"
-            "cmp r4, #0 \n\t"
+            "cmp r4, $0 \n\t"
             "bne 0f \n\t"
-            "cmp r5, #0 \n\t"
+            "cmp r5, $0 \n\t"
             "bne 0f \n\t"
             "mov %[r], #1 \n\t"
             "bne 1f \n\t"
         "0: \n\t"
-            "mov %[r], #0 \n\t"
+            "mov %[r], $0 \n\t"
         "1: \n\t"
     : // out
         [r] "=l" (result)
     : // in
-        [a] "l" (A),
-        [x] "l" (X)
+        [a] "l" (a),
+        [x] "l" (x)
     : // clobber list
         "r2", "r3", "r4", "r5", "memory"
     );
@@ -217,7 +200,7 @@ static uint32_t ecc_isX(const uint32_t* A, const uint32_t X) {
 */
 }
 
-static void ecc_rshift(uint32_t *A) {
+static void ecc_rshift(uint32_t *a) {
     uint32_t index = 32;
     uint32_t carry = 0;
 
@@ -230,11 +213,11 @@ static void ecc_rshift(uint32_t *A) {
             "lsr r3, r3, #1 \n\t"         // value >>= 1
             "orr r4, r4, r3 \n\t"         // result |= value
             "str r4, [%[a],%[i]] \n\t"    // a[index] = result
-            "cmp %[i], #0 \n\t"           // index == 0
+            "cmp %[i], $0 \n\t"           // index == 0
             "bne 0b \n\t"                 // != ? next loop
     : // out
     : // in
-        [a] "r" (A),
+        [a] "r" (a),
         [i] "r" (index),
         [c] "r" (carry)
     : // clobber list
@@ -270,7 +253,7 @@ static uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result)
             "mov %[c], #1 \n\t"
             "b 1f \n\t"
         "0: \n\t"
-            "mov %[c], #0 \n\t"
+            "mov %[c], $0 \n\t"
         "1: \n\t"
     : /* out */
         [c] "=l" (carry)
@@ -313,7 +296,7 @@ static uint32_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result)
             "mov %[c], #1 \n\t"
             "b 1f \n\t"
         "0: \n\t"
-            "mov %[c], #0 \n\t"
+            "mov %[c], $0 \n\t"
         "1: \n\t"
     : /* out */
         [c] "=l" (carry)
@@ -339,19 +322,19 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
 //                  tempP[0] = (uint64_t) x[i] * (uint64_t) y[j];
 //                  ecc_add(r, temp, r, 3);
                     asm volatile(
-                            "ldrh r5, [%[x], #0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
-                            "ldrh r3, [%[y], #0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
+                            "ldrh r5, [%[x], $0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
+                            "ldrh r3, [%[y], $0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
                             "mul r5, r3 \n\t"               // r5 *= r3                 r5 = AB[0]
                             "ldrh r6, [%[x], #2] \n\t"      // r6 = (x[0] >> 16)
                             "mul r3, r6 \n\t"               // r3 *= r6                 r3 = C[0]
                             "ldrh r4, [%[y], #2] \n\t"      // r4 = (y[0] >> 16)
                             "mul r6, r4 \n\t"               // r6 *= r4                 r6 = AB[1]
                         // %[y] wird nun nicht mehr benötigt und überschrieben (folgenden ry genannt)
-                            "ldrh %[y], [%[x], #0] \n\t"    // ry = (x[0] & 0x0000FFFF)
+                            "ldrh %[y], [%[x], $0] \n\t"    // ry = (x[0] & 0x0000FFFF)
                             "mul r4, %[y] \n\t"             // r4 *= ry                 r4 = C[1]
                             "add %[y], r3, r4 \n\t"         // ry = r3 + r4             ry = C[0] + C[1]
                         // C[1] (r4) wird nun nicht mehr benötigt und überschrieben
-                            "mov r4, #0 \n\t"               // r4 = 0
+                            "mov r4, $0 \n\t"               // r4 = 0
                             "bcc .nocarry \n\t"             // jump falls carry clear
                             "mov r4, #1 \n\t"               // r4 = 1
                             "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
@@ -367,10 +350,10 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                             "add r5, r5, r3 \n\t"
                             "adc r6, r6, r4 \n\t"
                             "stm %[r]!, {r5,r6} \n\t"
-                            "ldr r3, [%[r],#0] \n\t"
-                            "mov r4, #0 \n\t"
+                            "ldr r3, [%[r],$0] \n\t"
+                            "mov r4, $0 \n\t"
                             "adc r3, r3, r4 \n\t"
-                            "str r3, [%[r],#0] \n\t"
+                            "str r3, [%[r],$0] \n\t"
                     : // out
                     : // in
                         [x] "l" (&x[i]),
@@ -412,19 +395,19 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
 
         // Version 3: 56 Byte kleiner als Version 1 aber genau so schnell
         asm volatile(
-                "ldrh r5, [%[x], #0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
-                "ldrh r3, [%[y], #0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
+                "ldrh r5, [%[x], $0] \n\t"      // r5 = (x[0] & 0x0000FFFF)
+                "ldrh r3, [%[y], $0] \n\t"      // r3 = (y[0] & 0x0000FFFF)
                 "mul r5, r3 \n\t"               // r5 *= r3                 r5 = AB[0]
                 "ldrh r6, [%[x], #2] \n\t"      // r6 = (x[0] >> 16)
                 "mul r3, r6 \n\t"               // r3 *= r6                 r3 = C[0]
                 "ldrh r4, [%[y], #2] \n\t"      // r4 = (y[0] >> 16)
                 "mul r6, r4 \n\t"               // r6 *= r4                 r6 = AB[1]
             // %[y] wird nun nicht mehr benötigt und überschrieben (folgenden ry genannt)
-                "ldrh %[y], [%[x], #0] \n\t"    // ry = (x[0] & 0x0000FFFF)
+                "ldrh %[y], [%[x], $0] \n\t"    // ry = (x[0] & 0x0000FFFF)
                 "mul r4, %[y] \n\t"             // r4 *= ry                 r4 = C[1]
                 "add %[y], r3, r4 \n\t"         // ry = r3 + r4             ry = C[0] + C[1]
             // C[1] (r4) wird nun nicht mehr benötigt und überschrieben
-                "mov r4, #0 \n\t"               // r4 = 0
+                "mov r4, $0 \n\t"               // r4 = 0
                 "bcc 0f \n\t"                   // jump falls carry clear
                 "mov r4, #1 \n\t"               // r4 = 1
                 "lsl r4, r4, #16 \n\t"          // r4 <<= 16                
@@ -482,7 +465,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                     "mov %[c], #1 \n\t"
                     "b 2f \n\t"
                 "1: \n\t"
-                    "mov %[c], #0 \n\t"
+                    "mov %[c], $0 \n\t"
                 "2: \n\t"
             : // out
                 [c] "=l" (carry)
@@ -493,7 +476,6 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "r3", "r4", "r5", "r6", "memory"
             );
         }
-        ecc_setZero(C + length, length/2);
         C[length] = carry;
         asm volatile(
                 "cmp %[l], #2 \n\t"
@@ -525,13 +507,13 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
                 "ldm %[r]!, {r3,r4} \n\t"
-                "ldm %[c]!, {r5,r6} \n\t"
+                "ldm %[c]!, {r5} \n\t"
+				"mov r6, $0 \n\t"
                 "adc r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
                 "ldm %[r]!, {r3,r4} \n\t"
-                "ldm %[c]!, {r5,r6} \n\t"
-                "adc r3, r3, r5 \n\t"
+                "adc r3, r3, r6 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
                 "b 0f \n\t"
@@ -550,7 +532,8 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
                 "ldm %[r]!, {r3,r4} \n\t"
-                "ldm %[c]!, {r5,r6} \n\t"
+                "ldm %[c]!, {r5} \n\t"
+				"mov r6, $0 \n\t"
                 "adc r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
@@ -563,8 +546,8 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "ldm %[c]!, {r5,r6} \n\t"
                 "add r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
-                "ldr r5, [%[r], #0] \n\t"
-                "ldr r6, [%[c], #0] \n\t"
+                "ldr r5, [%[r], $0] \n\t"
+                "ldr r6, [%[c], $0] \n\t"
                 "adc r5, r5, r6 \n\t"
                 "stm %[l]!, {r3-r5} \n\t"
             "0: \n\t"
@@ -584,11 +567,11 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
 __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint32_t *src) {
     // 0, 0, 0, src[11], src[12], src[13], src[14], src[15]
     asm volatile(
-        "mov r2, #0 \n\t"
-        "mov r3, #0 \n\t"
-        "mov r4, #0 \n\t"
+        "mov r2, $0 \n\t"
+        "mov r3, r2 \n\t"
+        "mov r4, r3 \n\t"
         "stm %[d]!, {r2-r4} \n\t"
-        "add %[s], %[s], #44 \n\t"
+        "add %[s], #44 \n\t"
         "ldm %[s]!, {r2-r6} \n\t"
         "stm %[d]!, {r2-r6} \n\t"
     : // out
@@ -603,14 +586,14 @@ __attribute__((always_inline)) static void ecc_form_s1(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint32_t *src) {
     // 0, 0, 0, src[12], src[13], src[14], src[15], 0
     asm volatile(
-        "mov r2, #0 \n\t"
-        "mov r3, #0 \n\t"
-        "mov r4, #0 \n\t"
+        "mov r2, $0 \n\t"
+        "mov r3, r2 \n\t"
+        "mov r4, r3 \n\t"
         "stm %[d]!, {r2-r4} \n\t"
-        "add %[s], %[s], #48 \n\t"
+        "add %[s], #48 \n\t"
         "ldm %[s]!, {r2-r5} \n\t"
         "stm %[d]!, {r2-r5} \n\t"
-        "mov r2, #0 \n\t"
+        "mov r2, $0 \n\t"
         "stm %[d]!, {r2} \n\t"
     : // out
         [d] "+l" (dst),
@@ -624,13 +607,13 @@ __attribute__((always_inline)) static void ecc_form_s2(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint32_t *src) {
     // src[8], src[9], src[10], 0, 0, 0, src[14], src[15]
     asm volatile(
-        "add %[s], %[s], #32 \n\t"
+        "add %[s], #32 \n\t"
         "ldm %[s]!, {r2-r4} \n\t"
-        "mov r5, #0 \n\t"
+        "mov r5, $0 \n\t"
         "stm %[d]!, {r2-r5} \n\t"
-        "mov r2, #0 \n\t"
-        "mov r3, #0 \n\t"
-        "add %[s], %[s], #12 \n\t"
+        "mov r2, r5 \n\t"
+        "mov r3, r2 \n\t"
+        "add %[s], #12 \n\t"
         "ldm %[s]!, {r4,r5} \n\t"
         "stm %[d]!, {r2-r5} \n\t"
     : // out
@@ -645,10 +628,10 @@ __attribute__((always_inline)) static void ecc_form_s3(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint32_t *src) {
     // src[9], src[10], src[11], src[13], src[14], src[15], src[13], src[8]
     asm volatile(
-        "add %[s], %[s], #32 \n\t"
+        "add %[s], #32 \n\t"
         "ldm %[s]!, {r2-r5} \n\t"
         "stm %[d]!, {r3-r5} \n\t"
-        "add %[s], %[s], #4 \n\t"
+        "add %[s], #4 \n\t"
         "ldm %[s]!, {r3-r5} \n\t"
         "stm %[d]!, {r3-r5} \n\t"
         "mov r4, r2 \n\t"
@@ -665,12 +648,12 @@ __attribute__((always_inline)) static void ecc_form_s4(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint32_t *src) {
     // src[11], src[12], src[13], 0, 0, 0, src[8], src[10]
     asm volatile(
-        "add %[s], %[s], #32 \n\t"
+        "add %[s], #32 \n\t"
         "ldm %[s]!, {r2-r7} \n\t"
         "stm %[d]!, {r5-r7} \n\t"
-        "mov r3, #0 \n\t"
-        "mov r5, #0 \n\t"
-        "mov r6, #0 \n\t"
+        "mov r3, $0 \n\t"
+        "mov r5, r3 \n\t"
+        "mov r6, r5 \n\t"
         "stm %[d]!, {r3,r5,r6} \n\t"
         "stm %[d]!, {r2,r4} \n\t"
     : // out
@@ -685,13 +668,13 @@ __attribute__((always_inline)) static void ecc_form_d1(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint32_t *src) {
     // src[12], src[13], src[14], src[15], 0, 0, src[9], src[11]
     asm volatile(
-        "add %[s], %[s], #48 \n\t"
+        "add %[s], #48 \n\t"
         "ldm %[s]!, {r2-r5} \n\t"
         "stm %[d]!, {r2-r5} \n\t"
-        "sub %[s], %[s], #28 \n\t"
+        "sub %[s], #28 \n\t"
         "ldm %[s]!, {r4-r6} \n\t"
-        "mov r2, #0 \n\t"
-        "mov r3, #0 \n\t"
+        "mov r2, $0 \n\t"
+        "mov r3, r2 \n\t"
         "stm %[d]!, {r2-r4,r6} \n\t"
     : // out
         [d] "+l" (dst),
@@ -705,12 +688,12 @@ __attribute__((always_inline)) static void ecc_form_d2(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint32_t *src) {
     // src[13], src[14], src[15], src[8], src[9], src[10], 0, src[12]
     asm volatile(
-        "add %[s], %[s], #52 \n\t"
+        "add %[s], #52 \n\t"
         "ldm %[s]!, {r2-r4} \n\t"
         "stm %[d]!, {r2-r4} \n\t"
-        "sub %[s], %[s], #32 \n\t"
+        "sub %[s], #32 \n\t"
         "ldm %[s]!, {r2-r6} \n\t"
-        "mov r5, #0 \n\t"
+        "mov r5, $0 \n\t"
         "stm %[d]!, {r2-r6} \n\t"
     : // out
         [d] "+l" (dst),
@@ -724,13 +707,13 @@ __attribute__((always_inline)) static void ecc_form_d3(uint32_t *dst, const uint
 __attribute__((always_inline)) static void ecc_form_d4(uint32_t *dst, const uint32_t *src) {
     // src[14], src[15], 0, src[9], src[10], src[11], 0, src[13]
     asm volatile(
-        "add %[s], %[s], #56 \n\t"
+        "add %[s], #56 \n\t"
         "ldm %[s]!, {r2,r3} \n\t"
-        "mov r4, #0 \n\t"
+        "mov r4, $0 \n\t"
         "stm %[d]!, {r2-r4} \n\t"
-        "sub %[s], %[s], #28 \n\t"
+        "sub %[s], #28 \n\t"
         "ldm %[s]!, {r2-r6} \n\t"
-        "mov r5, #0 \n\t"
+        "mov r5, $0 \n\t"
         "stm %[d]!, {r2-r6} \n\t"
     : // out
         [d] "+l" (dst),
@@ -794,7 +777,7 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
         result[7] |= 0x80000000;//add the carry
         if (ecc_compare(result, modulus) == 1) {
             uint32_t tempas[8];
-            ecc_setZero(tempas, 8);
+            ecc_setZero(tempas);
             ecc_add(result, reducer, tempas);
             ecc_copy(result, tempas);
         }
@@ -809,15 +792,15 @@ static int ecc_fieldAddAndDivide(const uint32_t *x, const uint32_t *modulus, con
 static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint32_t *reducer, uint32_t *B){
     uint32_t u[8],v[8],x1[8];
     uint32_t tempm[8];
-    ecc_setZero(tempm, 8);
-    ecc_setZero(u, 8);
-    ecc_setZero(v, 8);
+    ecc_setZero(tempm);
+    ecc_setZero(u);
+    ecc_setZero(v);
 
     uint8_t t;
     ecc_copy(u, A); 
     ecc_copy(v, modulus); 
-    ecc_setZero(x1, 8);
-    ecc_setZero(B, 8);
+    ecc_setZero(x1);
+    ecc_setZero(B);
     x1[0]=1; 
     /* While u !=1 and v !=1 */ 
     while ((ecc_isX(u, 1) || ecc_isX(v, 1))==0) {
@@ -875,8 +858,8 @@ static void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *q
 
     if(!ecc_compare(px, qx)){
         if(ecc_compare(py, qy)){
-            ecc_setZero(Sx, 8);
-            ecc_setZero(Sy, 8);
+            ecc_setZero(Sx);
+            ecc_setZero(Sy);
             return;
         } else {
             ecc_ec_double(px, py, Sx, Sy);
@@ -914,7 +897,7 @@ static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, 
 
     ecc_mult(px, px, tempD, arrayLength);
     ecc_fieldModP(Dy, tempD);
-    ecc_setZero(tempB, 8);
+    ecc_setZero(tempB);
     tempB[0] = 0x00000001;
     ecc_fieldSub(Dy, tempB, ecc_prime_m, tempC); //tempC = (qx^2-1)
     tempB[0] = 0x00000003;
