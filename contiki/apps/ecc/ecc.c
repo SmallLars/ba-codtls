@@ -336,17 +336,38 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
     } else {
         uint32_t carry;
         uint32_t C[length*2];
-        ecc_mult(&x[0], &y[0], &result[0], length/2);
-        ecc_mult(&x[length/2], &y[length/2], &result[length], length/2);
-        ecc_mult(&x[0], &y[length/2], &C[0], length/2);
-        ecc_mult(&x[length/2], &y[0], &C[length], length/2);
-        if (length == 2) {
+        ecc_mult(x, y, result, length/2);
+        ecc_mult(x + (length/2), y + (length/2), result + length, length/2);
+        ecc_mult(x, y + (length/2), C, length/2);
+        ecc_mult(x + (length/2), y, C + length, length/2);
+        if (length == 8) {
+            carry = ecc_add(C, C + length, C, length);
+        } else {
             asm volatile(
+                    "cmp %[l], #2 \n\t"
+                    "beq .add2 \n\t"
+                    // ecc_add(C, C + 4, C, 4);
+                    "mov %[l], %[a] \n\t"
+                    "ldm %[a]!, {r3-r6} \n\t"
+                    "ldm %[a]!, {r5,r6} \n\t"
+                    "sub %[a], %[a], #16 \n\t"                    
+                    "add r3, r3, r5 \n\t"
+                    "adc r4, r4, r6 \n\t"
+                    "stm %[l]!, {r3,r4} \n\t"
+                    "ldm %[a]!, {r3-r6} \n\t"
+                    "ldm %[a]!, {r5,r6} \n\t"
+                    "adc r3, r3, r5 \n\t"
+                    "adc r4, r4, r6 \n\t"
+                    "stm %[l]!, {r3,r4} \n\t"
+                    "b 0f \n\t"
+                ".add2: \n\t"
+                    // ecc_add(C, C + 2, C, 2);
                     "ldm %[a]!, {r3-r6} \n\t"
                     "sub %[a], %[a], #16 \n\t"
                     "add r3, r3, r5 \n\t"
                     "adc r4, r4, r6 \n\t"
                     "stm %[a]!, {r3,r4} \n\t"
+                "0: \n\t"
                     "bcc 1f \n\t"
                     "mov %[c], #1 \n\t"
                     "b 2f \n\t"
@@ -356,14 +377,13 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
             : // out
                 [c] "=l" (carry)
             : // in
-                [a] "l" (C)
+                [a] "l" (C),
+                [l] "l" (length)
             : // clobber list
                 "r3", "r4", "r5", "r6", "memory"
             );
-        } else {
-            carry = ecc_add(&C[0], &C[length], &C[0], length);
         }
-        ecc_setZero(&C[length], length/2);
+        ecc_setZero(C + length, length/2);
         C[length] = carry;
         asm volatile(
                 "cmp %[l], #2 \n\t"
