@@ -119,9 +119,9 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
 static void ecc_setZero(uint32_t *a) {
     asm volatile(
         "mov r1, $0 \n\t"
-	    "mov r2, r1 \n\t"
+        "mov r2, r1 \n\t"
         "mov r3, r2 \n\t"
-	    "mov r4, r3 \n\t"
+        "mov r4, r3 \n\t"
         "stm %[a]!, {r1-r4} \n\t"
         "stm %[a]!, {r1-r4} \n\t"
     : // out
@@ -508,7 +508,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "stm %[l]!, {r3,r4} \n\t"
                 "ldm %[r]!, {r3,r4} \n\t"
                 "ldm %[c]!, {r5} \n\t"
-				"mov r6, $0 \n\t"
+                "mov r6, $0 \n\t"
                 "adc r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
@@ -533,7 +533,7 @@ static void ecc_mult(const uint32_t *x, const uint32_t *y, uint32_t *result, con
                 "stm %[l]!, {r3,r4} \n\t"
                 "ldm %[r]!, {r3,r4} \n\t"
                 "ldm %[c]!, {r5} \n\t"
-				"mov r6, $0 \n\t"
+                "mov r6, $0 \n\t"
                 "adc r3, r3, r5 \n\t"
                 "adc r4, r4, r6 \n\t"
                 "stm %[l]!, {r3,r4} \n\t"
