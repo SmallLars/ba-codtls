@@ -62,7 +62,7 @@ Ressource-Handlers, anhand einer globalen Variable, überprüft, ob die Ressourc
 Stimmt diese mit der Absender-IP der letzten Anfrage überein, kann die Anfrage trotzdem bearbeitet werden. Bei Bearbeitung der Anfrage, wird die Ressource
 zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben. Nur die Bearbeitung einer
 ClientHello-Nachricht mit korrektem Cookie führt im weiteren Verlauf zu einer erneuten Sperrung, da hier ein Zustand erzeugt wird, der erst in der darauffolgenden
-Anfrage abgearbeitet wird.  \TODO{probleme, angriffe, reaktionen, timeout}
+Anfrage abgearbeitet wird.   \TODO{probleme, angriffe, reaktionen, timeout}
 
 psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\

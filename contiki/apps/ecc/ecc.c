@@ -86,8 +86,8 @@ static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 signed int ecc_compare(const uint32_t *a, const uint32_t *b) {
-    int i;
-    for (i = 7; i >= 0; i--) {
+    int i = 8;
+    while (--i) {
         if (a[i] > b[i]) return 1; 
         if (a[i] < b[i]) return -1;
     }
@@ -97,21 +97,20 @@ signed int ecc_compare(const uint32_t *a, const uint32_t *b) {
 void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret, uint32_t *resultx, uint32_t *resulty) {
     uint32_t Qx[8];
     uint32_t Qy[8];
-    ecc_setZero(Qx);
-    ecc_setZero(Qy);
 
-    int i;
-    for (i = 256;i--;) {
-        ecc_ec_double(Qx, Qy, resultx, resulty);
+    ecc_setZero(resultx);
+    ecc_setZero(resulty);
+
+    int i = 256;
+    while (--i) {
+        ecc_ec_double(resultx, resulty, Qx, Qy);
         if ((((secret[i/32])>>(i%32)) & 0x01) == 1) {
-            ecc_ec_add(resultx, resulty, px, py, Qx, Qy);
+            ecc_ec_add(Qx, Qy, px, py, resultx, resulty);
         } else {
-            ecc_copy(Qx, resultx);
-            ecc_copy(Qy, resulty);
+            ecc_copy(resultx, Qx);
+            ecc_copy(resulty, Qy);
         }
     }
-    ecc_copy(resultx, Qx);
-    ecc_copy(resulty, Qy);
 }
 
 /* Private Funktionen ------------------------------------------------------ */
