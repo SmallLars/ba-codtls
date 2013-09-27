@@ -86,8 +86,8 @@ static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, 
 /* Öffentliche Funktionen -------------------------------------------------- */
 
 signed int ecc_compare(const uint32_t *a, const uint32_t *b) {
-    int i = 8;
-    while (--i) {
+    uint32_t i = 8;
+    while (i--) {
         if (a[i] > b[i]) return 1; 
         if (a[i] < b[i]) return -1;
     }
@@ -101,10 +101,10 @@ void ecc_ec_mult(const uint32_t *px, const uint32_t *py, const uint32_t *secret,
     ecc_setZero(resultx);
     ecc_setZero(resulty);
 
-    int i = 256;
-    while (--i) {
+    uint32_t i = 256;
+    while (i--) {
         ecc_ec_double(resultx, resulty, Qx, Qy);
-        if ((((secret[i/32])>>(i%32)) & 0x01) == 1) {
+        if (((secret[i/32]) >> (i & 0x1F)) & 0x01) {
             ecc_ec_add(Qx, Qy, px, py, resultx, resulty);
         } else {
             ecc_copy(resultx, Qx);
@@ -152,9 +152,9 @@ static void ecc_copy(uint32_t *dst, const uint32_t *src) {
 static uint32_t ecc_isX(const uint32_t* a, const uint32_t x) {
     if (a[0] != x) return 0;
 
-    uint8_t n; 
-    for (n = 1; n < 8; n++) 
-        if (a[n] != 0) 
+    uint32_t n = 8;
+    while (--n) 
+        if (a[n]) 
             return 0;
 
     return 1;
@@ -795,7 +795,6 @@ static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint3
     ecc_setZero(u);
     ecc_setZero(v);
 
-    uint8_t t;
     ecc_copy(u, A); 
     ecc_copy(v, modulus); 
     ecc_setZero(x1);
@@ -803,36 +802,35 @@ static void ecc_fieldInv(const uint32_t *A, const uint32_t *modulus, const uint3
     x1[0]=1; 
     /* While u !=1 and v !=1 */ 
     while ((ecc_isX(u, 1) || ecc_isX(v, 1))==0) {
-        while(!(u[0]&1)) {                  /* While u is even */
+        while(!(u[0]&1)) {                      /* While u is even */
             ecc_rshift(u);                      /* divide by 2 */
-            if (!(x1[0]&1))                 /*ifx1iseven*/
+            if (!(x1[0]&1))                     /*ifx1iseven*/
                 ecc_rshift(x1);                 /* Divide by 2 */
             else {
                 ecc_fieldAddAndDivide(x1,modulus,reducer,tempm); /* tempm=(x1+p)/2 */
-                ecc_copy(x1, tempm);         /* x1=tempm */
+                ecc_copy(x1, tempm);            /* x1=tempm */
             }
         } 
-        while(!(v[0]&1)) {                  /* While v is even */
+        while(!(v[0]&1)) {                      /* While v is even */
             ecc_rshift(v);                      /* divide by 2 */ 
-            if (!(B[0]&1))                  /*if x2 is even*/
-                ecc_rshift(B);              /* Divide by 2 */
-            else
-            {
+            if (!(B[0]&1))                      /*if x2 is even*/
+                ecc_rshift(B);                  /* Divide by 2 */
+            else {
                 ecc_fieldAddAndDivide(B,modulus,reducer,tempm); /* tempm=(x2+p)/2 */
-                ecc_copy(B, tempm);          /* x2=tempm */ 
+                ecc_copy(B, tempm);             /* x2=tempm */ 
             }
             
         } 
-        t=ecc_sub(u,v,tempm);                           /* tempm=u-v */
-        if (t==0) {                         /* If u > 0 */
-            ecc_copy(u, tempm);                  /* u=u-v */
-            ecc_fieldSub(x1,B,modulus,tempm);           /* tempm=x1-x2 */
-            ecc_copy(x1, tempm);                 /* x1=x1-x2 */
-        } else {
-            ecc_sub(v,u,tempm);                         /* tempm=v-u */
-            ecc_copy(v, tempm);                  /* v=v-u */
-            ecc_fieldSub(B,x1,modulus,tempm);           /* tempm=x2-x1 */
-            ecc_copy(B, tempm);                  /* x2=x2-x1 */
+            /* tempm=u-v */
+        if (ecc_sub(u,v,tempm)) {               /* If u == 0 */
+            ecc_sub(v,u,tempm);                 /* tempm=v-u */
+            ecc_copy(v, tempm);                 /* v=v-u */
+            ecc_fieldSub(B,x1,modulus,tempm);   /* tempm=x2-x1 */
+            ecc_copy(B, tempm);                 /* x2=x2-x1 */
+        } else {                                /* If u > 0 */
+            ecc_copy(u, tempm);                 /* u=u-v */
+            ecc_fieldSub(x1,B,modulus,tempm);   /* tempm=x1-x2 */
+            ecc_copy(x1, tempm);                /* x1=x1-x2 */
         }
     } 
     if (ecc_isX(u, 1)) {
