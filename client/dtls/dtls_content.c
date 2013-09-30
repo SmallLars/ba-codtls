@@ -11,8 +11,8 @@ typedef enum {
 } ContentLength;
 
 typedef struct {
-  ContentType type:6;
   ContentLength len:2;
+  ContentType type:6;
   uint8_t payload[0];
 } __attribute__ ((packed)) Content_t;
 

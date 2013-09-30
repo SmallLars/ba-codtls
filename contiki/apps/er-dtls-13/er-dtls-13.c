@@ -206,6 +206,12 @@ __attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, si
     // payload zunächst kopieren und dann in coap_parse_message verwenden
     // ist ineffizienter (auch weil die URI noch zerlegt werden muss)
 
+    if (packet[1] == 0) {
+        // Empty ist ok. Wird für die Block 2 Empfangsbestätigung benutzt.
+        PRINTF("dtls-uri-check: empty\n");
+        return 0;
+    }
+
     int url_len = 0;
 
     packet += (4 + (packet[0] & 0x0F));         // 4 Byte Header und Tokenlength. packet zeigt nun auf Options
@@ -237,8 +243,6 @@ __attribute__((always_inline)) static int checkCoapURI(const uint8_t *packet, si
         if (url_len != 4 || strncmp("dtls", packet, 4)) {
             return -1;
         }
-    } else {
-        PRINTF("dtls-uri-check: empty\n");
     }
 
     return 0;

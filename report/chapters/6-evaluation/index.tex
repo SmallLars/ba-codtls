@@ -1,5 +1,128 @@
 \chapter{Evaluation}
 
-\section{Datenverkehr}
+\section{Datenverkehr während des Handshakes}
 
-lala \TODO{Test1} soso
+Verglichen werden 3 Verfahren bei benutzung des definierten ciphersuits.
+\begin{itemize}
+  \item Neu
+  \item DTLS original
+  \item DTLS mit stateless header compression
+\end{itemize}
+dazu werden in den folgenden 3 abschnitten die datenmengen ermittelt, während in 4 abschnitt der vergleich erfolgt.
+dabei wird ein handshake ohne datenverluste oder andere fehler und angriffe betrachtet.
+
+je nach umfeld anders aber dort jeweils konstant:
+\begin{itemize}
+  \item 802.15.4 Header
+  \item 6LowPAN Header
+  \item UDP Header
+\end{itemize}
+deswegen werden diese nur im sinne von anzahl der pakete betrachtet
+
+Folgende werden verwendet und sind bei allen 3 Verfahren gleich:\\
+\begin{tabular}{l|r}
+  Typ & Größe\\
+  \hline
+  ClientHello ohne Cookie & 57 Byte\\
+  HelloVerifyRequest      & 11 Byte\\
+  ClientHello mit Cookie  & 65 Byte\\
+  ServerHello             & 56 Byte\\
+  ServerKeyExchange       & 87 Byte\\
+  ServerHelloDone         &  0 Byte\\
+  ClientKeyExchange       & 87 Byte\\
+  ChangeCipherSpec        &  1 Byte\\
+  Finished                & 12 Byte    
+\end{tabular}
+
+darauf basierend werden nun die Datenmengen für alle 3 Verfahren ermittelt\\
+ausgangssituation ist epoche 0 mit verwendetem ciphersuit
+
+\subsection{Neu}
+
+gemäß abbildung 3.2
+
+\textbf{erster von drei schritten:}
+
+ClientHello ohne cookie mit direkter Antwort: 2 Anfragen, 2 Antworten\\
+vier dtls header a drei Byte\\
+in der anfrage und in der antwort ist jeweils ein contentheader a zwei byte enthalten
+
+\begin{verbatim}
+--> 13 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 13 byte + 27 byte   coap + uri + block 1
+<-- 10 byte + 13 byte   coap + content type + block 1
+\end{verbatim}
+
+\textbf{zweiter von drei schritten:}
+
+ClientHello mit cookie mit separate Antwort: 8 Anfragen, 8 Antworten\\
+16 dtls header a drei byte\\
+in der anfrage ist ein contentheader a zwei byte enthalten. in der antwort sind drei content header mit insgesamt 5 byte enthalten
+
+\begin{verbatim}
+--> 13 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 13 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 13 byte +  3 byte   coap + uri + block 1
+<--  4 byte             coap empty msg (separate)
+
+<-- 11 byte + 32 byte   coap + content type + block 1 + block 2
+-->  4 byte             coap empty msg (ack)
+<--  9 byte + 32 byte   coap + content type + block 2
+-->  4 byte             coap empty msg (ack)
+<--  9 byte + 32 byte   coap + content type + block 2
+-->  4 byte             coap empty msg (ack)
+<--  9 byte + 32 byte   coap + content type + block 2
+-->  4 byte             coap empty msg (ack)
+<--  9 byte + 20 byte   coap + content type + block 2
+-->  4 byte             coap empty msg (ack)
+\end{verbatim}
+
+\textbf{dritter von drei schritten:}
+
+ClientKeyExchange + ChangeCipherSpec + Finished mit separate Antwort: 5 Anfragen, 5 Antworten\\
+10 dtls header a drei byte\\
+in der anfrage sind drei contentheader mit insgesamt 6 byte enthalten. in der antwort sind zwei content header mit insgesamt 4 byte enthalten
+
+\begin{verbatim}
+--> 22 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 22 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 22 byte + 32 byte   coap + uri + block 1
+<--  7 byte             coap + block 1
+--> 22 byte + 18 byte   coap + uri + block 1
+<--  4 byte             coap empty msg (separate)
+
+<-- 10 byte + 25 byte   coap + content type + block 1
+-->  4 byte             coap empty msg (ack)
+\end{verbatim}
+
+\subsection{DTLS original}
+
+\subsection{DTLS mit stateless header compression}
+
+\subsection{Vergleich}
+
+\section{Programmgröße}
+
+Implementierung ist 10 KiB groß\\
+7,2 KiB setzen sich zusammen: \TODO{aktualisieren}
+\begin{itemize}
+  \item 2,41 KiB ECC-Funktionen
+  \item 0,95 KiB AES-Funktionen (CCM + CMAC)
+  \item 0,80 KiB Flash-Speicher-Funktionen
+  \item 0,79 KiB Session-Verwaltung
+  \item 0,15 KiB Pseudo-Random-Funktion
+  \item 1,78 KiB Handshake-Ressource
+  \item 0,32 KiB Parse \& Send
+\end{itemize}
+
+\section{Dauer}
+
+\begin{itemize}
+  \item ECC-Multiplikation: \o 4,5 s
+  \item Handshake: \o 11 s
+\end{itemize}
