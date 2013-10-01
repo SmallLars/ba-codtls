@@ -1,13 +1,20 @@
 \section{Programmgröße}
 
-Implementierung ist 10 KiB groß\\
-7,2 KiB setzen sich zusammen: \TODO{aktualisieren}
+Implementierung ist 10,77 KiB groß\\
+8,41 KiB setzen sich zusammen:
 \begin{itemize}
-  \item 2,41 KiB ECC-Funktionen
+  \item 2,09 KiB ECC-Funktionen
   \item 0,95 KiB AES-Funktionen (CCM + CMAC)
   \item 0,80 KiB Flash-Speicher-Funktionen
-  \item 0,79 KiB Session-Verwaltung
-  \item 0,15 KiB Pseudo-Random-Funktion
-  \item 1,78 KiB Handshake-Ressource
-  \item 0,32 KiB Parse \& Send
+  \item 0,88 KiB Session-Verwaltung
+  \item 0,18 KiB Pseudo-Random-Funktion
+  \item 2,48 KiB Handshake-Ressource
+  \item 1,03 KiB Parse \& Send
 \end{itemize}
+
+Gesamtgröße: 93972 = 91,77 KiB\\
+Verbleiben   98304 - 93972 = 4332 = 4,23 KiB\\
+-> praxistauglich
+
+die maximale stackausnutzung beträgt 1504 byte von 2048\\
+somit wäre es möglich den stack von 2048 Byte auf 1536 Byte zu reduzieren, um 0,5 KiB weiteren Speicher nutzen zu können
