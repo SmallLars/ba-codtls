@@ -20,7 +20,10 @@ je nach umfeld anders aber dort jeweils konstant:
 deswegen werden diese nur im sinne von anzahl der pakete betrachtet
 
 Folgende werden verwendet und sind bei allen 3 Verfahren gleich:\\
+\begin{figure}[!ht]
+\centering
 \begin{tabular}{l|r}
+  \hiderowcolors
   Typ & Größe\\
   \hline
   ClientHello ohne Cookie & 57 Byte\\
@@ -31,8 +34,13 @@ Folgende werden verwendet und sind bei allen 3 Verfahren gleich:\\
   ServerHelloDone         &  0 Byte\\
   ClientKeyExchange       & 87 Byte\\
   ChangeCipherSpec        &  1 Byte\\
-  Finished                & 12 Byte    
+  Finished                & 12 Byte\\
+  \showrowcolors
 \end{tabular}
+\caption{Größe der Handshake Nachrichten}
+\label{tbl:6-1_handshake-data}
+\end{figure}
+
 
 darauf basierend werden nun die Datenmengen für alle 3 Verfahren ermittelt\\
 ausgangssituation ist epoche 0 mit verwendetem ciphersuit
@@ -41,124 +49,149 @@ ausgangssituation ist epoche 0 mit verwendetem ciphersuit
 
 gemäß abbildung 3.2
 
-\textbf{erster von drei schritten:}
+coap packete die nur zur bestätigung dienen und keine daten enthalten rausrechnen zum zusätzlichen vergleich
 
-ClientHello ohne cookie mit direkter Antwort: 2 Anfragen, 2 Antworten\\
-in der anfrage und in der antwort ist jeweils ein contentheader a zwei byte enthalten
+in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen wird
 
-\begin{verbatim}
---> 3 byte + 13 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 13 byte + 27 byte   coap + uri + block 1
-<-- 3 byte + 10 byte + 13 byte   coap + content type + block 1
-\end{verbatim}
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{r|c|r|r|r|r|l}
+  \hiderowcolors
+  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{CoAP-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & CoAP-Optionen und Inhalt\\
+  \hline
+  \hline
+   1 & --> & 3 & 13 & 2 & 30 & URI, B1, CHello ohne Cookie [1/2]\\
+   2 & <-- & 3 &  7 &   &    & B1\\
+   3 & --> & 3 & 13 &   & 27 & URI, B1, CHello ohne Cookie [2/2]\\
+   4 & <-- & 3 & 10 & 2 & 11 & CT, B1, HelloVerifyRequest\\
+  \hline
+  \hline
+   5 & --> & 3 & 13 & 2 & 30 & URI, B1, CHello mit Cookie [1/3]\\
+   6 & <-- & 3 &  7 &   &    & B1\\
+   7 & --> & 3 & 13 &   & 32 & URI, B1, CHello mit Cookie [2/3]\\
+   8 & <-- & 3 &  7 &   &    & B1\\
+   9 & --> & 3 & 13 &   &  3 & URI, B1, CHello mit Cookie [3/3]\\
+  10 & <-- & 3 &  4 &   &    & EMPTY (Separate Antwort)\\
+  11 & <-- & 3 & 11 & 5 & 27 & CT, B1, B2, SHello, SKeyExchange, SHelloDone [1/5]\\
+  12 & --> & 3 &  4 &   &    & EMPTY\\
+  13 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [2/5]\\
+  14 & --> & 3 &  4 &   &    & EMPTY\\
+  15 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [3/5]\\
+  16 & --> & 3 &  4 &   &    & EMPTY\\
+  17 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [4/5]\\
+  18 & --> & 3 &  4 &   &    & EMPTY\\
+  19 & <-- & 3 &  9 &   & 20 & CT, B2, SHello, SKeyExchange, SHelloDone [5/5]\\
+  20 & --> & 3 &  4 &   &    & EMPTY\\
+  \hline
+  \hline
+  21 & --> & 3 & 22 & 6 & 26 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [1/4]\\
+  22 & <-- & 3 &  7 &   &    & B1\\
+  23 & --> & 3 & 22 &   & 32 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [2/4]\\
+  24 & <-- & 3 &  7 &   &    & B1\\
+  25 & --> & 3 & 22 &   & 32 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [3/4]\\
+  26 & <-- & 3 &  7 &   &    & B1\\
+  27 & --> & 3 & 22 &   & 18 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [4/4]\\
+  28 & <-- & 3 &  4 &   &    & EMPTY (Separate Antwort)\\
+  29 & <-- & 3 & 10 & 4 & 21 & CT, B1, ChangeCipherSpec, Finished\\
+  30 & --> & 3 &  4 &   &    & EMPTY\\
+  \hline
+  \hline
+    & <-> & 90 & 294 & 21 & 405 & Gesamt 810 \\
+  \showrowcolors
+\end{tabular}
+\caption{Datenaustausch während eines Handshake mit angepasstem DTLS}
+\label{tbl:6-1_data-dtls-neu}
+\end{figure}
 
-\textbf{zweiter von drei schritten:}
-
-ClientHello mit cookie mit separate Antwort: 8 Anfragen, 8 Antworten\\
-in der anfrage ist ein contentheader a zwei byte enthalten. in der antwort sind drei content header mit insgesamt 5 byte enthalten
-
-\begin{verbatim}
---> 3 byte + 13 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 13 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 13 byte +  3 byte   coap + uri + block 1
-<-- 3 byte +  4 byte             coap empty msg (separate)
-
-<-- 3 byte + 11 byte + 32 byte   coap + content type + block 1 + block 2
---> 3 byte +  4 byte             coap empty msg (ack)
-<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
---> 3 byte +  4 byte             coap empty msg (ack)
-<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
---> 3 byte +  4 byte             coap empty msg (ack)
-<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
---> 3 byte +  4 byte             coap empty msg (ack)
-<-- 3 byte +  9 byte + 20 byte   coap + content type + block 2
---> 3 byte +  4 byte             coap empty msg (ack)
-\end{verbatim}
-
-\textbf{dritter von drei schritten:}
-
-ClientKeyExchange + ChangeCipherSpec + Finished mit separate Antwort: 5 Anfragen, 5 Antworten\\
-in der anfrage sind drei contentheader mit insgesamt 6 byte enthalten. in der antwort sind zwei content header mit insgesamt 4 byte enthalten
-
-\begin{verbatim}
---> 3 byte + 22 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 22 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 22 byte + 32 byte   coap + uri + block 1
-<-- 3 byte +  7 byte             coap + block 1
---> 3 byte + 22 byte + 18 byte   coap + uri + block 1
-<-- 3 byte +  4 byte             coap empty msg (separate)
-
-<-- 3 byte + 10 byte + 25 byte   coap + content type + block 1
---> 3 byte +  4 byte             coap empty msg (ack)
-\end{verbatim}
+zu beachten ist, dass 14 Datenpakete mit 116 Byte coap spezifisch sind und keinerlei dtls handshake daten enthalten\\
+die müssen zwar berücksichtig werden, sind aber dennoch eine separate betrachtung wert.\\
 
 \subsection{DTLS original}
-127 - 48 - 8 - 13 - 12 = 46 Byte Daten
 
-\begin{verbatim}
---> 13 byte + 12 byte + 46 byte   ClientHello ohne Cookie
---> 13 byte + 12 byte + 11 byte   ClientHello ohne Cookie
+maximale payload größe: 127 - 48 - 8 - 13 - 12 - 8 = 38
 
-<-- 13 byte + 12 byte + 11 byte   HelloVerifyRequest
-
---> 13 byte + 12 byte + 46 byte   ClientHello mit Cookie
---> 13 byte + 12 byte + 19 byte   ClientHello mit Cookie
-
-<-- 13 byte + 12 byte + 46 byte   ServerHello
-<-- 13 byte + 12 byte + 10 byte   ServerHello
-<-- 13 byte + 12 byte + 46 byte   ServerKeyExchange
-<-- 13 byte + 12 byte + 41 byte   ServerKeyExchange
-<-- 13 byte + 12 byte +  0 byte   ServerHelloDone
-
---> 13 byte + 12 byte + 46 byte   ClientKeyExchange
---> 13 byte + 12 byte + 41 byte   ClientKeyExchange
---> 13 byte + 12 byte +  1 byte   ChangeCipherSpec
---> 13 byte + 12 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
-
-<-- 13 byte + 12 byte +  1 byte   ChangeCipherSpec
-<-- 13 byte + 12 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
- \end{verbatim}
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{r|c|r|r|r|l}
+  \hiderowcolors
+  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & Inhalt\\
+  \hline
+  \hline
+   1 & --> & 13 & 12 & 38 & CHello ohne Cookie [1/2]\\
+   2 & --> & 13 & 12 & 19 & CHello ohne Cookie [2/2]\\
+   3 & <-- & 13 & 12 & 11 & HelloVerifyRequest\\
+  \hline
+  \hline
+   4 & --> & 13 & 12 & 38 & CHello mit Cookie [1/2]\\
+   5 & --> & 13 & 12 & 27 & CHello mit Cookie [2/2]\\
+   6 & <-- & 13 & 12 & 38 & SHello [1/2]\\
+   7 & <-- & 13 & 12 & 18 & SHello [2/2]\\
+   8 & <-- & 13 & 12 & 38 & SKeyExchange [1/3]\\
+   9 & <-- & 13 & 12 & 38 & SKeyExchange [2/3]\\
+  10 & <-- & 13 & 12 & 11 & SKeyExchange [3/3]\\
+  11 & <-- & 13 & 12 &  0 & SHelloDone\\
+  \hline
+  \hline
+  12 & --> & 13 & 12 & 38 & CKeyExchange [1/3]\\
+  13 & --> & 13 & 12 & 38 & CKeyExchange [2/3]\\
+  14 & --> & 13 & 12 & 11 & CKeyExchange [3/3]\\
+  15 & --> & 13 & 12 &  1 & ChangeCipherSpec\\
+  16 & --> & 13 & 12 & 20 & Finished inklusive 8 Byte MAC\\
+  17 & <-- & 13 & 12 &  1 & ChangeCipherSpec\\
+  18 & <-- & 13 & 12 & 20 & Finished inklusive 8 Byte MAC\\
+  \hline
+  \hline
+    & <-> & 234 & 216 & 405 & Gesamt 861\\
+  \showrowcolors
+\end{tabular}
+\caption{Datenaustausch während eines Handshake mit DTLS}
+\label{tbl:6-1_data-dtls}
+\end{figure}
 
 \subsection{DTLS mit stateless header compression}
-%   ClientHello ohne Cookie & 57 Byte
-%   HelloVerifyRequest      & 11 Byte
-%   ClientHello mit Cookie  & 65 Byte
-%   ServerHello             & 56 Byte
-%   ServerKeyExchange       & 87 Byte
-%   ServerHelloDone         &  0 Byte
-%   ClientKeyExchange       & 87 Byte
-%   ChangeCipherSpec        &  1 Byte
-%   Finished                & 12 Byte
-
-127 - 48 - 8 - 3 - 2 = 66 Byte Daten
 
 mit direkter umsetzung von draft \cite[Kapitel 3]{draftcodtls}
 
-\begin{verbatim}
---> 3 byte + 2 byte + 57 byte   ClientHello ohne Cookie
+da die angepasste version einen maximalen dtls header ermöglicht, wird hier ebenfalls davon ausgegangen:\\
+maximale payload größe: 127 - 48 - 8 - 15 - 14 - 8 = 34
 
-<-- 3 byte + 2 byte + 11 byte   HelloVerifyRequest
-
---> 3 byte + 2 byte + 65 byte   ClientHello mit Cookie
-
-<-- 3 byte + 2 byte + 56 byte   ServerHello
-<-- 3 byte + 3 byte + 65 byte   ServerKeyExchange
-<-- 3 byte + 3 byte + 22 byte   ServerKeyExchange
-<-- 3 byte + 2 byte +  0 byte   ServerHelloDone
-
---> 3 byte + 3 byte + 65 byte   ClientKeyExchange
---> 3 byte + 3 byte + 22 byte   ClientKeyExchange
---> 3 byte + 2 byte +  1 byte   ChangeCipherSpec
---> 3 byte + 2 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
-
-<-- 3 byte + 2 byte +  1 byte   ChangeCipherSpec
-<-- 3 byte + 2 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
- \end{verbatim}
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{r|c|r|r|r|l}
+  \hiderowcolors
+  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & Inhalt\\
+  \hline
+  \hline
+   1 & --> & 3 & 3 & 34 & CHello ohne Cookie [1/2]\\
+   2 & --> & 3 & 3 & 23 & CHello ohne Cookie [2/2]\\
+   3 & <-- & 3 & 2 & 11 & HelloVerifyRequest\\
+  \hline
+  \hline
+   4 & --> & 3 & 3 & 34 & CHello mit Cookie [1/2]\\
+   5 & --> & 3 & 3 & 31 & CHello mit Cookie [2/2]\\
+   6 & <-- & 3 & 3 & 34 & SHello [1/2]\\
+   7 & <-- & 3 & 3 & 22 & SHello [2/2]\\
+   8 & <-- & 3 & 3 & 34 & SKeyExchange [1/3]\\
+   9 & <-- & 3 & 3 & 34 & SKeyExchange [2/3]\\
+  10 & <-- & 3 & 3 & 19 & SKeyExchange [3/3]\\
+  11 & <-- & 3 & 2 &  0 & SHelloDone\\
+  \hline
+  \hline
+  12 & --> & 3 & 3 & 34 & CKeyExchange [1/3]\\
+  13 & --> & 3 & 3 & 34 & CKeyExchange [2/3]\\
+  14 & --> & 3 & 3 & 19 & CKeyExchange [3/3]\\
+  15 & --> & 3 & 2 &  1 & ChangeCipherSpec\\
+  16 & --> & 3 & 2 & 20 & Finished inklusive 8 Byte MAC\\
+  17 & <-- & 3 & 2 &  1 & ChangeCipherSpec\\
+  18 & <-- & 3 & 2 & 20 & Finished inklusive 8 Byte MAC\\
+  \hline
+  \hline
+    & <-> & 54 & 48 & 405 & Gesamt 507\\
+  \showrowcolors
+\end{tabular}
+\caption{Datenaustausch während eines Handshake mit DTLS und stateless header compression}
+\label{tbl:6-1_data-dtls-comp}
+\end{figure}
 
 \subsection{Vergleich}
 
