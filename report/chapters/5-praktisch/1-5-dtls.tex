@@ -59,10 +59,13 @@ was durch einen Sprung an das Ende der Methode realisiert wird, damit globale Va
 
 Um Speicher zu sparen, und die Block-1-Option von \acr{coap} einfach nutzen zu können, wird nur ein Handshake zur Zeit gestattet. Dafür wird bei einem Aufruf des
 Ressource-Handlers, anhand einer globalen Variable, überprüft, ob die Ressource gerade in Benutzung ist. Ist dies der Fall, wird die Absender-IP verglichen.
-Stimmt diese mit der Absender-IP der letzten Anfrage überein, kann die Anfrage trotzdem bearbeitet werden. Bei Bearbeitung der Anfrage, wird die Ressource
-zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben. Nur die Bearbeitung einer
-ClientHello-Nachricht mit korrektem Cookie führt im weiteren Verlauf zu einer erneuten Sperrung, da hier ein Zustand erzeugt wird, der erst in der darauffolgenden
-Anfrage abgearbeitet wird.   \TODO{probleme, angriffe, reaktionen, timeout}
+Stimmt diese mit der Absender-IP der letzten Anfrage überein, kann die Anfrage trotzdem bearbeitet werden. Besteht keine Übereinstimmung, wird die Zeit herangezogen,
+seit der die Ressource gesperrt ist. Liegt diese mehr als 60 Sekunden zurück, kann die Anfrage ebenfalls bearbeitet werden. Diese Überprüfung ist notwendig, da
+ein Angreifer die Ressource durch einen einmaligen Aufruf dauerhaft sperren könnte, wenn er seine Anfrage nicht zuende führt.
+
+Bei Bearbeitung der Anfrage, wird die Ressource zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben.
+Nur die Bearbeitung einer ClientHello-Nachricht mit korrektem Cookie führt im weiteren Verlauf zu einer erneuten Sperrung, da hier ein Zustand erzeugt wird, der erst
+in der darauffolgenden Anfrage abgearbeitet wird.
 
 psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\

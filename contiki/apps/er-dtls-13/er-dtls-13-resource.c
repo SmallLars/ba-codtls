@@ -62,8 +62,9 @@ static uint8_t big_msg[128];
 static size_t big_msg_len = 0;
 
 static uint8_t resource_busy = 0;
+static uint32_t busy_since = 0;
+
 static uint16_t created_offset;
-static uint16_t changed_offset;
 static uint16_t client_random_offset;
 static uint16_t server_random_offset;
 
@@ -71,14 +72,18 @@ static uint16_t server_random_offset;
 /*  Ressource für den DTLS-Handshake                                     */
 /*************************************************************************/
 void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t preferred_size, int32_t *offset) {
-    if (resource_busy) { // TODO auh zeit speichern nach deren ablauf busy verfällt
+    if (resource_busy) {
+        // Betreten verboten, falls ip ungleich && busy_since nicht weiter als 60 sekunden zurück liegt
         if (!uip_ipaddr_cmp(src_addr, &UIP_IP_BUF->srcipaddr)) {
-            coap_error_code = SERVICE_UNAVAILABLE_5_03;
-            coap_error_message = "AlreadyInUse";
-            return;
+            if (clock_seconds() - busy_since <= 60) {
+                coap_error_code = SERVICE_UNAVAILABLE_5_03;
+                coap_error_message = "AlreadyInUse";
+                return;
+            }
         }
     } else {
         resource_busy = 1;
+        busy_since = clock_seconds();
         uip_ipaddr_copy(src_addr, &UIP_IP_BUF->srcipaddr);
     }
 
@@ -138,16 +143,16 @@ void dtls_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
             } else {
                 PRINTF("ClientHello mit korrektem Cookie erhalten\n");
 
-                // Zustand wird erzeugt, der erst mit der nächsten Anfrage abgearbeitet ist.
-                // Bis dahin sind keine weiteren Anfragen möglich.
-                resource_busy = 1;
-
                 AlertDescription alert = checkClientHello(clienthello, big_msg_len - (sizeof(DTLSContent_t) + content->len));
                 if (alert) {
                     PRINTF("ClientHello falsche oder nicht unterstützte Werte\n");
                     generateAlert(response, buffer, alert);
                     goto dtls_handler_end;
                 }
+
+                // Zustand wird erzeugt, der erst mit der nächsten Anfrage abgearbeitet ist.
+                // Bis dahin sind keine weiteren Anfragen möglich.
+                resource_busy = 1;
 
                 coap_separate_accept(request, request_metadata); // ACK + Anfrageinformationen zwischenspeichern
 
