@@ -13,9 +13,9 @@ dabei wird ein handshake ohne datenverluste oder andere fehler und angriffe betr
 
 je nach umfeld anders aber dort jeweils konstant:
 \begin{itemize}
-  \item 802.15.4 Header
-  \item 6LowPAN Header
-  \item UDP Header
+  \item 802.15.4 Header - Bietet 127 Byte Payload
+  \item 48 Byte - 6LowPAN Header
+  \item 08 Byte - UDP Header
 \end{itemize}
 deswegen werden diese nur im sinne von anzahl der pakete betrachtet
 
@@ -44,65 +44,121 @@ gemäß abbildung 3.2
 \textbf{erster von drei schritten:}
 
 ClientHello ohne cookie mit direkter Antwort: 2 Anfragen, 2 Antworten\\
-vier dtls header a drei Byte\\
 in der anfrage und in der antwort ist jeweils ein contentheader a zwei byte enthalten
 
 \begin{verbatim}
---> 13 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 13 byte + 27 byte   coap + uri + block 1
-<-- 10 byte + 13 byte   coap + content type + block 1
+--> 3 byte + 13 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 13 byte + 27 byte   coap + uri + block 1
+<-- 3 byte + 10 byte + 13 byte   coap + content type + block 1
 \end{verbatim}
 
 \textbf{zweiter von drei schritten:}
 
 ClientHello mit cookie mit separate Antwort: 8 Anfragen, 8 Antworten\\
-16 dtls header a drei byte\\
 in der anfrage ist ein contentheader a zwei byte enthalten. in der antwort sind drei content header mit insgesamt 5 byte enthalten
 
 \begin{verbatim}
---> 13 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 13 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 13 byte +  3 byte   coap + uri + block 1
-<--  4 byte             coap empty msg (separate)
+--> 3 byte + 13 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 13 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 13 byte +  3 byte   coap + uri + block 1
+<-- 3 byte +  4 byte             coap empty msg (separate)
 
-<-- 11 byte + 32 byte   coap + content type + block 1 + block 2
--->  4 byte             coap empty msg (ack)
-<--  9 byte + 32 byte   coap + content type + block 2
--->  4 byte             coap empty msg (ack)
-<--  9 byte + 32 byte   coap + content type + block 2
--->  4 byte             coap empty msg (ack)
-<--  9 byte + 32 byte   coap + content type + block 2
--->  4 byte             coap empty msg (ack)
-<--  9 byte + 20 byte   coap + content type + block 2
--->  4 byte             coap empty msg (ack)
+<-- 3 byte + 11 byte + 32 byte   coap + content type + block 1 + block 2
+--> 3 byte +  4 byte             coap empty msg (ack)
+<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
+--> 3 byte +  4 byte             coap empty msg (ack)
+<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
+--> 3 byte +  4 byte             coap empty msg (ack)
+<-- 3 byte +  9 byte + 32 byte   coap + content type + block 2
+--> 3 byte +  4 byte             coap empty msg (ack)
+<-- 3 byte +  9 byte + 20 byte   coap + content type + block 2
+--> 3 byte +  4 byte             coap empty msg (ack)
 \end{verbatim}
 
 \textbf{dritter von drei schritten:}
 
 ClientKeyExchange + ChangeCipherSpec + Finished mit separate Antwort: 5 Anfragen, 5 Antworten\\
-10 dtls header a drei byte\\
 in der anfrage sind drei contentheader mit insgesamt 6 byte enthalten. in der antwort sind zwei content header mit insgesamt 4 byte enthalten
 
 \begin{verbatim}
---> 22 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 22 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 22 byte + 32 byte   coap + uri + block 1
-<--  7 byte             coap + block 1
---> 22 byte + 18 byte   coap + uri + block 1
-<--  4 byte             coap empty msg (separate)
+--> 3 byte + 22 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 22 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 22 byte + 32 byte   coap + uri + block 1
+<-- 3 byte +  7 byte             coap + block 1
+--> 3 byte + 22 byte + 18 byte   coap + uri + block 1
+<-- 3 byte +  4 byte             coap empty msg (separate)
 
-<-- 10 byte + 25 byte   coap + content type + block 1
--->  4 byte             coap empty msg (ack)
+<-- 3 byte + 10 byte + 25 byte   coap + content type + block 1
+--> 3 byte +  4 byte             coap empty msg (ack)
 \end{verbatim}
 
 \subsection{DTLS original}
+127 - 48 - 8 - 13 - 12 = 46 Byte Daten
+
+\begin{verbatim}
+--> 13 byte + 12 byte + 46 byte   ClientHello ohne Cookie
+--> 13 byte + 12 byte + 11 byte   ClientHello ohne Cookie
+
+<-- 13 byte + 12 byte + 11 byte   HelloVerifyRequest
+
+--> 13 byte + 12 byte + 46 byte   ClientHello mit Cookie
+--> 13 byte + 12 byte + 19 byte   ClientHello mit Cookie
+
+<-- 13 byte + 12 byte + 46 byte   ServerHello
+<-- 13 byte + 12 byte + 10 byte   ServerHello
+<-- 13 byte + 12 byte + 46 byte   ServerKeyExchange
+<-- 13 byte + 12 byte + 41 byte   ServerKeyExchange
+<-- 13 byte + 12 byte +  0 byte   ServerHelloDone
+
+--> 13 byte + 12 byte + 46 byte   ClientKeyExchange
+--> 13 byte + 12 byte + 41 byte   ClientKeyExchange
+--> 13 byte + 12 byte +  1 byte   ChangeCipherSpec
+--> 13 byte + 12 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
+
+<-- 13 byte + 12 byte +  1 byte   ChangeCipherSpec
+<-- 13 byte + 12 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
+ \end{verbatim}
 
 \subsection{DTLS mit stateless header compression}
+%   ClientHello ohne Cookie & 57 Byte
+%   HelloVerifyRequest      & 11 Byte
+%   ClientHello mit Cookie  & 65 Byte
+%   ServerHello             & 56 Byte
+%   ServerKeyExchange       & 87 Byte
+%   ServerHelloDone         &  0 Byte
+%   ClientKeyExchange       & 87 Byte
+%   ChangeCipherSpec        &  1 Byte
+%   Finished                & 12 Byte
+
+127 - 48 - 8 - 3 - 2 = 66 Byte Daten
+
+mit direkter umsetzung von draft \cite[Kapitel 3]{draftcodtls}
+
+\begin{verbatim}
+--> 3 byte + 2 byte + 57 byte   ClientHello ohne Cookie
+
+<-- 3 byte + 2 byte + 11 byte   HelloVerifyRequest
+
+--> 3 byte + 2 byte + 65 byte   ClientHello mit Cookie
+
+<-- 3 byte + 2 byte + 56 byte   ServerHello
+<-- 3 byte + 3 byte + 65 byte   ServerKeyExchange
+<-- 3 byte + 3 byte + 22 byte   ServerKeyExchange
+<-- 3 byte + 2 byte +  0 byte   ServerHelloDone
+
+--> 3 byte + 3 byte + 65 byte   ClientKeyExchange
+--> 3 byte + 3 byte + 22 byte   ClientKeyExchange
+--> 3 byte + 2 byte +  1 byte   ChangeCipherSpec
+--> 3 byte + 2 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
+
+<-- 3 byte + 2 byte +  1 byte   ChangeCipherSpec
+<-- 3 byte + 2 byte + 20 byte   Finished (schon verschlüsselt) 8 Byte MAC enthalten
+ \end{verbatim}
 
 \subsection{Vergleich}
 
