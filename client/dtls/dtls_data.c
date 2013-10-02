@@ -34,15 +34,20 @@ int getPSK(uint8_t dst[16], uint8_t uuid[16]) {
 }
 
 void createSession(uint8_t ip[16], uint8_t id[8]) {
-    if (findIP(ip) < 0) {
-        memcpy(session[0].ip, ip, 16);
-        memcpy(session[0].id, id, 8);
-        session[0].epoch = 0;
-        session[0].seq_num_w = 1;
-        memset(session[0].key_block.key_block, 0, sizeof(KeyBlock_t));
-        memset(session[0].key_block_new.key_block, 0, sizeof(KeyBlock_t));
+    int i = findIP(ip);
+    if (i < 0) {
+        i = findIP(NULL);
+        if (i >= 0) {
+            memcpy(session[i].ip, ip, 16);
+            memcpy(session[i].id, id, 8);
+            session[i].epoch = 0;
+            session[i].valid = 1;
+            session[i].seq_num_w = 1;
+            memset(session[i].key_block.key_block, 0, sizeof(KeyBlock_t));
+            memset(session[i].key_block_new.key_block, 0, sizeof(KeyBlock_t));
+        }
     } else {
-        memcpy(session[0].id, id, 8);
+        memcpy(session[i].id, id, 8);
     }
 }
 
@@ -101,7 +106,13 @@ void increaseEpoch(uint8_t ip[16]) {
 int findIP(uint8_t ip[16]) {
     int i;
     for (i = 0; i < SESSION_LIST_LEN; i++) {
-        if (!memcmp(session[i].ip, ip, 16)) return i;
+        if (ip == NULL) {
+            if (session[i].valid == 0) return 1;
+        } else {
+            if (session[i].valid == 1) {
+                if (!memcmp(session[i].ip, ip, 16)) return i;
+            }
+        }
     }
     return -1;
 }
