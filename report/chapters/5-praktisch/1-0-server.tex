@@ -9,8 +9,11 @@ Block schon für den Redbee Econotag selbst reserviert ist.
 
 Betrieben wird der Server mit SmartAppContiki \cite{erbium}, das auf Contiki \cite{contiki} basiert, und eine Implementierung von \acr{coap}, in
 der Entwurfsversion 13 \cite{draftcoap13}, enthält. In der Standardkonfiguration benötigt SmartAppContiki, mit einer definierten \acr{coap}-Ressource,
-die ein "`Hallo Welt!"' zurückgibt, \textasciitilde 84 KiB. Diese Daten teilen sich gemäß Abbildung \ref{tbl:contiki-speicher} auf. Um den benötigten
+die ein "`Hallo Welt!"' zurückgibt, 83,73 KiB. Diese Daten teilen sich gemäß Abbildung \ref{tbl:contiki-speicher} auf. Um den benötigten
 Speicher zu optimieren wurde die Größe des "`Sys Stack"' und des "`Heap"' in der Konfigurationsdatei "`contiki/cpu/mc1322x/mc1322x.lds"' angepasst.
+Außerdem wurde "`REST\_MAX\_CHUNK\_SIZE"' in der Contiki-App "`Erbium"' von 128 auf 48 Byte reduziert, wodurch das Datensegment weniger Speicher benötigt.
+Diese Konstante definiert die maximale Größe der Anwendungsdaten, die in einem Contiki-Paket untergebracht werden können, und stellt somit sicher,
+dass jedes \acr{coap}-Paket in ein einzelnes IP-Paket passt.
 
 \begin{figure}[!ht]
 \centering
@@ -18,18 +21,18 @@ Speicher zu optimieren wurde die Größe des "`Sys Stack"' und des "`Heap"' in d
   \hiderowcolors
   \textbf{Beschreibung} & \textbf{Standard} & \textbf{Angepasst}\\
   \hline
-  Programm        & ~~~~~59248 Byte    & ~~~~~59248 Byte\\
+  Programm        & ~~~~~58760 Byte    & ~~~~~58760 Byte\\
   Irq Stack       &   256 Byte         &   256 Byte\\
   Fiq Stack       &   256 Byte         &   256 Byte\\
   Svc Stack       &   256 Byte         &   256 Byte\\
   Abt Stack       &    16 Byte         &    16 Byte\\
   Und Stack       &    16 Byte         &    16 Byte\\
   Sys Stack       &  1024 Byte         &  2048 Byte\\
-  Datensegment    & 20872 Byte         & 20872 Byte\\
+  Datensegment    & 21064 Byte         & 20744 Byte\\
   Heap            &  4096 Byte         &    16 Byte\\
   \hline
-  \textbf{Gesamt} & 86040 Byte         & 82984 Byte\\
-                  & $ \approx $ 84 KiB & $ \approx $ 81 KiB\\
+  \textbf{Gesamt} & 85744 Byte         & 82368 Byte\\
+                  & 83,73 KiB          & 80,44 KiB\\
   \showrowcolors
 \end{tabular}
 \caption{Speicheraufteilung von SmartAppContiki}
@@ -42,8 +45,8 @@ effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die per
 durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
 und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des Handshakes,
 unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
-Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von \textasciitilde
-84 KiB auf \textasciitilde 81 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15 KiB zur
+Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von 83,73 KiB
+auf 80,44 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15,5 KiB zur
 Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des Geräts selbst implementiert werden müssen.
 
 Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option

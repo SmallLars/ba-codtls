@@ -16,7 +16,7 @@ erhalt der Reihenfolge der Daten innerhalb eines \acr{coap}-Pakets ist es somit 
 Um IP-Fragmentierung zu vermeiden, wird die Blockweise-Datenübertragung von \acr{coap} verwendet \cite{draftcoapblock}. Problematisch ist die Verwendung
 der IP-Fragmentierung, da bei Verlust eines einzelnen Fragments das ganze IP-Paket verworfen wird. So kommt es zu einer Wiederholung
 der \acr{coap}-Anfrage und die Übertragung aller Fragmente wird wiederholt. Je nach Anzahl der Fragmente und der Paketverluste, kann
-es somit zu einer mehrfachen Übertragung, die sowohl Zeit als auch Energie benötigt. Um dies zu vermeiden werden die Daten schon
+es somit zu einer mehrfachen Übertragung kommen, die sowohl Zeit als auch Energie benötigt. Um dies zu vermeiden werden die Daten schon
 durch \acr{coap} in Fragmente unterteilt, die in einem einzelnen IP-Paket platz finden. Jedes Fragment wird dann durch ein eigenes
 \acr{coap}-Paket übertragen welches als "`confirmable"' gekennzeichnet ist. Geht ein Fragment verloren bleibt das \acr{ack}-Paket aus
 und die Übertragung nur dieses Fragments wird wiederholt. So bleibt die Menge der übertragenen Daten und damit der Energieverbrauch
@@ -76,12 +76,21 @@ in dieser Arbeit keine Anwendung finden.
   \label{fig:coaphandshake}
 \end{figure}
 
-Für die Realisierung des Handshakes über \acr{coap} dient die Ressource "`/dtls"'. Dieser \acr{uri} wurde bewusst kurz gehalten,
-da er im Klartext in der \acr{coap}-Anfrage eingefügt wird und so Daten und Energie spart. Während in einem gewöhnlichen \acr{dtls}-Handshake
-jedes einzelne \acr{dtls}-Paket einen vollständigen \acr{dtls}-Record-Header hat, ist dies hier nicht mehr notwendig, da mehrere
-\acr{dtls}-Pakete innerhalb eines \acr{coap}-Pakets enthalten sind. Der \acr{dtls}-Record-Header erscheint somit einmalig vor jedem
-\acr{coap}- oder Alert-Paket. Um die \acr{dtls}-Pakete innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der
-\acr{dtls}Conten-Header (Abbildung {ref{fig:com\_content\_header}).
+Für die Realisierung des Handshakes über \acr{coap} dient die Ressource "`/dtls"'. Dieser \acr{uri} wurde bewusst kurz gehalten, um sowohl Daten
+als auch Energie zu sparen, da er im Klartext in die \acr{coap}-Anfrage eingefügt wird. \acr{dtls}-Sessions, die während eines Handshakes erzeugt
+werden, bilden Sub-Ressourcen. Gemäß \acr{coap} \cite[Abschnitt 5.8.2]{draftcoap13}, soll eine POST-Anfrage, die eine Ressource erzeugt, mit einem
+2.01 Created und der Location-Path-Option beantwortet werden, die den neuen \acr{uri} enthält. Auf die Location-Path-Option wird hier verzichtet,
+da diese nicht zwingend ist, und die Session-ID im ServerHello-Paket enthalten ist, womit sich der neue \acr{uri} berechnen lässt. Die Verwendung
+der Location-Path-Option hätte den Nachteil, dass diese bei einer blockweisen Übertragung, in jedem Block wiederholt werden würde. Dieser Nachteil
+tritt bei einer \acr{coap}-Anfrage ebenfalls ein, wird hier jedoch akzeptiert, da es so bei einer blockweisen Übertragung frühzeitig möglich ist,
+die Gültigkeit der Ressource zu überprüfen. Während die Session-ID somit im ClientHello-Paket überflüssig ist und entfernt wird, bleibt diese im
+ServerHello-Paket enthalten. Dadurch ist auch fest definiert, dass ein ClientHello-Paket an die Haupt-Ressource die Erstellung einer neuen
+Sub-Ressource bewirkt, während ein ClientHello-Paket an eine Sub-Ressource die Wiederaufnahme einer Session bewirkt.
+
+Während in einem gewöhnlichen \acr{dtls}-Handshake jedes einzelne \acr{dtls}-Handshake-Paket sowohl den \acr{dtls}-Record-Header als auch den
+\acr{dtls}-Handshake-Header enthält, ist dies hier nicht mehr notwendig, da mehrere \acr{dtls}-Handshake-Pakete innerhalb eines \acr{coap}-Pakets
+enthalten sind. Der \acr{dtls}-Record-Header ist einmalig vor jedem \acr{coap}- oder Alert-Paket enthalten. Um die \acr{dtls}-Handshake-Pakete
+innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dtls}Conten-Header (Abbildung {ref{fig:com\_content\_header}).
 
 \begin{figure}[ht]
   \centering
@@ -96,9 +105,9 @@ jedes einzelne \acr{dtls}-Paket einen vollständigen \acr{dtls}-Record-Header ha
 \end{figure}
 
 Dieser wurde abgeleitet vom Handshake-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
-enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits der in
-\acr{tls}/\acr{dtls} definierte Wert für den Handshake-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
-Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{tls}/\acr{dtls} definierten Handshake-Typen werden die folgenden
+enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits, der in
+\acr{tls}/\acr{dtls} definierte Wert, für den Handshake-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
+Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{dtls} definierten Handshake-Typen werden die folgenden
 beiden Typen definiert: \textit{change\_cipher\_spec} (32) und \textit{alert} (33).
 
 Obwohl eine zuverlässige Übertragung von Benachrichtigungen gemäß \acr{dtls} nicht notwendig ist, macht es insbesondere bei einem Handshake sinn, diese

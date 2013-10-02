@@ -1,6 +1,32 @@
 \section{Programmgröße}
 
-Implementierung ist 10,77 KiB groß\\
+Aktuelle Werte:
+
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{l|r}
+  \hiderowcolors
+  \textbf{Beschreibung} & \textbf{DTLS}\\
+  \hline
+  Programm        & ~~~~~70008 Byte\\
+  Irq Stack       &   256 Byte\\
+  Fiq Stack       &   256 Byte\\
+  Svc Stack       &   256 Byte\\
+  Abt Stack       &    16 Byte\\
+  Und Stack       &    16 Byte\\
+  Sys Stack       &  2048 Byte\\
+  Datensegment    & 21025 Byte\\
+  Heap            &    16 Byte\\
+  \hline
+  \textbf{Gesamt} & 93897 Byte\\
+                  & 91,70 KiB\\
+  \showrowcolors
+\end{tabular}
+\caption{Speicheraufteilung von SmartAppContiki mit DTLS}
+\label{tbl:contiki-speicher-dtls}
+\end{figure}
+
+Implementierung ist 93897 - 82368 = 11529 = 11,26 KiB groß\\
 8,41 KiB setzen sich zusammen:
 \begin{itemize}
   \item 2,09 KiB ECC-Funktionen
@@ -12,8 +38,8 @@ Implementierung ist 10,77 KiB groß\\
   \item 1,03 KiB Parse \& Send
 \end{itemize}
 
-Gesamtgröße: 93972 = 91,77 KiB\\
-Verbleiben   98304 - 93972 = 4332 = 4,23 KiB\\
+Gesamtgröße: 93897 = 91,70 KiB\\
+Verbleiben   98304 - 93897 = 4407 = 4,30 KiB\\
 -> praxistauglich
 
 die maximale stackausnutzung beträgt 1504 byte von 2048\\
