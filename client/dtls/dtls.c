@@ -41,8 +41,11 @@ ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const st
     nonce[10] = (seq_num & 0x0000FF00) >>  8;
     nonce[11] = (seq_num & 0x000000FF) >>  0;
 
-    uint8_t *key_block = getKeyBlock(ip, epoch);
-    memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+    uint8_t *key_block;
+    if (epoch) {
+        key_block = getKeyBlock(ip, epoch);
+        memcpy(nonce, key_block + KEY_BLOCK_CLIENT_IV, 4);
+    }
 
     DTLSRecord_t *record = (DTLSRecord_t *) malloc(sizeof(DTLSRecord_t) + 13 + len + MAC_LEN); // 13 = maximaler Header-Anhang
 

@@ -25,7 +25,7 @@ typedef struct { // 16 + 8 + 2 + 32 = 58
     uint8_t ip[16];
     uint8_t id[8];
     uint16_t epoch;
-    uint32_t seq_num;
+    uint32_t seq_num_w;
     KeyBlock_t key_block;
     KeyBlock_t key_block_new;
 } __attribute__ ((packed)) Session_t;
