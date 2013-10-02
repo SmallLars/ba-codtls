@@ -56,10 +56,10 @@ void dtls_handshake(uint8_t ip[16]) {
     PRINTF("Länge der Anfrage: %u Byte\n", len);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, "dtls", buffer) != 2) return;
     coap_setPayload(message, len);
     coap_setBlock1(1, 0, 1);
-    coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, "dtls", buffer) != 4) return;
     if (getContentType(buffer) != hello_verify_request) {
         return;
     }
@@ -79,13 +79,13 @@ void dtls_handshake(uint8_t ip[16]) {
     PRINTF("Länge der Anfrage: %u Byte\n", len);
     coap_setPayload(message, len);
     coap_setBlock1(0, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, "dtls", buffer) != 2) return;
     coap_setPayload(message, len);
     coap_setBlock1(1, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, "dtls", buffer) != 2) return;
     coap_setPayload(message, len);
     coap_setBlock1(2, 0, 1);
-    coap_request(ip, COAP_REQUEST_POST, "dtls", buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, "dtls", buffer) != 2) return;
     if (getContentType(buffer) != server_hello) {
         PRINTF("Erwartetes ServerHello nicht erhalten. Abbruch.\n");
         return;
@@ -285,16 +285,16 @@ void dtls_handshake(uint8_t ip[16]) {
     PRINTF("Länge der Anfrage: %u Byte\n", paylen);
     coap_setPayload(message, paylen);
     coap_setBlock1(0, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, uri, buffer) != 2) return;
     coap_setPayload(message, paylen);
     coap_setBlock1(1, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, uri, buffer) != 2) return;
     coap_setPayload(message, paylen);
     coap_setBlock1(2, 1, 1);
-    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, uri, buffer) != 2) return;
     coap_setPayload(message, paylen);
     coap_setBlock1(3, 0, 1);
-    coap_request(ip, COAP_REQUEST_POST, uri, buffer);
+    if (coap_request(ip, COAP_REQUEST_POST, uri, buffer) != 2) return;
     if (getContentType(buffer) != change_cipher_spec) {
         PRINTF("Erwartetes ChangeCipherSpec nicht erhalten. Abbruch.\n");
         return;

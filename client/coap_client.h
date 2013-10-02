@@ -10,7 +10,7 @@
 
 typedef unsigned char method_t;
 
-void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target);
+int coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target);
 
 void coap_setPayload(uint8_t *data, size_t len);
 

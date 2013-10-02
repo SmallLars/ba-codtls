@@ -67,6 +67,8 @@ coap_tick_t obs_wait = 0;	/* timeout for current subscription */
 static unsigned char answer_s[512];
 static str answer = { 0, answer_s };
 
+static int response_code;
+
 // to check post block 2 answer
 uint32_t expected_blocks = 0;
 uint32_t received_blocks = 0;
@@ -263,6 +265,8 @@ void message_handler(struct coap_context_t *ctx, const coap_address_t *remote, c
         }
         return;
     }
+
+    response_code = received->hdr->code;
 
     switch (received->hdr->type) {
         case COAP_MESSAGE_CON:
@@ -861,7 +865,7 @@ get_context(const char *node, const char *port) {
   return ctx;
 }
 
-void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
+int coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
   coap_context_t  *ctx = NULL;
   coap_address_t dst;
   static char addr[INET6_ADDRSTRLEN];
@@ -1010,7 +1014,7 @@ void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
 
   if (!ctx) {
     coap_log(LOG_EMERG, "cannot create context\n");
-    return; //-1
+    return -1;
   }
 
   coap_register_option(ctx, COAP_OPTION_BLOCK2);
@@ -1038,7 +1042,7 @@ void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
     set_blocksize();
 
   if (! (pdu = coap_new_request(ctx, method, optlist)))
-    return; //-1;
+    return -1;
 
 #ifndef NDEBUG
   if (LOG_DEBUG <= coap_get_log_level()) {
@@ -1128,6 +1132,8 @@ void coap_request(uint8_t *ip, method_t my_method, char *my_res, char *target) {
   msgtype = COAP_MESSAGE_CON;
   coap_delete_list(optlist);
   optlist = NULL;
+
+  return COAP_RESPONSE_CLASS(response_code);
 }
 
 void coap_setPayload(uint8_t *data, size_t len) {
