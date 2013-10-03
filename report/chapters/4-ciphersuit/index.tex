@@ -1,9 +1,9 @@
 \chapter{Definition des Cipher-Suites}
 
-Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des Handshakes ist es notwendig eine geeignete \glos{ciphersuite} zu definieren.
+Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des \glospl{handshake} ist es notwendig eine geeignete \glos{ciphersuite} zu definieren.
 Dieses gibt vor, welche Mechanismen für die Authentisierung genutzt werden und auf Grundlage welcher Algorithmen diese durchgeführt wird. Auch kann
 ein Verfahren zum Schlüsselaustausch definiert werden. Für die Übertragung von Anwendungsdaten ist schließlich ein Verschlüsselungsverfahren festgelegt,
-das Vertraulichkeit und/oder Integrität sicherstellen soll. Die \glos{ciphersuite} beeinflusst somit wesentlich, welche und wieviel Daten während des Handshakes
+das Vertraulichkeit und/oder Integrität sicherstellen soll. Die \glos{ciphersuite} beeinflusst somit wesentlich, welche und wieviel Daten während des \glospl{handshake}
 ausgetauscht werden und welche Berechnungen notwendig sind. Je nach Verfahren können diese sehr Umfangreich werden und sind somit insbesondere für eingeschränkte
 Umgebungen nicht immer geeignet.
 
@@ -26,10 +26,10 @@ Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Ve
 Im Unterschied zu \glos{ciphersuite} 3 wird bei \glos{ciphersuite} 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
 Diffie-Hellman-Schlüsselaustausch durchgeführt und dessen Ergebnis mit dem \acr{psk} kombiniert. Der große Unterschied besteht darin, dass
 ein Angreifer mit Kenntnis des \acr{psk} ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch jederzeit in der Lage ist den Schlüssel zu
-berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des Handshakes gelauscht hat.
+berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des \glospl{handshake} gelauscht hat.
 Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs ist er nicht in der Lage den Schlüssel zu berechnen und die Daten zu
-entschlüssel. Problematisch bleibt nur ein \glos{mitma} während des Handshakes. Verhindert ein Angreifer die direkte
-Kommunikation und leitet den Handshake über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
+entschlüssel. Problematisch bleibt nur ein \glos{mitma} während des \glospl{handshake}. Verhindert ein Angreifer die direkte
+Kommunikation und leitet den \glos{handshake} über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
 zukünftigen Datenverkehr mitlesen. Dies fällt erst dann auf, wenn der Angreifer verschwindet, da die beiden Parteien ohne ihn nicht
 direkt kommunizieren können. Die Verwendung von \glos{ciphersuite} 3 kommt somit nicht in Frage, womit \glos{ciphersuite} 4 hier zunächst das Mittel
 der Wahl ist.
@@ -60,7 +60,7 @@ Durch die Verwendung von \acr{ecc} bekommt die \glos{ciphersuite} nun ihren Name
 Da dieses keine offizielle \glos{ciphersuite} gemäß den "`Transport Layer Security (TLS) Parameters"' \cite{tlsparams} ist, wird hier die Nummer
 \{0xFF,0x01\} benutzt, da diese für die private Nutzung reserviert ist.
 
-Alle weiteren für einen Diffie-Hellman-Schlüsselaustausch unter Verwendung von \acr{ecc} sind Teil der Aushandlung im Handshake und müssen
+Alle weiteren für einen Diffie-Hellman-Schlüsselaustausch unter Verwendung von \acr{ecc} sind Teil der Aushandlung im \glos{handshake} und müssen
 hier somit nicht weiter definiert werden.
 
 Die Nonce setzt sich gemäß dem  RFC 5116 \cite{rfc5116} für die Umsetzung von \acr{aead}-Algorithmen zusammen. Es wird hier eine 12 Byte lange
@@ -79,7 +79,7 @@ Nonce verwendet, aus einem Initialisierungsvektor, der Epoche und der Sequenznum
 \end{figure}
 Während die Epoche und die Sequenznummer im \acr{dtls}-Header enthalten sind und in der selben Ordnung (Network Byte Order == Most Signifikant
 Byte first) in der Nonce hinterlegt werden, wird der Initialisierungsvektor nicht mit übertragen und ist implizit bekannt durch Erzeugung des
-Schlüsselblocks innerhalb des Handshakes. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{prf} erzeugt und muss somit
+Schlüsselblocks innerhalb des \glospl{handshake}. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{prf} erzeugt und muss somit
 40 Byte lang sein, welche wie folgt aufgeteilt sind:
 \begin{itemize}
   \item ~~0 Byte: client\_write\_MAC\_key
@@ -129,6 +129,6 @@ Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildun
 
 Um den Hash für die Berechnung der Finished-Nachricht zu ermitteln, wird nun ebenfalls der definierte \acr{cmac} benutzt.
 Um die Berechnung zu vereinfachen wird der Hash entgegen dem Vorschlag von K. Hartke und O. Bergmann \cite{draftcodtls} aus den
-Handshake-Nachrichten ermittelt, wie sie über das Netz versendet wurden. Sollte also eine Stateless Header Compression wie in Kapitel
+\glos{handshake}-Nachrichten ermittelt, wie sie über das Netz versendet wurden. Sollte also eine Stateless Header Compression wie in Kapitel
 \ref{sec:headercompression} verwendet werden, dann wird der Hash auf Grundlage der komprimierten Nachrichten berechnet. So können
 die ein- und ausgehenden Nachrichten direkt für die Berechnung des Hashs gespeichert werden, ohne weitere Berechnungen vornehmen zu müssen.

@@ -1,14 +1,14 @@
 \section{Handshake}
 \label{sec:handshake}
 
-Auch der Handshake orientiert sich am Entwurf von K. Hartke und O. Bergmann \cite[Kapitel 4]{draftcodtls}.
+Auch der \glos{handshake} orientiert sich am Entwurf von K. Hartke und O. Bergmann \cite[Kapitel 4]{draftcodtls}.
 
-Wie in Kapitel \ref{chp:dtls} beschrieben, wurde der Header des \acr{dtls}-Handshake-Protokolls um eine Sequenz-Nummer
+Wie in Kapitel \ref{chp:dtls} beschrieben, wurde der Header des \acr{dtls}-\glos{handshake}-Protokolls um eine Sequenz-Nummer
 und 2 Datenfelder für die Fragmentierung ergänzt. Diese sind zunächst notwendig, um die in \acr{udp} fehlende Zuverlässigkeit
-und begrenzte Paketgröße auszugleichen. Da der Handshake nun über \acr{coap} realisiert wird, können diese Datenfelder jedoch
+und begrenzte Paketgröße auszugleichen. Da der \glos{handshake} nun über \acr{coap} realisiert wird, können diese Datenfelder jedoch
 wieder wegfallen, da \acr{coap} über geeignete Mechanismen verfügt.
 
-Durch eine Kennzeichnung aller \acr{coap}-Anfragen während des Handshakes als "`confirmable"' stellt \acr{coap} sicher, dass
+Durch eine Kennzeichnung aller \acr{coap}-Anfragen während des \glospl{handshake} als "`confirmable"' stellt \acr{coap} sicher, dass
 alle Daten zuverlässig übertragen werden. Dies wird dadurch realisiert, dass auf jede Anfrage mit mindestens einem \acr{ack}-Paket
 geantwortet wird. Bleibt dies aus, wird die Anfrage nach Ablauf einer Wartezeit wiederholt. Durch diese Zuverlässigkeit und den
 erhalt der Reihenfolge der Daten innerhalb eines \acr{coap}-Pakets ist es somit möglich auf das "`message\_seq"' Datenfeld zu verzichten.
@@ -28,12 +28,12 @@ Unter Beachtung der maximalen Paketgröße von 127 Byte kommen hier somit nur di
 dass in der Testumgebung der Header eines \acr{6lowpan}-Paketes in das Sensornetz 48 Byte groß ist, während der Header eines \acr{6lowpan}-Paketes
 aus dem Sensornetz eine Größe von 40 Byte hat. Hinzu kommt jeweils noch der 8 Byte große UDP-Header, womit 71 bzw. 79 Byte für die \acr{coap}-Anfrage bzw.
 -Antwort verbleiben. Der \acr{coap}-Header ist minimal 4 Byte groß und eine Blockoption benötigt zusätzliche 3 Byte womit noch 64 bzw. 72 Byte
-für die Daten des Handshakes selbst bleiben. Da bei einer \acr{coap}-Anfrage aber auch noch die \acr{uri} in den \acr{coap}-Optionen hinzukommt,
+für die Daten des \glospl{handshake} selbst bleiben. Da bei einer \acr{coap}-Anfrage aber auch noch die \acr{uri} in den \acr{coap}-Optionen hinzukommt,
 fällt die Blockgröße von 64 Byte für eine \acr{coap}-Anfrage weg, so dass hier nur die Blockgrößen 16 und 32 zur Auswahl stehen. Bezieht man schließlich
 auch noch den \acr{dtls}-Header mit ein und berücksicht, dass ein Handschake auch innerhalb einer sicheren Verbindung durchgeführt werden kann, wobei
 dann noch ein 8 bis 16 Byte langer \acr{mac} hinzukommt, lassen sich auch \acr{coap}-Antworten nur mit einer Blockgröße von 16 und 32 Byte übertragen.
 
-Der vollständige Handshake über \acr{coap} ist in Abbildung \ref{fig:coaphandshake} zu sehen, wobei wieder die mit * markierten Daten
+Der vollständige \glos{handshake} über \acr{coap} ist in Abbildung \ref{fig:coaphandshake} zu sehen, wobei wieder die mit * markierten Daten
 in dieser Arbeit keine Anwendung finden.
 
 \begin{figure}[ht]
@@ -72,12 +72,12 @@ in dieser Arbeit keine Anwendung finden.
 
             Application Data <-------> Application Data
   \end{lstlisting}
-  \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
+  \caption{Nachrichtenaustausch während eines TLS / DTLS \glospl{handshake} über CoAP}
   \label{fig:coaphandshake}
 \end{figure}
 
-Für die Realisierung des Handshakes über \acr{coap} dient die Ressource "`/dtls"'. Dieser \acr{uri} wurde bewusst kurz gehalten, um sowohl Daten
-als auch Energie zu sparen, da er im Klartext in die \acr{coap}-Anfrage eingefügt wird. \acr{dtls}-Sessions, die während eines Handshakes erzeugt
+Für die Realisierung des \glospl{handshake} über \acr{coap} dient die Ressource "`/dtls"'. Dieser \acr{uri} wurde bewusst kurz gehalten, um sowohl Daten
+als auch Energie zu sparen, da er im Klartext in die \acr{coap}-Anfrage eingefügt wird. \acr{dtls}-Sessions, die während eines \glospl{handshake} erzeugt
 werden, bilden Sub-Ressourcen. Gemäß \acr{coap} \cite[Abschnitt 5.8.2]{draftcoap13}, soll eine POST-Anfrage, die eine Ressource erzeugt, mit einem
 2.01 Created und der Location-Path-Option beantwortet werden, die den neuen \acr{uri} enthält. Auf die Location-Path-Option wird hier verzichtet,
 da diese nicht zwingend ist, und die Session-ID im ServerHello-Paket enthalten ist, womit sich der neue \acr{uri} berechnen lässt. Die Verwendung
@@ -87,9 +87,9 @@ die Gültigkeit der Ressource zu überprüfen. Während die Session-ID somit im 
 ServerHello-Paket enthalten. Dadurch ist auch fest definiert, dass ein ClientHello-Paket an die Haupt-Ressource die Erstellung einer neuen
 Sub-Ressource bewirkt, während ein ClientHello-Paket an eine Sub-Ressource die Wiederaufnahme einer Session bewirkt.
 
-Während in einem gewöhnlichen \acr{dtls}-Handshake jedes einzelne \acr{dtls}-Handshake-Paket sowohl den \acr{dtls}-Record-Header als auch den
-\acr{dtls}-Handshake-Header enthält, ist dies hier nicht mehr notwendig, da mehrere \acr{dtls}-Handshake-Pakete innerhalb eines \acr{coap}-Pakets
-enthalten sind. Der \acr{dtls}-Record-Header ist einmalig vor jedem \acr{coap}- oder Alert-Paket enthalten. Um die \acr{dtls}-Handshake-Pakete
+Während in einem gewöhnlichen \acr{dtls}-\glos{handshake} jedes einzelne \acr{dtls}-\glos{handshake}-Paket sowohl den \acr{dtls}-Record-Header als auch den
+\acr{dtls}-\glos{handshake}-Header enthält, ist dies hier nicht mehr notwendig, da mehrere \acr{dtls}-\glos{handshake}-Pakete innerhalb eines \acr{coap}-Pakets
+enthalten sind. Der \acr{dtls}-Record-Header ist einmalig vor jedem \acr{coap}- oder Alert-Paket enthalten. Um die \acr{dtls}-\glos{handshake}-Pakete
 innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dtls}Conten-Header (Abbildung {ref{fig:com\_content\_header}).
 
 \begin{figure}[ht]
@@ -104,13 +104,13 @@ innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dt
   \label{fig:com_content_header}
 \end{figure}
 
-Dieser wurde abgeleitet vom Handshake-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
-enthalten sind. Neben Handshake- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits, der in
-\acr{tls}/\acr{dtls} definierte Wert, für den Handshake-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
-Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{dtls} definierten Handshake-Typen werden die folgenden
+Dieser wurde abgeleitet vom \glos{handshake}-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
+enthalten sind. Neben \glos{handshake}- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits, der in
+\acr{tls}/\acr{dtls} definierte Wert, für den \glos{handshake}-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
+Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{dtls} definierten \glos{handshake}-Typen werden die folgenden
 beiden Typen definiert: \textit{change\_cipher\_spec} (32) und \textit{alert} (33).
 
-Obwohl eine zuverlässige Übertragung von Benachrichtigungen gemäß \acr{dtls} nicht notwendig ist, macht es insbesondere bei einem Handshake sinn, diese
+Obwohl eine zuverlässige Übertragung von Benachrichtigungen gemäß \acr{dtls} nicht notwendig ist, macht es insbesondere bei einem \glos{handshake} sinn, diese
 innerhalb eines \acr{coap}-Paketes zu versenden, falls es sich um die Antwort auf eine Anfrage handelt. Ausgehend von einem ClientHello, das
 auf der Server-Seite ein Problem auslöst, erwartet der Client vom Server eine \acr{coap}-Antwort. Wird die Benachrichtigung darüber ohne \acr{coap} versendet,
 muss der Client bei Erhalt der Benachrichtigung dafür sorgen, dass die Anfrage aus der darüber liegenden \acr{coap} Schicht entfernt wird, damit diese
@@ -129,20 +129,20 @@ Der \acr{coap}-Response-Code ist in diesem Fall "`4.00 Bad Request"'. Ein Beispi
                              <-------- 4.00 Bad Request
                                            Alert(handshake_failure)
   \end{lstlisting}
-  \caption{Nachrichtenaustausch während eines TLS / DTLS Handshakes über CoAP}
+  \caption{Nachrichtenaustausch während eines TLS / DTLS \glospl{handshake} über CoAP}
   \label{fig:coaphandshakefail}
 \end{figure}
 
-Während der Record-Typ bei Anwendungsdaten eindeutig ist, muss dieser nun für einen Handshake und Benachrichtigungen definiert werden.
+Während der Record-Typ bei Anwendungsdaten eindeutig ist, muss dieser nun für einen \glos{handshake} und Benachrichtigungen definiert werden.
 Alert wird hier nur verwendet, falls es sich um eine Benachrichtigung direkt über \acr{udp} ohne \acr{coap} handelt.
-Benachrichtigungen innerhalb von \acr{coap} sind eindeutig durch den Content-Header gekennzeichnet und gehören immer zu einem Handshake
-womit hier auch der Record-Type Handshake verwendet wird. Handshake wird generell verwendet, wenn es sich um Handshake-Daten handelt.
+Benachrichtigungen innerhalb von \acr{coap} sind eindeutig durch den Content-Header gekennzeichnet und gehören immer zu einem \glos{handshake}
+womit hier auch der Record-Type \glos{handshake} verwendet wird. \glos{handshake} wird generell verwendet, wenn es sich um \glos{handshake}-Daten handelt.
 Dazu zählt hier nun auch ein enthaltenes ChangeCipherSpec-Paket. Während bei \acr{tls}/\acr{dtls} der Versand eines ChangeCipherSpec-Pakets
 zur anschließenden Änderungen der Sicherheitsparameter des Paketversands führt, kommmt es bei Empfang solch eines Pakets zur Änderungen der
 Sicherheitsparameter des Paketempfangs für alle folgenden Pakete. Diese Vorgehensweise ist hier nicht mehr notwendig. Die Epoche und somit
 die Sicherheitsparameter für den Paketempfang ergeben sich durch den \acr{dtls}-Header. Beachtet werden muss nur, wann eine alte Epoche
 für den Paketempfang für ungültig erklärt werden kann. Dieses ist auf der Seite des Clienten nach erhalt der Nachricht Nr. 6 gemäß Abbildung
-\ref{fig:coaphandshake} möglich da diese die letzte Nachricht der alten Epoche ist der Handshake erfolgreich abgeschlossen wurde.
+\ref{fig:coaphandshake} möglich da diese die letzte Nachricht der alten Epoche ist der \glos{handshake} erfolgreich abgeschlossen wurde.
 Der Server darf die alte Epoche für den Paketempfang jedoch erst nach Erhalt der ersten Anwendungsdaten in der neuen Epoche vernichten, da
 er nicht sicherstellen kann, dass Nachricht Nr. 6 den Clienten erreicht hat und diese somit Nachricht Nr. 5 wiederholen könnte.
 Genaus so verhält es sich für die Epoche und die dazugehörenden Sicherheitsparameter für den Paketversand. Hat der Server Nachricht Nr. 6
@@ -152,7 +152,7 @@ dazu gehörenden Sicherheitsparameter vernichten.
 
 Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
 verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im
-Handshake ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei das das Finished-Paket durch das
+\glos{handshake} ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei das das Finished-Paket durch das
 ChangeCipherSpec-Paket, welches einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Daten abgegrenzt wird.
 Das ChangeCipherSpec-Paket kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
 Je nach \glos{ciphersuite} wird dadurch die in \acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen

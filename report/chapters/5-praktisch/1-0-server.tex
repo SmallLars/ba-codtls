@@ -43,7 +43,7 @@ Das wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerkz
 sowie Sys Stack Größe, in "`contiki/platform/redbee-econotag/contiki-mc1322x-main.c"', können die Auslastungen beobachtet werden. Um diesen Prozess
 effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die periodischen Ausgaben deaktiviert. In "`server/server.c"' lässt sich nun,
 durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
-und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des Handshakes,
+und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des \glospl{handshake},
 unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
 Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von 83,73 KiB
 auf 80,44 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15,5 KiB zur
@@ -52,7 +52,7 @@ Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des 
 Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option
 Block-1 fehlt. Diese Option kann von einem Clienten benutzt werden, um größere Datenmengen, in einer \acr{coap}-Anfrage, in Blöcke zu unterteilen, damit es nicht
 zu einer Fragmentierung auf IP-Ebene kommt. Laut Aussage von Matthias Kovatsch wird "`auf die atomare Variante aus Platzgründen verzichtet, da man Block1 ganz
-einfach im Resource-Handler lösen kann"`. Da diese Option für den \acr{dtls}-Handshake generell benötigt wird, und ohne Code-Duplizierung auch anderen Ressourcen
+einfach im Resource-Handler lösen kann"`. Da diese Option für den \acr{dtls}-\glos{handshake} generell benötigt wird, und ohne Code-Duplizierung auch anderen Ressourcen
 zur Verfügung stehen soll, wird sie in ähnlicher Form wie die Separate-Option implementiert. Das Separate-Modul bietet Methoden an, um den Client, während der
 Bearbeitung einer Anfrage, zu informieren, dass die Bearbeitung einige Zeit dauert, und die Beantwortung der Anfrage später fortzusetzen. In diesem Sinne bietet
 das Block-1-Modul eine Methode an, mit der die Parameter der Block-1-Option überprüft und bearbeitet werden, wobei bei Bedarf die entsprechenden Fehler generiert

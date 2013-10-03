@@ -1,23 +1,18 @@
 \section{Datenverkehr während des Handshakes}
 
-Verglichen werden 3 Verfahren bei benutzung des definierten ciphersuits.
-\begin{itemize}
-  \item Neu
-  \item DTLS original
-  \item DTLS mit stateless header compression
-\end{itemize}
-dazu werden in den folgenden 3 abschnitten die datenmengen ermittelt, während in 4 abschnitt der vergleich erfolgt.
-dabei wird ein handshake ohne datenverluste oder andere fehler und angriffe betrachtet.
+Um einen fairen Vergleich durchzuführen, wird neben dem originalen \acr{dtls} auch eine \acr{dtls}-Version mit Stateless Header Compression herangezogen.
+Dazu werden in den folgenden 3 Abschnitten die Datenmengen ermittelt, während im 4. Abschnitt der Vergleich erfolgt. Die Datenmengen basieren auf einem
+\glos{handshake}, bei dem weder Paketverluste noch Angriffe von dritten, oder andere Fehler, auftreten.
 
-je nach umfeld anders aber dort jeweils konstant:
-\begin{itemize}
-  \item 802.15.4 Header - Bietet 127 Byte Payload
-  \item 48 Byte - 6LowPAN Header
-  \item 08 Byte - UDP Header
-\end{itemize}
-deswegen werden diese nur im sinne von anzahl der pakete betrachtet
+Das Umfeld ist in allen Fällen konstant. In einem IEEE 802.15.4 Paket, lassen sich maximal 127 Byte Nutzdaten versenden. Davon werden 48 Byte für den
+\acr{6lowpan}-Header, und 8 Byte für den \acr{udp}-Header benötigt, so dass 71 Byte pro Paket für den \acr{dtls}-\glos{handshake} verbleiben.
+Um den Vergleich auf das Wesentliche zu reduzieren, gehen in den Vergleich zunächst nur die \acr{dtls}-Daten selbst ein. Die genannten Header
+werden dann als "`Anzahl der benötigten Pakete"' in der Vergleich mit aufgenommen.
 
-Folgende werden verwendet und sind bei allen 3 Verfahren gleich:\\
+Die in dieser Arbeit genutzte \glos{ciphersuite} dient als Basis für die Ermittlung der Datenmengen. Zu beachten ist hier, dass die dort definierte \acr{prf},
+keinen Einfluss auf die Datenmenge hat. Für den \glos{handshake} sind generell die in Abbildung \ref{tbl:6-1_handshake-data} aufgeführten Nachrichten mit den
+dort angegebenen Größen erfolderlich.
+
 \begin{figure}[!ht]
 \centering
 \begin{tabular}{l|r}
@@ -35,19 +30,15 @@ Folgende werden verwendet und sind bei allen 3 Verfahren gleich:\\
   Finished                & 12 Byte\\
   \showrowcolors
 \end{tabular}
-\caption{Größe der Handshake Nachrichten}
+\caption{Größe der Handshake-Nachrichten}
 \label{tbl:6-1_handshake-data}
 \end{figure}
 
+Darauf basierende werden nun die Datenmengen für alle 3 Verfahren ermittelt, wobei in Epoche 0, ohne jegliche Verschlüsselung, begonnen wird.
 
-darauf basierend werden nun die Datenmengen für alle 3 Verfahren ermittelt\\
-ausgangssituation ist epoche 0 mit verwendetem ciphersuit
-
-\subsection{Neu}
+\subsection{DTLS mit Anpassungen}
 
 gemäß abbildung 3.2
-
-coap packete die nur zur bestätigung dienen und keine daten enthalten rausrechnen zum zusätzlichen vergleich
 
 in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen wird
 
@@ -55,7 +46,7 @@ in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen w
 \centering
 \begin{tabular}{r|c|r|r|r|r|l}
   \hiderowcolors
-  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{CoAP-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & CoAP-Optionen und Inhalt\\
+  Nr. & <-> & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Record-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\acr{coap}-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Content-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\glos{handshake}-} \rotatebox{90}{Daten}} & \acr{coap}-Optionen und Inhalt\\
   \hline
   \hline
    1 & --> & 3 & 13 & 2 & 30 & URI, B1, CHello ohne Cookie [1/2]\\
@@ -101,10 +92,12 @@ in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen w
 \label{tbl:6-1_data-dtls-neu}
 \end{figure}
 
+coap packete die nur zur bestätigung dienen und keine daten enthalten rausrechnen zum zusätzlichen vergleich
+
 zu beachten ist, dass 14 Datenpakete mit 116 Byte coap spezifisch sind und keinerlei dtls handshake daten enthalten\\
 die müssen zwar berücksichtig werden, sind aber dennoch eine separate betrachtung wert.\\
 
-\subsection{DTLS original}
+\subsection{DTLS}
 
 maximale payload größe: 127 - 48 - 8 - 13 - 12 - 8 = 38
 
@@ -112,7 +105,7 @@ maximale payload größe: 127 - 48 - 8 - 13 - 12 - 8 = 38
 \centering
 \begin{tabular}{r|c|r|r|r|l}
   \hiderowcolors
-  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & Inhalt\\
+  Nr. & <-> & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Record-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Content-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\glos{handshake}-} \rotatebox{90}{Daten}} & Inhalt\\
   \hline
   \hline
    1 & --> & 13 & 12 & 38 & CHello ohne Cookie [1/2]\\
@@ -146,7 +139,7 @@ maximale payload größe: 127 - 48 - 8 - 13 - 12 - 8 = 38
 \label{tbl:6-1_data-dtls}
 \end{figure}
 
-\subsection{DTLS mit stateless header compression}
+\subsection{DTLS mit Stateless Header Compression}
 
 mit direkter umsetzung von draft \cite[Kapitel 3]{draftcodtls}
 
@@ -157,7 +150,7 @@ maximale payload größe: 127 - 48 - 8 - 15 - 14 - 8 = 34
 \centering
 \begin{tabular}{r|c|r|r|r|l}
   \hiderowcolors
-  Nr. & <-> & \rotatebox{90}{DTLS-Record-Header} & \rotatebox{90}{DTLS-Content-Header} & \rotatebox{90}{DTLS-Handshake-Daten} & Inhalt\\
+  Nr. & <-> & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Record-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Content-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\glos{handshake}-} \rotatebox{90}{Daten}} & Inhalt\\
   \hline
   \hline
    1 & --> & 3 & 4 & 34 & CHello ohne Cookie [1/2]\\
