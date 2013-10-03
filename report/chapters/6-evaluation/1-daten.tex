@@ -11,23 +11,23 @@ werden dann als "`Anzahl der benötigten Pakete"' in der Vergleich mit aufgenomm
 
 Die in dieser Arbeit genutzte \glos{ciphersuite} dient als Basis für die Ermittlung der Datenmengen. Zu beachten ist hier, dass die dort definierte \acr{prf},
 keinen Einfluss auf die Datenmenge hat. Für den \glos{handshake} sind generell die in Abbildung \ref{tbl:6-1_handshake-data} aufgeführten Nachrichten mit den
-dort angegebenen Größen erfolderlich.
+dort angegebenen Größen erforderlich.
 
 \begin{figure}[!ht]
 \centering
-\begin{tabular}{l|r}
+\begin{tabular}{l|l|r}
   \hiderowcolors
-  Typ & Größe\\
+  Typ & Abkürzung & Größe\\
   \hline
-  ClientHello ohne Cookie & 57 Byte\\
-  HelloVerifyRequest      & 11 Byte\\
-  ClientHello mit Cookie  & 65 Byte\\
-  ServerHello             & 56 Byte\\
-  ServerKeyExchange       & 87 Byte\\
-  ServerHelloDone         &  0 Byte\\
-  ClientKeyExchange       & 87 Byte\\
-  ChangeCipherSpec        &  1 Byte\\
-  Finished                & 12 Byte\\
+  ClientHello ohne Cookie & CHoC & 57 Byte\\
+  HelloVerifyRequest      & HVR  & 11 Byte\\
+  ClientHello mit Cookie  & CHmC & 65 Byte\\
+  ServerHello             & SH   & 56 Byte\\
+  ServerKeyExchange       & SKE  & 87 Byte\\
+  ServerHelloDone         & SHD  &  0 Byte\\
+  ClientKeyExchange       & CKE  & 87 Byte\\
+  ChangeCipherSpec        & CCS  &  1 Byte\\
+  Finished                & FI   & 12 Byte\\
   \showrowcolors
 \end{tabular}
 \caption{Größe der Handshake-Nachrichten}
@@ -35,12 +35,16 @@ dort angegebenen Größen erfolderlich.
 \end{figure}
 
 Darauf basierende werden nun die Datenmengen für alle 3 Verfahren ermittelt, wobei in Epoche 0, ohne jegliche Verschlüsselung, begonnen wird.
+In den Abbildungen sind die übertragenen Pakete zur besseren Übersicht jeweils in 3 Gruppen eingeteilt. Jede Gruppe beinhaltet eine vollständige
+Anfrage des Clients, sowie die vollständige Antwort des Servers.
 
 \subsection{DTLS mit Anpassungen}
 
-gemäß abbildung 3.2
-
-in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen wird
+Der \glos{handshake} über \acr{coap}, gemäß Abbildung \ref{fig:coaphandshake}, erfordert die Übertragung von 30 Datenpaketen, die in Abbildung
+\ref{tbl:6-1_data-dtls-neu} dargestellt sind. Gemäß Abschnitt \ref{sec:handshake} wird eine \acr{coap}-Blockgröße von 32 Byte benutzt. Diese
+Blockgröße ermöglicht auch dann noch einen \glos{handshake}, wenn der \acr{dtls}-Header die maximale Größe von 15 Byte annimmt. Zusätzlich zu den
+übertragenen Handshake-Nachrichten, sind in der letzten Spalte die enthaltenen \acr{coap}-Optionen angegeben. B1 und B2 stehen für die jeweiligen
+Block-Optionen, während CT die Content-Type-Option beschreibt.
 
 \begin{figure}[!ht]
 \centering
@@ -49,48 +53,52 @@ in kapitel 3.2 hat sich blockgröße von 32 byte ergeben die hier herangezogen w
   Nr. & <-> & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Record-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\acr{coap}-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{Content-} \rotatebox{90}{Header}} & \multicolumn{1}{p{0.56cm}|}{\rotatebox{90}{\glos{handshake}-} \rotatebox{90}{Daten}} & \acr{coap}-Optionen und Inhalt\\
   \hline
   \hline
-   1 & --> & 3 & 13 & 2 & 30 & URI, B1, CHello ohne Cookie [1/2]\\
+   1 & --> & 3 & 13 & 2 & 30 & URI, B1, CHoC [1/2]\\
    2 & <-- & 3 &  7 &   &    & B1\\
-   3 & --> & 3 & 13 &   & 27 & URI, B1, CHello ohne Cookie [2/2]\\
-   4 & <-- & 3 & 10 & 2 & 11 & CT, B1, HelloVerifyRequest\\
+   3 & --> & 3 & 13 &   & 27 & URI, B1, CHoC [2/2]\\
+   4 & <-- & 3 & 10 & 2 & 11 & CT, B1, HVR\\
   \hline
   \hline
-   5 & --> & 3 & 13 & 2 & 30 & URI, B1, CHello mit Cookie [1/3]\\
+   5 & --> & 3 & 13 & 2 & 30 & URI, B1, CHmC [1/3]\\
    6 & <-- & 3 &  7 &   &    & B1\\
-   7 & --> & 3 & 13 &   & 32 & URI, B1, CHello mit Cookie [2/3]\\
+   7 & --> & 3 & 13 &   & 32 & URI, B1, CHmC [2/3]\\
    8 & <-- & 3 &  7 &   &    & B1\\
-   9 & --> & 3 & 13 &   &  3 & URI, B1, CHello mit Cookie [3/3]\\
+   9 & --> & 3 & 13 &   &  3 & URI, B1, CHmC [3/3]\\
   10 & <-- & 3 &  4 &   &    & EMPTY (Separate Antwort)\\
-  11 & <-- & 3 & 11 & 5 & 27 & CT, B1, B2, SHello, SKeyExchange, SHelloDone [1/5]\\
+  11 & <-- & 3 & 11 & 5 & 27 & CT, B1, B2, (SH, SKE, SHD) [1/5]\\
   12 & --> & 3 &  4 &   &    & EMPTY\\
-  13 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [2/5]\\
+  13 & <-- & 3 &  9 &   & 32 & CT, B2, (SH, SKE, SHD) [2/5]\\
   14 & --> & 3 &  4 &   &    & EMPTY\\
-  15 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [3/5]\\
+  15 & <-- & 3 &  9 &   & 32 & CT, B2, (SH, SKE, SHD) [3/5]\\
   16 & --> & 3 &  4 &   &    & EMPTY\\
-  17 & <-- & 3 &  9 &   & 32 & CT, B2, SHello, SKeyExchange, SHelloDone [4/5]\\
+  17 & <-- & 3 &  9 &   & 32 & CT, B2, (SH, SKE, SHD) [4/5]\\
   18 & --> & 3 &  4 &   &    & EMPTY\\
-  19 & <-- & 3 &  9 &   & 20 & CT, B2, SHello, SKeyExchange, SHelloDone [5/5]\\
+  19 & <-- & 3 &  9 &   & 20 & CT, B2, (SH, SKE, SHD) [5/5]\\
   20 & --> & 3 &  4 &   &    & EMPTY\\
   \hline
   \hline
-  21 & --> & 3 & 22 & 6 & 26 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [1/4]\\
+  21 & --> & 3 & 22 & 6 & 26 & URI, B1, (CKE, CCS, FI) [1/4]\\
   22 & <-- & 3 &  7 &   &    & B1\\
-  23 & --> & 3 & 22 &   & 32 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [2/4]\\
+  23 & --> & 3 & 22 &   & 32 & URI, B1, (CKE, CCS, FI) [2/4]\\
   24 & <-- & 3 &  7 &   &    & B1\\
-  25 & --> & 3 & 22 &   & 32 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [3/4]\\
+  25 & --> & 3 & 22 &   & 32 & URI, B1, (CKE, CCS, FI) [3/4]\\
   26 & <-- & 3 &  7 &   &    & B1\\
-  27 & --> & 3 & 22 &   & 18 & URI, B1, CKeyExchange, ChangeCipherSpec, Finished [4/4]\\
+  27 & --> & 3 & 22 &   & 18 & URI, B1, (CKE, CCS, FI) [4/4]\\
   28 & <-- & 3 &  4 &   &    & EMPTY (Separate Antwort)\\
-  29 & <-- & 3 & 10 & 4 & 21 & CT, B1, ChangeCipherSpec, Finished\\
+  29 & <-- & 3 & 10 & 4 & 21 & CT, B1, CCS, FI\\
   30 & --> & 3 &  4 &   &    & EMPTY\\
   \hline
   \hline
     & <-> & 90 & 294 & 21 & 405 & Gesamt 810 \\
   \showrowcolors
 \end{tabular}
-\caption{Datenaustausch während eines Handshake mit angepasstem DTLS}
+\caption[test 1]{Datenaustausch während eines Handshake mit angepasstem DTLS}
 \label{tbl:6-1_data-dtls-neu}
 \end{figure}
+
+Der Record-Header nimmt hier generell drei Byte in Anspruch. Zwei Byte beinhalten den komprimierten Record-Header, während die Sequenznummer in einem extra Byte
+angehängt werden muss.
+
 
 coap packete die nur zur bestätigung dienen und keine daten enthalten rausrechnen zum zusätzlichen vergleich
 
