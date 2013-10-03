@@ -4,38 +4,40 @@ Aktuelle Werte:
 
 \begin{figure}[!ht]
 \centering
-\begin{tabular}{l|r}
+\begin{tabular}{l|r|r}
   \hiderowcolors
-  \textbf{Beschreibung} & \textbf{DTLS}\\
+  \textbf{Beschreibung} & \textbf{Basis} & \textbf{mit DTLS}\\
   \hline
-  Programm        & ~~~~~70008 Byte\\
-  Irq Stack       &   256 Byte\\
-  Fiq Stack       &   256 Byte\\
-  Svc Stack       &   256 Byte\\
-  Abt Stack       &    16 Byte\\
-  Und Stack       &    16 Byte\\
-  Sys Stack       &  2048 Byte\\
-  Datensegment    & 21025 Byte\\
-  Heap            &    16 Byte\\
+  Programm        & ~~~~~58760 Byte    & ~~~~~70008 Byte    \\
+  Irq Stack       &   256 Byte         &   256 Byte\\
+  Fiq Stack       &   256 Byte         &   256 Byte\\
+  Svc Stack       &   256 Byte         &   256 Byte\\
+  Abt Stack       &    16 Byte         &    16 Byte\\
+  Und Stack       &    16 Byte         &    16 Byte\\
+  Sys Stack       &  2048 Byte         &  2048 Byte\\
+  Datensegment    & 20744 Byte         & 21025 Byte\\
+  Heap            &    16 Byte         &    16 Byte\\
   \hline
-  \textbf{Gesamt} & 93897 Byte\\
-                  & 91,70 KiB\\
+  \textbf{Gesamt} & 82368 Byte         & 93897 Byte\\
+                  & 80,44 KiB          & 91,70 KiB\\
   \showrowcolors
 \end{tabular}
-\caption{Speicheraufteilung von SmartAppContiki mit DTLS}
+\caption{Speicheraufteilung von SmartAppContiki ohne und mit DTLS}
 \label{tbl:contiki-speicher-dtls}
 \end{figure}
 
 Implementierung ist 93897 - 82368 = 11529 = 11,26 KiB groß\\
-8,41 KiB setzen sich zusammen:
+8922 Byte setzen sich zusammen:
 \begin{itemize}
-  \item 2,09 KiB ECC-Funktionen
-  \item 0,95 KiB AES-Funktionen (CCM + CMAC)
-  \item 0,80 KiB Flash-Speicher-Funktionen
-  \item 0,88 KiB Session-Verwaltung
-  \item 0,18 KiB Pseudo-Random-Funktion
-  \item 2,48 KiB Handshake-Ressource
-  \item 1,03 KiB Parse \& Send
+  \item 2144 Byte ECC-Funktionen
+  \item  310 Byte AES
+  \item  328 Byte AES-CCM
+  \item  332 Byte AES-CMAC
+  \item  824 Byte Flash-Speicher-Funktionen
+  \item  896 Byte Session-Verwaltung
+  \item  184 Byte Pseudo-Random-Funktion
+  \item 2848 Byte Handshake-Ressource
+  \item 1056 Byte Parse \& Send
 \end{itemize}
 
 Gesamtgröße: 93897 = 91,70 KiB\\
@@ -44,3 +46,18 @@ Verbleiben   98304 - 93897 = 4407 = 4,30 KiB\\
 
 die maximale stackausnutzung beträgt 1504 byte von 2048\\
 somit wäre es möglich den stack von 2048 Byte auf 1536 Byte zu reduzieren, um 0,5 KiB weiteren Speicher nutzen zu können
+
+Im \acr{ietf}-Entwurf "`A Hitchhiker's Guide to the (D)TLS Protocol"' \cite{draftmintls} werden zwar auch Programmgrößen für einzelne
+Funktionen aufgeführt, die sich jedoch nicht zum direkten Vergleich eignen, da diese für eine 64-bit-Architektur kompiliert wurden.
+
+tinydtls:
+
+aes :   code: 1692 byte\\
+         var: 4096 byte
+
+sha2 :  code: 1072 byte\\
+         var: 288 byte
+
+hmac :  code: 348 byte
+
+prf :   code: 504 byte
