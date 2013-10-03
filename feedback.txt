@@ -3,7 +3,6 @@ Header compression deterministisch ?
 Flashsspeicher abnutzung ?
 
 genereic header compression - paper mit einbeziehen ohne praktische implementierung
-
-length feld erweitern -> freie bits im record layer header
+https://tools.ietf.org/html/draft-bormann-6lowpan-ghc-06
 
 trennung von ciphersuit spezifischen sachen zu generellen dtls anpassungen im vergleich !!!
