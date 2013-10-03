@@ -1,0 +1,16 @@
+*.a
+*.bin
+*.map
+*.png
+*.log
+*.elf
+*.ihex
+*.sky
+*.minimal-net
+*.avr-atmega128rfa1
+obj_*
+symbols.*
+Makefile.target
+doc/html
+patches-*
+tools/tunslip6
