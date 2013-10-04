@@ -44,7 +44,7 @@ während die Sequenznummer in jeder Epoche bei $ 0 $ beginnt und bei jedem Paket
 \section{Handshake}
 
 Damit es überhaupt zu einer sicheren Verbindung kommen kann, müssen zunächst einige Sicherheitsparameter mit Hilfe des \glos{handshake}-Protokolls ausgehandelt werden.
-Der Header eines \glos{handshake}-Pakets setzt sich gemäß Abbildung \ref{fig:handshakelayer} zusammen. Während es bei TLS ausreichend ist, den Typ, die Länge und die Daten selbst
+Der Header einer \glos{handshake}-Nachricht setzt sich gemäß Abbildung \ref{fig:handshakelayer} zusammen. Während es bei TLS ausreichend ist, den Typ, die Länge und die Daten selbst
 zu senden, wurden bei DTLS weitere Datenfelder ergänzt. message\_seq dient zur Durchnummerierung der \glos{handshake}-Nachrichten, um zu gewährleisten, dass diese vollständig,
 und in der richtigen Reihenfolge, bearbeitet werden. Da auf eine Fragmentierung der \acr{udp}-Pakete auf IP-Ebene vermieden werden soll, und somit die Paketgröße begrenzt ist,
 müssen \glos{handshake}-Nachrichten eventuell auf mehrere UDP-Pakete verteilt werden. Um dies zu ermöglichen, wurden fragment\_offset und fragment\_length
@@ -106,7 +106,7 @@ den \acr{psk} realisiert werden soll und auf die Zertifikate verzichtet wird, um
 
 Eingeleitet wird der \glos{handshake} mit einer Nachricht vom Typ ClientHello, in der der Client seine Möglichkeiten bekannt gibt. Dazu gehören u. a. die unterstützten
 Protokollversionen, \glospl{ciphersuite} und Kompressionsmethoden. Während der Server bei \acr{tls} nun direkt mit einer ServerHello-Nachricht und weiteren
-\glos{handshake}-Paketen antworten kann, lässt sich das bei DTLS so nicht realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem
+\glos{handshake}-Nachrichten antworten kann, lässt sich das bei DTLS so nicht realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem
 Absender versendet werden. Auf diese Art könnte Angriff vom Typ \acr{dos} durchgeführt werden, in dem zahllose Pakete mit unterschiedlichen Absendern an den Server
 gesendet werden, welche alle ein ClientHello enthalten. Problematisch ist hierbei der Zustand, der für jedes ClientHello im Server erzeugt wird. Neben dem
 Speicherverbrauch kann die Berechnung des ServerKeyExchange eine Menge Rechenleistung benötigen, so dass die Ressourcen des Servers schnell aufgebraucht sind.
@@ -124,7 +124,7 @@ Damit sind zunächst alle Daten ausgetauscht, die für die Aushandlung der Siche
 
 Während die bisher genannten \glos{handshake}-Nachrichten mit den Sicherheitsparametern der aktuell gültigen Epoche versendet werden, folgt nun der Versand eines
 ChangeCipherSpec. Dieses Paket gehört formell nicht zum \glos{handshake}-Protokoll, sondern bildet ein eigenes Protokoll, da hier die Epoche verändert wird.
-Ein ChangeCipherSpec-Paket besteht ausschließlich aus einem 1 Byte langen Header mit dem Wert 1 und enthält keine weiteren Daten.
+Eine ChangeCipherSpec-Nachricht besteht ausschließlich aus einem 1 Byte langen Header mit dem Wert 1 und enthält keine weiteren Daten.
 Nach dem Versand des Pakets werden alle folgenden Pakete mit den Sicherheitsparametern der neuen Epoche versendet, während erst der Empfang solch eines
 Pakets dazu führt, dass alle folgenden eingehenden Pakete mit Hilfe der neuen Sicherheitsparameter gelesen werden.
 
@@ -141,8 +141,8 @@ Wenn es während des \glospl{handshake} oder der Übertragung von Anwendungsdate
 Der Header (siehe Abbildung \ref{fig:alertlayer}) enthält neben dem AlertLevel, welches \textit{warning} (1) oder \textit{fatal} (2) sein kann,
 die Beschreibung des Fehlers. Während Fehler der Stufe \textit{fatal} zu einem unmittelbaren Verbindungsabbruch führen, sind Fehler der Stufe
 \textit{warning} zur Information der Gegenseite über mögliche Probleme gedacht. Das Alert-Protokoll unterscheidet sich bei \acr{tls} und \acr{dtls}
-nicht voneinander, da eine zuverlässige Übertragung nicht notwendig ist. Sollte aufgrund eines verloren gegangenen Alert-Pakets eine Anfrage
-wiederholt werden, wird erneut ein Alert-Paket generiert. \TODO{wie auch alle anderen pakete -> sicherheitsparameter der aktuellen epoche, verschlüsselt}
+nicht voneinander, da eine zuverlässige Übertragung nicht notwendig ist. Sollte aufgrund einer verloren gegangenen Alert-Nachricht eine Anfrage
+wiederholt werden, wird erneut eine Alert-Nachricht generiert. \TODO{wie auch alle anderen pakete -> sicherheitsparameter der aktuellen epoche, verschlüsselt}
 
 \begin{figure}[ht]
   \centering

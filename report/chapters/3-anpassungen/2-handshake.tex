@@ -80,17 +80,17 @@ Für die Realisierung des \glospl{handshake} über \acr{coap} dient die Ressourc
 als auch Energie zu sparen, da er im Klartext in die \acr{coap}-Anfrage eingefügt wird. \acr{dtls}-Sessions, die während eines \glospl{handshake} erzeugt
 werden, bilden Sub-Ressourcen. Gemäß \acr{coap} \cite[Abschnitt 5.8.2]{draftcoap13}, soll eine POST-Anfrage, die eine Ressource erzeugt, mit einem
 2.01 Created und der Location-Path-Option beantwortet werden, die den neuen \acr{uri} enthält. Auf die Location-Path-Option wird hier verzichtet,
-da diese nicht zwingend ist, und die Session-ID im ServerHello-Paket enthalten ist, womit sich der neue \acr{uri} berechnen lässt. Die Verwendung
+da diese nicht zwingend ist, und die Session-ID in der ServerHello-Nachricht enthalten ist, womit sich der neue \acr{uri} berechnen lässt. Die Verwendung
 der Location-Path-Option hätte den Nachteil, dass diese bei einer blockweisen Übertragung, in jedem Block wiederholt werden würde. Dieser Nachteil
 tritt bei einer \acr{coap}-Anfrage ebenfalls ein, wird hier jedoch akzeptiert, da es so bei einer blockweisen Übertragung frühzeitig möglich ist,
-die Gültigkeit der Ressource zu überprüfen. Während die Session-ID somit im ClientHello-Paket überflüssig ist und entfernt wird, bleibt diese im
-ServerHello-Paket enthalten. Dadurch ist auch fest definiert, dass ein ClientHello-Paket an die Haupt-Ressource die Erstellung einer neuen
-Sub-Ressource bewirkt, während ein ClientHello-Paket an eine Sub-Ressource die Wiederaufnahme einer Session bewirkt.
+die Gültigkeit der Ressource zu überprüfen. Während die Session-ID somit in der ClientHello-Nachricht überflüssig ist und entfernt wird, bleibt diese in der
+ServerHello-Nachricht enthalten. Dadurch ist auch fest definiert, dass eine ClientHello-Nachricht an die Haupt-Ressource die Erstellung einer neuen
+Sub-Ressource bewirkt, während eine ClientHello-Nachricht an eine Sub-Ressource die Wiederaufnahme einer Session bewirkt.
 
-Während in einem gewöhnlichen \acr{dtls}-\glos{handshake} jedes einzelne \acr{dtls}-\glos{handshake}-Paket sowohl den \acr{dtls}-Record-Header als auch den
-\acr{dtls}-\glos{handshake}-Header enthält, ist dies hier nicht mehr notwendig, da mehrere \acr{dtls}-\glos{handshake}-Pakete innerhalb eines \acr{coap}-Pakets
-enthalten sind. Der \acr{dtls}-Record-Header ist einmalig vor jedem \acr{coap}- oder Alert-Paket enthalten. Um die \acr{dtls}-\glos{handshake}-Pakete
-innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dtls}Conten-Header (Abbildung {ref{fig:com\_content\_header}).
+Während in einem gewöhnlichen \acr{dtls}-\glos{handshake} jede einzelne \acr{dtls}-\glos{handshake}-Nachricht sowohl den \acr{dtls}-Record-Header als auch den
+\acr{dtls}-\glos{handshake}-Header enthält, ist dies hier nicht mehr notwendig, da mehrere \acr{dtls}-\glos{handshake}-Nachrichten innerhalb eines \acr{coap}-Pakets
+enthalten sind. Der \acr{dtls}-Record-Header ist einmalig vor jedem \acr{coap}- oder jeder Alert-Nachricht enthalten. Um die \acr{dtls}-\glos{handshake}-Nachrichten
+innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dtls}-Content-Header (Abbildung {ref{fig:com\_content\_header}).
 
 \begin{figure}[ht]
   \centering
@@ -105,7 +105,7 @@ innerhalb eines \acr{coap}-Pakets voneinander abzugrenzen, dient nun der \acr{dt
 \end{figure}
 
 Dieser wurde abgeleitet vom \glos{handshake}-Header, wird jedoch nicht mehr so genannt, da in einem \acr{coap}-Paket unterschiedliche \acr{dtls}-Inhalte
-enthalten sind. Neben \glos{handshake}- und ChangeCipherSpec-Paketen sind dort zusätzlich Alert-Pakete möglich. Während in den ersten sechs Bits, der in
+enthalten sind. Neben \glos{handshake}- und ChangeCipherSpec-Nachrichten sind dort zusätzlich Alert-Nachrichten möglich. Während in den ersten sechs Bits, der in
 \acr{tls}/\acr{dtls} definierte Wert, für den \glos{handshake}-Typ hinterlegt werden kann, enthalten die letzten beiden Bits die Anzahl der dem Header folgenden
 Bytes der Länge, wobei der Wert 0 die Länge 0 direkt definiert. Neben den in \acr{dtls} definierten \glos{handshake}-Typen werden die folgenden
 beiden Typen definiert: \textit{change\_cipher\_spec} (32) und \textit{alert} (33).
@@ -137,7 +137,7 @@ Während der Record-Typ bei Anwendungsdaten eindeutig ist, muss dieser nun für 
 Alert wird hier nur verwendet, falls es sich um eine Benachrichtigung direkt über \acr{udp} ohne \acr{coap} handelt.
 Benachrichtigungen innerhalb von \acr{coap} sind eindeutig durch den Content-Header gekennzeichnet und gehören immer zu einem \glos{handshake}
 womit hier auch der Record-Type \glos{handshake} verwendet wird. \glos{handshake} wird generell verwendet, wenn es sich um \glos{handshake}-Daten handelt.
-Dazu zählt hier nun auch ein enthaltenes ChangeCipherSpec-Paket. Während bei \acr{tls}/\acr{dtls} der Versand eines ChangeCipherSpec-Pakets
+Dazu zählt hier nun auch eine enthaltene ChangeCipherSpec-Nachricht. Während bei \acr{tls}/\acr{dtls} der Versand einer ChangeCipherSpec-Nachricht
 zur anschließenden Änderungen der Sicherheitsparameter des Paketversands führt, kommmt es bei Empfang solch eines Pakets zur Änderungen der
 Sicherheitsparameter des Paketempfangs für alle folgenden Pakete. Diese Vorgehensweise ist hier nicht mehr notwendig. Die Epoche und somit
 die Sicherheitsparameter für den Paketempfang ergeben sich durch den \acr{dtls}-Header. Beachtet werden muss nur, wann eine alte Epoche
@@ -150,10 +150,10 @@ erhalten kann er alle weiteren Nachrichten mit den Sicherheitsparametern der neu
 weiß bei Erhalt der ersten Anwendungsdaten ebenfalls, dass Pakete innerhalb der alten Epoche nicht mehr versand werden und kann die
 dazu gehörenden Sicherheitsparameter vernichten.
 
-Da somit gemäß Abbildung \ref{fig:coaphandshake} das Finished-Paket innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
-verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck des Pakets zu bewahren. Hier wird der Hash über alle im
-\glos{handshake} ausgetauschten Pakete nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei das das Finished-Paket durch das
-ChangeCipherSpec-Paket, welches einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Daten abgegrenzt wird.
-Das ChangeCipherSpec-Paket kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
-Je nach \glos{ciphersuite} wird dadurch die in \acr{tls} definierte Länge des Finished-Pakets von 12 vergrößert, da unter Umständen Zusatzinformationen
+Da somit gemäß Abbildung \ref{fig:coaphandshake} die Finished-Nachricht innerhalb des \acr{coap}-Pakets noch mit den alten Sicherheitsparametern
+verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck der Nachricht zu bewahren. Hier wird der Hash über alle im
+\glos{handshake} ausgetauschten Nachrichten nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei die Finished-Nachricht durch die
+ChangeCipherSpec-Nachricht, die einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Nachrichten abgegrenzt wird.
+Die ChangeCipherSpec-Nachricht kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
+Je nach \glos{ciphersuite} wird dadurch die in \acr{tls} definierte Länge der Finished-Nachricht von 12 vergrößert, da unter Umständen Zusatzinformationen
 wie Nonce und MAC hinzukommen.
