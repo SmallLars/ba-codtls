@@ -44,7 +44,7 @@ Anfrage des Clients, sowie die vollständige Antwort des Servers.
 Der \glos{handshake} über \acr{coap}, gemäß Abbildung \ref{fig:coaphandshake}, erfordert die Übertragung von 30 Datenpaketen, die in Abbildung
 \ref{tbl:6-1_data-dtls-neu} dargestellt sind. Gemäß Abschnitt \ref{sec:handshake} wird eine \acr{coap}-Blockgröße von 32 Byte benutzt. Diese
 Blockgröße ermöglicht im Allgemeinen auch dann noch einen \glos{handshake}, wenn der \acr{dtls}-Header die maximale Größe von 15 Byte annimmt, und der 8 Byte
-lange \acr{mac} bei einer verschlüsselten Datenübertraung hinzukommt. Kritisch wird es nur bei Nachricht 5 gemäß Abbildung \ref{fig:coaphandshake}.
+lange \acr{mac} bei einer verschlüsselten Datenübertragung hinzukommt. Kritisch wird es nur bei Nachricht 5 gemäß Abbildung \ref{fig:coaphandshake}.
 Da dort die \acr{uri} für die Sub-Ressource angegeben wird, die als zusätzliche \acr{coap}-Option angehängt wird, reicht der Platz im Datenpaket
 nicht mehr aus. Um dies zu vermeiden, müsste auf die Modellierung von Sessions als Sub-Ressource verzichtet werden, und die Session-ID weiterhin
 in der ClientHello-Nachricht übertragen werden, falls es zu einer Fortsetzung einer Session kommt. Für die Nachricht 5 stellt dies kein Problem dar,
@@ -112,7 +112,7 @@ Die einzige Ausnahme bildet hier der Content-Header für die Finished-Nachricht,
 Insgesamt müssen 810 Byte in 30 Paketen übertragen werden. Zu beachten ist, dass 14 Pakete mit 116 Byte \acr{coap} spezifisch sind und keinerlei
 \glos{handshake}-Daten enthalten. Diese müssen zwar berücksichtig werden, sind aber dennoch eine separate Betrachtung wert. Ohne diese verbleiben
 16 Pakete mit 694 Byte. Auffällig ist auch, dass die Nachricht 5 in vier Blöcke unterteilt werden muss, und so der \acr{uri} entsprechend oft wiederholt wird.
-Würde auf die Modellierung der Sessions als Sub-Ressource verzichtet werden, könnten in diesem Fall weitere 30 Byte eingespart werden.
+Würde auf die Modellierung der Sessions als Sub-Ressource verzichtet werden, könnten in diesem Fall weitere 36 Byte eingespart werden.
 
 \subsection{DTLS}
 
@@ -214,32 +214,39 @@ Wie auch in Abschnitt \ref{sec:new-dtls} werden für den Record-Header 3 Byte be
 Sequenznummer übertragen. Der \glos{handshake}-Header kommt generell mit 2 Byte, ohne weitere Anhänge, aus, falls die \glos{handshake}-Nachrichten klein genug sind,
 um in einem Paket übertragen zu werden. Müssen diese in mehrere Teile unterteilt werden, kommt eine 1 Byte lange Gesamtlänge, sowie ein 1 Byte langer Offset hinzu.
 Diese Angaben sind notwendig, um die einzelnen Teile wieder zusammenzusetzen. Wie auch im letzten Abschnitt, wird für die ChangeCipherSpec-Nachricht kein
-\glos{handshake}-Header benötigt. Insgesamt werden 18 Pakete mit 512 Byte übertragen.
+\glos{handshake}-Header benötigt. Insgesamt werden 18 Pakete mit 515 Byte übertragen.
 
 \subsection{Vergleich}
 
-test
-
-test
-
-test
+In Abbildung \ref{tbl:6-1_vergleich} sind im oberen Bereich nun alle 3 Varianten gegenübergestellt, wobei im unteren Bereich die denkbaren
+Alternativen und Betrachtungsweisen aufgeführt sind. In der letzten Spalte sind zusätzlich die die Header von \acr{6lowpan} und \acr{udp},
+mit insgesamt 56 Byte pro Paket, berücksichtigt.
 
 \begin{figure}[!ht]
 \centering
-\begin{tabular}{l|r|r}
+\begin{tabular}{l|r|r|r}
   \hiderowcolors
-  Variante & Pakete & Datenmenge\\
+  Variante & Pakete & Datenmenge & Gesamt\\
   \hline
-  DTLS mit Anpassungen                                         & 30 & 810\\
-  DTLS                                                         & 18 & 831\\
-  DTLS mit Stateless Header Compression                        & 18 & 515\\
+  DTLS mit Anpassungen                                         & 30 & 810 & 2490\\
+  DTLS                                                         & 18 & 831 & 1839\\
+  DTLS mit Stateless Header Compression                        & 18 & 515 & 1523\\
   \hline
   \hline
-  DTLS mit Anpassungen (ohne Sub-Ressource)                    & 30 & 770\\
-  DTLS mit Anpassungen (ohne \acr{coap}-ACK)                   & 16 & 694\\
-  DTLS mit Anpassungen (ohne Sub-Ressource und \acr{coap}-ACK) & 16 & 664\\
+  DTLS mit Anpassungen (ohne \acr{coap}-ACK)                   & 16 & 694 & 1590\\
+  DTLS mit Anpassungen (ohne Sub-Ressource)                    & 30 & 774 & 2454\\
+  DTLS mit Anpassungen (ohne Sub-Ressource und \acr{coap}-ACK) & 16 & 658 & 1554\\
   \showrowcolors
 \end{tabular}
 \caption{Vergleich der drei Varianten}
 \label{tbl:6-1_vergleich}
 \end{figure}
+
+Die angepasste \acr{dtls}-Variante schneidet bezüglich der Anzahl der benötigten Pakete zunächst am schlechtesten ab. Jedoch muss berücksichtig werden,
+dass 14 Pakete davon \acr{coap}-Pakete sind, die keine \glos{handshake}-Daten enthalten. Diese ermöglichen eine zuverlässige blockweise Datenübertragung,
+so dass dafür im Gegenzug einiges an Programmcode wegfällt, der diese Dinge ausgleichem müsste. Mit den verbleibenden 16 Paketen liegt die angepasste
+\acr{coap}-Variante vorne. Zwei Pakete weniger sind hier nötig, da die \glos{handshake}-Nachrichten kompakt in \acr{coap}-Paketen aneinander gehängt werden,
+wodurch das verfügbare Volumen der Datenpakete maximal ausgenutzt wird.
+
+Werden die \acr{dtls} spezifischen Datenmengen verglichen, schneidet die angepasste \acr{dtls}-Variante besser ab als das originale \acr{dtls}.
+\acr{dtls} mit Stateless Header Compression ist jedoch, bezogen auf die Datenmenge, am effizientesten, da hier keine \acr{coap}-Header übertragen werden.
