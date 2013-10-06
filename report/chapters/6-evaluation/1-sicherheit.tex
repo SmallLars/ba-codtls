@@ -1,0 +1,35 @@
+\section{Sicherheit}
+
+Der in Abschnitt \ref{sec:ori-handshake} beschriebene Cookie soll den Absender validieren und so \acr{dos}-Angriffe verhindern.
+Dabei liegt der Fokus darauf, die Erstellung einer Session, durch einen Angreifer zu vermeiden, da dieser so die Ressourcen des Endgeräts aufbrauchen könnte.
+Diese Funktion ist auch bei der Realisierung des \glospl{handshake} über \acr{coap} gegeben. Durch die Verwendung der Block-1-Option treten jedoch neue
+Angriffsmöglichkeiten auf, die in dieser Arbeit nicht verhindert werden konnten. Die \acr{coap}-Ressource für den \acr{dtls}-\glos{handshake} akzeptiert, aufgrund
+der begrenzten Ressourcen, nur eine Anfrage zur Zeit. Eine Anfrage kann jedoch aus mehreren \acr{coap}-Paketen mit der Block-1-Option bestehen. Während
+die Datenblöcke gesammelt werden, ist die Ressource für alle anderen Anfragen gesperrt. Zwar wird die Ressource nach 60 Sekunden freigegeben, falls die Anfrage
+nicht beendet wurde, was einem Angreifer jedoch die Möglichkeit offen lässt, alle 60 Sekunden eine neue Anfrage zu senden und die Ressource erneut zu sperren.
+
+Um Angriffe dieser Art zu verhindern, ist es notwendig, für den ersten Validierungsprozess auf die Nutzung der Block-1-Option zu verzichten, oder dafür ausschließlich
+die Daten im ersten Datenblock zu nutzen. Letzteres wäre möglich, durch die Anpassung der ClientHello-Nachricht, wie in Abbildung \ref{fig:clienthelloalternative} dargestellt.
+
+\begin{figure}[ht]
+  \centering
+  \begin{lstlisting}[language=c]
+  struct {
+    ProtocolVersion client_version;
+    opaque client_hello_hash<0..2^8-1>;                  // New field
+    opaque cookie<0..2^8-1>;                             // New field
+    Random random;
+    SessionID session_id;
+    CipherSuite cipher_suites<2..2^16-1>;
+    CompressionMethod compression_methods<1..2^8-1>;
+  } ClientHello;
+  \end{lstlisting}
+  \caption{Alternative zur ClientHello-Nachricht}
+  \label{fig:clienthelloalternative}
+\end{figure}
+
+Ausgehend von einem 16 Byte langen Hash-Wert, der ClientHello-Nachricht ohne Hash, und einem 8 Byte langen Cookie, passen diese Werte exakt in den ersten 32 Byte großen
+Block. Fehlt dort der Cookie, kann die HelloVerifyRequest-Nachricht auf Basis des Hash-Wertes sofort berechnet und versendet werden. Der Client kann die Anfrage somit
+umgehend, inklusve dem Cookie, erneut beginnen. Wie im nächsten Abschnitt zu sehen, würde dies sogar den Versand von 2 Datenpaketen einsparen. Außerdem werden ist es
+auf Serverseite nicht mehr notwendig, den Hash-Wert der vollständigen ClientHello-Nachricht zu berechnen, was weitere Ressourcen spart. Falls sich eine Überbrüfung des
+Hash-Wertes als notwendig erweist, kann dieser trotzdem berechnet und verglichen werden.
