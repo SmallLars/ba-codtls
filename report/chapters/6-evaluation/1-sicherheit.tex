@@ -10,6 +10,7 @@ nicht beendet wurde, was einem Angreifer jedoch die Möglichkeit offen lässt, a
 
 Um Angriffe dieser Art zu verhindern, ist es notwendig, für den ersten Validierungsprozess auf die Nutzung der Block-1-Option zu verzichten, oder dafür ausschließlich
 die Daten im ersten Datenblock zu nutzen. Letzteres wäre möglich, durch die Anpassung der ClientHello-Nachricht, wie in Abbildung \ref{fig:clienthelloalternative} dargestellt.
+Dort wird gleich hinter der Version ein Hash, der ClientHello-Nachricht ohne Hash und Cookie, hinterlegt, worauf direkt der Cookie folgt.
 
 \begin{figure}[ht]
   \centering
@@ -28,8 +29,8 @@ die Daten im ersten Datenblock zu nutzen. Letzteres wäre möglich, durch die An
   \label{fig:clienthelloalternative}
 \end{figure}
 
-Ausgehend von einem 16 Byte langen Hash-Wert, der ClientHello-Nachricht ohne Hash, und einem 8 Byte langen Cookie, passen diese Werte exakt in den ersten 32 Byte großen
-Block. Fehlt dort der Cookie, kann die HelloVerifyRequest-Nachricht auf Basis des Hash-Wertes sofort berechnet und versendet werden. Der Client kann die Anfrage somit
-umgehend, inklusve dem Cookie, erneut beginnen. Wie im nächsten Abschnitt zu sehen, würde dies sogar den Versand von 2 Datenpaketen einsparen. Außerdem werden ist es
-auf Serverseite nicht mehr notwendig, den Hash-Wert der vollständigen ClientHello-Nachricht zu berechnen, was weitere Ressourcen spart. Falls sich eine Überbrüfung des
-Hash-Wertes als notwendig erweist, kann dieser trotzdem berechnet und verglichen werden.
+Ausgehend von einem 16 Byte langen Hash-Wert und einem 8 Byte langen Cookie, passen diese Werte exakt in den ersten 32 Byte großen Block. Fehlt dort der Cookie,
+kann die HelloVerifyRequest-Nachricht auf Basis des Hash-Wertes sofort berechnet und versendet werden. Der Client kann die Anfrage somit umgehend, inklusve dem
+Cookie, erneut beginnen. Wie im nächsten Abschnitt zu sehen, würde dies sogar den Versand von 2 Datenpaketen einsparen. Außerdem werden ist es auf Serverseite
+nicht mehr notwendig, den Hash-Wert der vollständigen ClientHello-Nachricht zu berechnen, was weitere Ressourcen spart. Falls sich eine Überbrüfung des Hash-Wertes
+als notwendig erweist, kann dieser trotzdem berechnet und verglichen werden.

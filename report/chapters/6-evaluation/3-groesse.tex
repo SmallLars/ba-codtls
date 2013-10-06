@@ -1,65 +1,80 @@
 \section{Programmgröße}
 
-Aktuelle Werte:
+In Abbildung \ref{tbl:contiki-speicher-dtls} sind zunächst die Ausgangs-Werte aus Abschnitt \ref{sec:server}
+im Vergleich mit den Werten inklusive der \acr{dtls}-Implementierung aufgeführt. Daraus ergibt sich, dass
+für die Funktionen des Endgeräts 4407 Byte (4,30 KiB) verbleiben.
 
 \begin{figure}[!ht]
 \centering
-\begin{tabular}{l|r|r}
+\begin{tabular}{l|r|r|r}
   \hiderowcolors
-  \textbf{Beschreibung} & \textbf{Basis} & \textbf{mit DTLS}\\
+  \textbf{Beschreibung} & \textbf{Basis} & \textbf{mit DTLS} & \textbf{Differenz}\\
   \hline
-  Programm        & ~~~~~58760 Byte    & ~~~~~70008 Byte    \\
-  Irq Stack       &   256 Byte         &   256 Byte\\
-  Fiq Stack       &   256 Byte         &   256 Byte\\
-  Svc Stack       &   256 Byte         &   256 Byte\\
-  Abt Stack       &    16 Byte         &    16 Byte\\
-  Und Stack       &    16 Byte         &    16 Byte\\
-  Sys Stack       &  2048 Byte         &  2048 Byte\\
-  Datensegment    & 20744 Byte         & 21025 Byte\\
-  Heap            &    16 Byte         &    16 Byte\\
+  Programm        & ~~~~~58760 Byte & ~~~~~70008 Byte & ~~~~~11248 Byte \\
+  Irq Stack       &   256 Byte      &   256 Byte      &     0 Byte\\
+  Fiq Stack       &   256 Byte      &   256 Byte      &     0 Byte\\
+  Svc Stack       &   256 Byte      &   256 Byte      &     0 Byte\\
+  Abt Stack       &    16 Byte      &    16 Byte      &     0 Byte\\
+  Und Stack       &    16 Byte      &    16 Byte      &     0 Byte\\
+  Sys Stack       &  2048 Byte      &  2048 Byte      &     0 Byte\\
+  Datensegment    & 20744 Byte      & 21025 Byte      &   281 Byte\\
+  Heap            &    16 Byte      &    16 Byte      &     0 Byte\\
   \hline
-  \textbf{Gesamt} & 82368 Byte         & 93897 Byte\\
-                  & 80,44 KiB          & 91,70 KiB\\
+  \textbf{Gesamt} & 82368 Byte      & 93897 Byte      & 11529 Byte\\
+                  & 80,44 KiB       & 91,70 KiB       & 11,26 KiB\\
   \showrowcolors
 \end{tabular}
 \caption{Speicheraufteilung von SmartAppContiki ohne und mit DTLS}
 \label{tbl:contiki-speicher-dtls}
 \end{figure}
 
-Implementierung ist 93897 - 82368 = 11529 = 11,26 KiB groß\\
-8922 Byte setzen sich zusammen:
+Der Zuwachs im Datensegment resultiert zur Hälfte aus dem, für die Behandlung der Block-1-Option notwendigen, Speicher, in dem die Datenblöcke gesammelt und
+zusammen gesetzt werden. Von den 11248 Byte zusätzlichem Programmcode, setzen sich 9114 Byte aus den folgen Komponenten zusammen:
 \begin{itemize}
-  \item 2144 Byte ECC-Funktionen
-  \item  310 Byte AES
-  \item  328 Byte AES-CCM
-  \item  332 Byte AES-CMAC
-  \item  824 Byte Flash-Speicher-Funktionen
-  \item  896 Byte Session-Verwaltung
-  \item  184 Byte Pseudo-Random-Funktion
-  \item 2848 Byte Handshake-Ressource
-  \item 1056 Byte Parse \& Send
+  \item  2848 Byte \glos{handshake}-Ressource
+  \item  2144 Byte \acr{ecc}-Funktionen
+  \item  1056 Byte Parse \& Send
+  \item ~~896 Byte Session-Verwaltung
+  \item ~~824 Byte Flash-Speicher-Funktionen
+  \item ~~332 Byte \acr{aes}-\acr{cmac}
+  \item ~~328 Byte \acr{aes}-\acr{ccm}
+  \item ~~310 Byte \acr{aes}
+  \item ~~192 Byte \acr{coap}-Block-1-Handler
+  \item ~~184 Byte \acr{prf}
 \end{itemize}
+Die übrigend 2134 Byte setzten sich zusammen aus kleineren Anpassungen in \acr{coap}, und einigen Ressourcen zum Abruf von gerätespezifischen Daten,
+sowie jeweils einer Ressource für das Update der Realzeit und der Software. Zu beachten ist auch, das weitere 1400 Byte im Flash-Speicher genutzt werden,
+um die Daten von 10 Sessions abzulegen. Auch sind dort 96 Byte genutzt, die den Basispunkt und die Ordnung der elliptischen Kurve enthalten.
 
-Gesamtgröße: 93897 = 91,70 KiB\\
-Verbleiben   98304 - 93897 = 4407 = 4,30 KiB\\
--> praxistauglich
+Es hat sich gezeigt, dass von den 2048 Byte des System-Stacks nur maximal 1504 Byte genutzt werden. Sollte weiterer Speicher benötigt werden, könnte
+der System-Stack auf 1536 Byte begrenzt werden, wodurch weitere 0,5 KiB an Speicher verfübar wären.
 
-denke dran, im flash: 1400 byte für session speicher[10] und 96 byte für base point und ecc ordnung
-
-die maximale stackausnutzung beträgt 1504 byte von 2048\\
-somit wäre es möglich den stack von 2048 Byte auf 1536 Byte zu reduzieren, um 0,5 KiB weiteren Speicher nutzen zu können
-
-Im \acr{ietf}-Entwurf "`A Hitchhiker's Guide to the (D)TLS Protocol"' \cite{draftmintls} werden zwar auch Programmgrößen für einzelne
+Im \acr{ietf}-Entwurf "`A Hitchhiker's Guide to the (D)TLS Protocol"' \cite{draftmintls} werden Programmgrößen für einzelne
 Funktionen aufgeführt, die sich jedoch nicht zum direkten Vergleich eignen, da diese für eine 64-bit-Architektur kompiliert wurden.
+Um einige Programmgrößen zu ermitteln wird deshalb TinyDTLS \cite{tinydtls} herangezogen und mit Contiki kompiliert.
+Die aktuelle Version ist \textasciitilde 7 KiB zu groß für den \glos{mc1322} und konnte somit nicht getestet werden. Für die Ermittlung
+der Programmgrößen einzelner Komponenten reicht dies jedoch aus. Einige nennenswerte Komponenten sind in Abbildung \ref{tbl:tinydtls} aufgeführt.
 
-tinydtls:
+\begin{figure}[!ht]
+\centering
+\begin{tabular}{l|r|r}
+  \hiderowcolors
+  \textbf{Komponente} & \textbf{Programmgröße} & \textbf{Datensegment}\\
+  \hline
+  \acr{aes}  & 1692 Byte & 4096 Byte\\
+  SHA2       & 1072 Byte &  288 Byte\\
+  \acr{hmac} &  348 Byte &    0 Byte\\
+  \acr{prf}  &  504 Byte &    0 Byte\\
+  \showrowcolors
+\end{tabular}
+\caption{Größe einiger nennenswerter Komponenten aus TinyDTLS}
+\label{tbl:tinydtls}
+\end{figure}
 
-aes :   code: 1692 byte\\
-         var: 4096 byte
+\acr{aes} benötigt neben 1692 Byte Programmcode 4096 Byte im Datensegment für einige Konstanten. Es zeigt sich hier also, dass die \acr{aes}-Unterstützung
+des \glos{mc1322} wesentlich für das Gelingen dieser Realisierung ist. Eine Software-Lösung wäre zu groß für den zur Verfügung stehenden Platz.
 
-sha2 :  code: 1072 byte\\
-         var: 288 byte
-
-hmac :  code: 348 byte
-
-prf :   code: 504 byte
+Anders verhält es sich mit der genutzten \acr{prf}. Ersetzt man die genutzte \acr{prf} und die dafür notwendige \acr{aes}-\acr{cmac}-Funktion durch die
+TinyDTLS-Komponenten \acr{prf}, \acr{hmac} und SHA2 wird das Programm um 1696 Byte (1,66 KiB) größer. Dadurch würden immer noch mehr als 2,5 KiB
+Speicher zur Verfügung stehen, um Funktionen des Endgeräts zu realisieren. Von Vorteil wäre dies, da somit die in \acr{dtls} definierte \acr{prf}
+benutzt wird, und die Definition der \acr{prf} in der benutzen \glos{ciphersuite} überflüssig ist.
