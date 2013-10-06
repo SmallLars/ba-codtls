@@ -13,6 +13,7 @@
 
 #if DEBUG
     #include <stdio.h>
+    #include "mc1322x.h"
     #define PRINTF(...) printf(__VA_ARGS__)
 #else
     #define PRINTF(...)
@@ -64,6 +65,11 @@ nvmErr_t nvm_getVar(void *dest, fpoint_t address, uint16_t numBytes) {
 }
 
 nvmErr_t nvm_setVar(void *src, fpoint_t address, uint16_t numBytes) {
+    #if DEBUG
+        printf("SetVar - START . ");
+        uint32_t time = *MACA_CLK;
+    #endif
+
     if (address >= 8192) {
         PRINTF("Schreibfehler - Ungültiger Bereich.\n");
         return gNvmErrInvalidPointer_c;
@@ -93,6 +99,11 @@ nvmErr_t nvm_setVar(void *src, fpoint_t address, uint16_t numBytes) {
     }
 
     nvm_erase(gNvmInternalInterface_c, gNvmType_SST_c, 1 << (src_block / LEN_BLOCK_XX));
+
+    #if DEBUG
+        time = *MACA_CLK - time;
+        printf("BEENDET NACH %u MS\n", time / 250);
+    #endif
 
     return gNvmErrNoError_c;
 }

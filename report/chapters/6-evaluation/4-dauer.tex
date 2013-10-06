@@ -1,8 +1,8 @@
 \section{Dauer}
 
-\begin{itemize}
-  \item ECC-Multiplikation: \o 4,5 s
-  \item Handshake: \o 11 s
-\end{itemize}
-
-praxitauglich. trotzdem sinnvoll den handshake durchzuführen, noch bevor anwendungsdaten zum versand anstehen.
+Der \glos{handshake} dauert unter idealen Bedingungen insgesamt 12 Sekunden wobei dort zwei Faktoren eine wesentlich Rolle spielen.
+Zum einen werden während des \glospl{handshake} zwei Multiplikationen auf elliptischen Kurven durchgeführt, wobei eine Multiplikation derzeit \o 4,5 Sekunden dauert.
+Zum anderen sind während des \glospl{handshake} vier Schreiboperationen, in die RW-Blöcke des Flash-Speichers, notwendig, die insgesamt 0,8 Sekunden benötigen.
+Abzüglich dieser Operationen verbleiben 2,2 Sekunden, die für den Datenaustausch und weitere Berechnungen benötigt werden.
+Ausgehend von dem Szenario, das neue Endgeräte bei Aktivierung von einer zentralen Software erkannt werden, die einen Handshake unmittelbar durchführt,
+wird der Benutzer davon nichts mitbekommen.

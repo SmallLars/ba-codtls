@@ -55,6 +55,8 @@
 #define RES_BLK_2_ACTIVE    4096
 #define LEN_BLK_X_ACTIVE       1
 
+//------------------------------------
+
 #define RES_PSK_ISNEW          1
 #define LEN_PSK_ISNEW          1
 
@@ -65,11 +67,14 @@
 #define RES_SESSION_LIST      18
 #define LEN_SESSION_LIST     600
 
-#define RES_KEY_BLOCK_LIST   618
+#define LEN_BLOCK_1          618
+
+//------------------------------------
+
+#define RES_KEY_BLOCK_LIST  (4096 + 1)
 #define LEN_KEY_BLOCK_LIST   800
 
-#define LEN_BLOCK_1         1418
-#define LEN_BLOCK_2            1
+#define LEN_BLOCK_2          801
 
 typedef uint32_t fpoint_t;   // Adresse im Flash-Speicher
 
