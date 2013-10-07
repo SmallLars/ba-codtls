@@ -1,3 +1,17 @@
 \subsection{Update-Funktion}
 
-flasher beschreiben: überschreibt den programmcode jedoch nicht die vom blaster generierten gerätedaten
+Damit Endgeräte im Einsatz ein Softwareupdate erhaltenen können, ohne diese direkt mit einem Computer zu verbinden,
+dient die Ressource "`/f"'. Mit Hilfe dieser kann der Programmcode aktualisiert werden, ohne die Daten im
+erweiterten Flash-Speicher zu überschreiben. So bleiben unter anderem der Werksmäßig definierte \acr{psk} und die \acr{uuid} erhalten.
+
+Um ein IEEE 802.15.4 Paket mit maximal 127 Byte Nutzdaten voll auszuschöpfen, wird hier auf den Einsatz der Block-1-Option verzichtet, und
+die neue Software in Blöcken von 46 Byte übertragen. Würde hier die Block-1-Option genutzt, müsste die Blockgröße 32 Byte betragen, womit
+sich die Anzahl der notwendigen Pakete um \textasciitilde 50 \% erhöhen würde. Damit der Block identifiziert werden kann, wird vor jedem Block ein zwei
+Byte langer Index übertragen. Ist dieser null, handelt es sich um den ersten Block und der Flash-Speicher wird gelöscht, damit die neue Software
+dort hinterlegt werden kann. Hat der Index den Wert $ 0 $xFFFF folgen keine weiteren Blöcke und das Endgerät wird neu gestartet.
+
+Das führt zum Verlust der Session-Daten, wodurch ein Handshake erneut erforderlich ist. Um dies zu verhindern ist es zukünftig denkbar,
+die erforderlichen Daten vor einem Neustart zu sichern, um diese im Anschluss wieder herzustellen.
+
+Bedingt durch die zuverlässige Übertragung kann der Client sicherstellen, dass alle Datenblöcke angekommen sind, bevor der Neustart ausgelöst wird.
+\TODO{ausfall während der übertragung - error}

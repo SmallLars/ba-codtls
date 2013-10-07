@@ -74,10 +74,11 @@ Block-1-Nachricht auf 128 Byte begrenzt, die durch vier Blöcke a 32 Byte oder a
 eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO LARGE"', mit einem Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an \glospl{ciphersuite}
 reduzieren kann, um der maximalen Größe gerecht zu werden.
 
-psk wird nur benötigt bis pre master secret berechnet\\
-am ende des handshakes wird alter psk vernichtet und neuer generiert\\
-kann durch uri /psk über sichere leitung abgerufen werden so dass weitere handshakes durchgeführt werden können
+Als Cookie für die HelloVerifyRequest-Nachricht wird ein \acr{cmac} von "`client-ip + clienthello"' herangezogen. Dieses bietet sich an, da für die Berechnung eines
+\acr{cmac}s der derzeit gültige \acr{psk} herangezogen wird. Dieser ist immer nur für einen \glos{handshake} gültig, und wird bei erfolgreichem Abschluss des
+\glospl{handshake} durch einen neuen \acr{psk} ersetzt. Damit weitere \glospl{handshake} möglich sind, kann der neue \acr{psk} über die Ressource "`/d/psk"'
+abgerufen werden. Somit ist es einem Angreifer nicht möglich, einige aufgezeichnete Cookies erneut zu verwenden.
 
-für hello verify cookie: cmac(client-ip + clienthello)
-
-uri syntax \cite{rfc3986}. beachten wegen session-id
+Für die Generierung der Session-ID, wird schließlich der RFC 3986 \cite{rfc3986} herangezogen. Da diese als Sub-Ressource im \acr{uri} enthalten ist,
+dürfen dort nur die im RFC beschrieben Zeichen verwendet werden. Gemäß dem dort enthaltenen Abschnitt 2.3 dürfen nur Buchstaben, Zahlen und die vier
+Sonderzeichen -, ., \_ und \textasciitilde verwendet werden.

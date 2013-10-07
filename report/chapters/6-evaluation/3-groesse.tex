@@ -50,6 +50,8 @@ um die Daten von 10 Sessions abzulegen. Auch sind dort 96 Byte genutzt, die den 
 Es hat sich gezeigt, dass von den 2048 Byte des System-Stacks nur maximal 1504 Byte genutzt werden. Sollte weiterer Speicher benötigt werden, könnte
 der System-Stack auf 1536 Byte begrenzt werden, wodurch weitere 0,5 KiB an Speicher verfübar wären.
 
+% Erwähnt werden soll hier auch, dass durch Entfernen der Kompiler-Option -mcallee-super-interworking weitere 4,32 KiB zur Verfügung stehen.
+%
 Im \acr{ietf}-Entwurf "`A Hitchhiker's Guide to the (D)TLS Protocol"' \cite{draftmintls} werden Programmgrößen für einzelne
 Funktionen aufgeführt, die sich jedoch nicht zum direkten Vergleich eignen, da diese für eine 64-bit-Architektur kompiliert wurden.
 Um einige Programmgrößen zu ermitteln wird deshalb TinyDTLS \cite{tinydtls} herangezogen und mit Contiki kompiliert.
