@@ -534,8 +534,8 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
     buf[18] = 0;
     buf[19] = 64;
     memcpy(buf + 84, "master secret", 13);
-    nvm_getVar(buf + 97, RES_STACK + client_random_offset, 28);
-    nvm_getVar(buf + 125, RES_STACK + server_random_offset, 28);
+    stack_read(buf + 97, client_random_offset, 28);
+    stack_read(buf + 125, server_random_offset, 28);
     //  0                   1                   2                   3                   4                   5
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // |016PSK064|   Secret-Px   |   Secret-Py   | "master secret" + C-Rand + S-Rand |#|#|#|#|#|#|#|#|#|#|#|#|#|
@@ -566,8 +566,8 @@ __attribute__((always_inline)) static void processClientKeyExchange(KeyExchange_
 
     memcpy(buf + 40, buf + 160, 48);
     memcpy(buf + 88, "key expansion", 13);
-    nvm_getVar(buf + 101, RES_STACK + server_random_offset, 28);
-    nvm_getVar(buf + 129, RES_STACK + client_random_offset, 28);
+    stack_read(buf + 101, server_random_offset, 28);
+    stack_read(buf + 129, client_random_offset, 28);
     //  0                   1                   2                   3                   4                   5
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // |#|#|#|#|#|#|#|#|#|#|     Master-Secret     | "key expansion" + S-Rand + C-Rand |     Master-Secret     |
@@ -592,11 +592,11 @@ __attribute__((always_inline)) static void generateFinished(uint8_t *buf) {
     memcpy(buf + 24, buf + 160, 48);
     memset(buf + 87, 0, 16);
     getPSK(buf + 104);
-    nvm_getVar(buf + 120, RES_STACK, 16);
+    stack_read(buf + 120, 0, 16);
     int i;
     for (i = 16; i < stack_size(); i+=16) {
         aes_cmac(buf + 87, buf + 120, 16, buf + 104, 0);
-        nvm_getVar(buf + 120, RES_STACK + i, 16);
+        stack_read(buf + 120, i, 16);
     }
     aes_cmac(buf + 87, buf + 120, stack_size() + 16 - i, buf + 104, 1);
     //  0                   1                   2                   3                   4                   5
@@ -655,7 +655,7 @@ __attribute__((always_inline)) static int readServerHello(void *target, uint8_t 
     uint8_t readsize = (length - offset);
     if (size < readsize) readsize = size;
 
-    nvm_getVar(target, RES_STACK + created_offset + offset, readsize);
+    stack_read(target, created_offset + offset, readsize);
 
     return (offset + readsize) >= length ? readsize : 0;
 }

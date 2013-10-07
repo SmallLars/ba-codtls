@@ -162,6 +162,7 @@ int deleteSession(uip_ipaddr_t *addr) {
     uint16_t valid = 0;
     Session_t *s = (Session_t *) RES_SESSION_LIST; // Pointer auf Flashspeicher
     nvm_setVar(&valid, (fpoint_t) &s[index].valid, 2);
+    return 0;
 }
 
 int insertKeyBlock(uip_ipaddr_t *addr, KeyBlock_t *key_block) {

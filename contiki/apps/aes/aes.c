@@ -37,7 +37,7 @@ uint32_t aes_init() {
     ASM->CONTROL1bits.SELF_TEST = 1;
     ASM->CONTROL0bits.START = 1;
 
-    /* Wait for self-test to pass */
+    /* Auf Beenden des Selbsttests warten */
     while (!ASM->STATUSbits.DONE) {
         #if DEBUG
             static uint32_t count = 0;
@@ -52,7 +52,7 @@ uint32_t aes_init() {
     }
 
     ASM->CONTROL1bits.SELF_TEST = 0;   // Test-Modus wieder deaktivieren
-    ASM->CONTROL1bits.NORMAL_MODE = 1; // BOOT-Modus mit internem geheimen Schlüssel verlassen
+    ASM->CONTROL1bits.NORMAL_MODE = 1; // Boot-Modus mit internem geheimen Schlüssel verlassen
     ASM->CONTROL1bits.BYPASS = 0;      // Bypass würde die Verschlüsselung deaktivieren
 
     ASM->CONTROL1bits.CTR = 1;

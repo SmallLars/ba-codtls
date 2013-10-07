@@ -254,13 +254,13 @@ static uint32_t ecc_add( const uint32_t *x, const uint32_t *y, uint32_t *result)
         "0: \n\t"
             "mov %[c], $0 \n\t"
         "1: \n\t"
-    : /* out */
+    : // out
         [c] "=l" (carry)
-    : /* in */
+    : // in
         [x] "l" (x),
         [y] "l" (y),
         [r] "l" (result)
-    : /* clobber list */
+    : // clobber list
         "r4", "r5", "r6", "r7", "memory"
     );
 
@@ -297,13 +297,13 @@ static uint32_t ecc_sub( const uint32_t *x, const uint32_t *y, uint32_t *result)
         "0: \n\t"
             "mov %[c], $0 \n\t"
         "1: \n\t"
-    : /* out */
+    : // out
         [c] "=l" (carry)
-    : /* in */
+    : // in
         [x] "l" (x),
         [y] "l" (y),
         [r] "l" (result)
-    : /* clobber list */
+    : // clobber list
         "r4", "r5", "r6", "r7", "memory"
     );
 
@@ -868,12 +868,12 @@ static void ecc_ec_add(const uint32_t *px, const uint32_t *py, const uint32_t *q
     ecc_fieldSub(px, qx, ecc_prime_m, Sy);
     ecc_fieldInv(Sy, ecc_prime_m, ecc_prime_r, Sy);
     ecc_mult(Sx, Sy, tempD, arrayLength); 
-    ecc_fieldModP(tempC, tempD); //tempC = lambda
+    ecc_fieldModP(tempC, tempD);                    //tempC = lambda
 
-    ecc_mult(tempC, tempC, tempD, arrayLength); //Sx = lambda^2
+    ecc_mult(tempC, tempC, tempD, arrayLength);     //Sx = lambda^2
     ecc_fieldModP(Sx, tempD);
-    ecc_fieldSub(Sx, px, ecc_prime_m, Sy); //lambda^2 - Px
-    ecc_fieldSub(Sy, qx, ecc_prime_m, Sx); //lambda^2 - Px - Qx
+    ecc_fieldSub(Sx, px, ecc_prime_m, Sy);          //lambda^2 - Px
+    ecc_fieldSub(Sy, qx, ecc_prime_m, Sx);          //lambda^2 - Px - Qx
 
     ecc_fieldSub(qx, Sx, ecc_prime_m, Sy);
     ecc_mult(tempC, Sy, tempD, arrayLength);
@@ -896,22 +896,22 @@ static void ecc_ec_double(const uint32_t *px, const uint32_t *py, uint32_t *Dx, 
     ecc_fieldModP(Dy, tempD);
     ecc_setZero(tempB);
     tempB[0] = 0x00000001;
-    ecc_fieldSub(Dy, tempB, ecc_prime_m, tempC); //tempC = (qx^2-1)
+    ecc_fieldSub(Dy, tempB, ecc_prime_m, tempC);    //tempC = (qx^2-1)
     tempB[0] = 0x00000003;
     ecc_mult(tempC, tempB, tempD, arrayLength);
-    ecc_fieldModP(Dy, tempD);//Dy = 3*(qx^2-1)
-    ecc_fieldAdd(py, py, ecc_prime_r, tempB); //tempB = 2*qy
+    ecc_fieldModP(Dy, tempD);                       //Dy = 3*(qx^2-1)
+    ecc_fieldAdd(py, py, ecc_prime_r, tempB);       //tempB = 2*qy
     ecc_fieldInv(tempB, ecc_prime_m, ecc_prime_r, tempC); //tempC = 1/(2*qy)
-    ecc_mult(Dy, tempC, tempD, arrayLength); //tempB = lambda = (3*(qx^2-1))/(2*qy)
+    ecc_mult(Dy, tempC, tempD, arrayLength);        //tempB = lambda = (3*(qx^2-1))/(2*qy)
     ecc_fieldModP(tempB, tempD);
 
-    ecc_mult(tempB, tempB, tempD, arrayLength); //tempC = lambda^2
+    ecc_mult(tempB, tempB, tempD, arrayLength);     //tempC = lambda^2
     ecc_fieldModP(tempC, tempD);
-    ecc_fieldSub(tempC, px, ecc_prime_m, Dy); //lambda^2 - Px
-    ecc_fieldSub(Dy, px, ecc_prime_m, Dx); //lambda^2 - Px - Qx
+    ecc_fieldSub(tempC, px, ecc_prime_m, Dy);       //lambda^2 - Px
+    ecc_fieldSub(Dy, px, ecc_prime_m, Dx);          //lambda^2 - Px - Qx
 
-    ecc_fieldSub(px, Dx, ecc_prime_m, Dy); //Dy = qx-dx
-    ecc_mult(tempB, Dy, tempD, arrayLength); //tempC = lambda * (qx-dx)
+    ecc_fieldSub(px, Dx, ecc_prime_m, Dy);          //Dy = qx-dx
+    ecc_mult(tempB, Dy, tempD, arrayLength);        //tempC = lambda * (qx-dx)
     ecc_fieldModP(tempC, tempD);
-    ecc_fieldSub(tempC, py, ecc_prime_m, Dy); //Dy = lambda * (qx-dx) - px
+    ecc_fieldSub(tempC, py, ecc_prime_m, Dy);       //Dy = lambda * (qx-dx) - px
 }

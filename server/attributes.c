@@ -63,7 +63,7 @@ void device_handler(void* request, void* response, uint8_t *buffer, uint16_t pre
         //*  DEVICE TIME                                                          *
         //*************************************************************************
         if (uri_path[2] == 't') {
-            uint32_t time = uip_htonl(getTime());
+            uint32_t time = uip_htonl(getTime()); // clock_seconds()
             memcpy(buffer, &time, 4);
             REST.set_response_status(response, CONTENT_2_05);
             REST.set_header_content_type(response, APPLICATION_OCTET_STREAM);
@@ -91,7 +91,7 @@ void time_handler(void* request, void* response, uint8_t *buffer, uint16_t prefe
         uint32_t time;
         memcpy(&time, payload, 4);
         time = uip_ntohl(time);
-        setTime(time);
+        setTime(time);    //clock_set_seconds(time);
         REST.set_response_status(response, CHANGED_2_04);
     } else {
         REST.set_response_status(response, BAD_REQUEST_4_00);

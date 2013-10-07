@@ -44,26 +44,29 @@ typedef enum {
 /* ------------------------------------------------------------------------- */
 
 /**
-  * \brief  Titel
+  * \brief  Allgemeiner Versand einer Alert-Nachricht
   *
-  *         Beschreibung
+  *         Sendet eine Alert-Nachricht an Adresse addr:port. Der Erhalt der
+  *         Nachricht durch den Empfänger kann nicht sichergestellt werden.
+  *         Level und Beschreibung entsprechen den übergeben Parametern.
   *
-  * \param  addr        1
-  * \param  port        2
-  * \param  level       3
-  * \param  description 4
+  * \param  addr        Die Ip-Adresse des Empfängers
+  * \param  port        Der Port an den die Nachricht gesendet werden soll
+  * \param  level       Das Level der Alert-Nachricht
+  * \param  description Die Beschreibung der Alert-Nachricht
   */
 void sendAlert(uip_ipaddr_t *addr, uint16_t port, AlertLevel level, AlertDescription description);
 
 /**
-  * \brief  Titel
+  * \brief  Versand einer Alert-Nachricht innerhalb eines Handshakes über CoAP
   *
-  *         Beschreibung
+  *         Konfiguriert die CoAP Antwort und setzt die Alert-Nachricht.
+  *         Die Alert-Nachricht wird dafür in buffer geschrieben und als
+  *         Payload der CoAP-Antwort gesetzt. Das level entspricht immer fatal.
   *
-  * \param  addr        1
-  * \param  port        2
-  * \param  level       3
-  * \param  description 4
+  * \param  response    Zeiger auf die CoAP-Antwort, die Konfiguriert werden soll
+  * \param  buffer      Von CoAP bereitgestellter Buffer für die Antwort
+  * \param  description Die Beschreibung der Alert-Nachricht
   */
 void generateAlert(void* response, uint8_t *buffer, AlertDescription description);
 

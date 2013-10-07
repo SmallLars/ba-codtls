@@ -30,6 +30,12 @@ AUTOSTART_PROCESSES(&server_firmware);
 PROCESS_THREAD(server_firmware, ev, data) {
     PROCESS_BEGIN();
 
+    /*
+    uint32_t time;
+    nvm_getVar((void *) &time, RES_FLASHTIME, LEN_FLASHTIME);
+    clock_set_seconds(time);
+    */
+
     leds_on(LEDS_GREEN);
         nvm_init();
         rest_init_engine();

@@ -174,6 +174,17 @@ void stack_push(uint8_t *src, uint16_t numBytes);
   */
 uint16_t stack_size();
 
-// Auslesen mit: nvm_getVar(dest, RES_STACK, getStackSize())
+/**
+  * \brief    Lesen von Daten aus dem Stack
+  *
+  *           Liest numBytes aus dem Stack an Position offset und hinterlegt diese in dest.
+  *
+  * \param    dest       Zeiger auf die Position an der die Daten hinterlegt werden sollen
+  * \param    offset     Position im Stack, von der die Daten gelesen werden sollen
+  * \param    numBytes   Anzahl der Bytes die gelesen werden sollen
+  *
+  * \return   0 bei erfolgreichem Lesevorgang. Ansonsten größer 0
+  */
+#define stack_read(dest, offset, numBytes) nvm_getVar(dest, RES_STACK + (offset), numBytes)
 
 #endif /* FLASH_STORE_H_ */
