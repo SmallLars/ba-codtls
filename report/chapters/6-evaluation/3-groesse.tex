@@ -28,8 +28,9 @@ für die Funktionen des Endgeräts 4407 Byte (4,30 KiB) verbleiben.
 \label{tbl:contiki-speicher-dtls}
 \end{figure}
 
-Der Zuwachs im Datensegment resultiert zur Hälfte aus dem, für die Behandlung der Block-1-Option notwendigen, Speicher, in dem die Datenblöcke gesammelt und
-zusammen gesetzt werden. Von den 11248 Byte zusätzlichem Programmcode, setzen sich 9114 Byte aus den folgen Komponenten zusammen:
+Der Zuwachs im Datensegment resultiert mit 128 Byte aus dem, für die Behandlung der Block-1-Option notwendigen, Speicher, in dem die Datenblöcke gesammelt und
+zusammen gesetzt werden. Außerdem werden 80 Byte benötigt um je zwei Sequenznummern für die maximal 10 Sessions abzulegen. Von den 11248 Byte zusätzlichem
+Programmcode, setzen sich 9114 Byte aus den folgen Komponenten zusammen:
 \begin{itemize}
   \item  2848 Byte \glos{handshake}-Ressource
   \item  2144 Byte \acr{ecc}-Funktionen

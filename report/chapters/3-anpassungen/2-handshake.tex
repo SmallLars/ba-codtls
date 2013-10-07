@@ -154,6 +154,7 @@ Da somit gemäß Abbildung \ref{fig:coaphandshake} die Finished-Nachricht innerh
 verschlüsselt wird müssen hier zusätzliche maßnahmen Ergriffen werden um den Zweck der Nachricht zu bewahren. Hier wird der Hash über alle im
 \glos{handshake} ausgetauschten Nachrichten nun zusätzlich mit den neuen Sicherheitsparametern verschlüsselt, wobei die Finished-Nachricht durch die
 ChangeCipherSpec-Nachricht, die einen Wechsel der Sicherheitsparameter kennzeichnet, eindeutig von den vorhergehenden Nachrichten abgegrenzt wird.
-Die ChangeCipherSpec-Nachricht kennzeichnet somit nun immer einen Wechsel von der Epoche 0 ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
+Die ChangeCipherSpec-Nachricht kennzeichnet somit nun immer einen Wechsel von der Epoche null ohne Verschlüsselung zur neuen Epoche mit Verschlüsselung.
 Je nach \glos{ciphersuite} wird dadurch die in \acr{tls} definierte Länge der Finished-Nachricht von 12 vergrößert, da unter Umständen Zusatzinformationen
-wie Nonce und MAC hinzukommen.
+wie Nonce und MAC hinzukommen. Da es sich um die erste Nachricht handelt, die mit den Sicherheitsparametern der neuen Epoche verschlüsselt wird, ist
+die Sequenznummer mit null eindeutig definiert. Der Datenaustausch nach einem Handshake beginnt somit mit der Sequenznummer eins.

@@ -10,7 +10,7 @@ Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige
 
 \begin{description}
   \item[er-dtls-13-alert.{$[$h|c$]$}] Stellt zwei Funktionen für den Versand einer Alert-Nachricht zur Verfügung.
-					Während die eine, ohne Verwendung con CoAP, eine Nachricht an den Kommunikationspartner sendet,
+					Während die eine, ohne Verwendung von CoAP, eine Nachricht an den Kommunikationspartner sendet,
 					konfiguriert die andere eine CoAP-Antwort. Dieser Unterschied ist notwendig, da einige Fehler während
 					des \glospl{handshake} auftauchen, und per CoAP kommentiert werden, damit es nicht zu einer neuen Anfrage kommt.
 					Würden diese Nachrichten direkt mit dem Record-Protokoll versand, müsste sich der Empfänger darum kümmern,
@@ -63,9 +63,16 @@ Stimmt diese mit der Absender-IP der letzten Anfrage überein, kann die Anfrage 
 seit der die Ressource gesperrt ist. Liegt diese mehr als 60 Sekunden zurück, kann die Anfrage ebenfalls bearbeitet werden. Diese Überprüfung ist notwendig, da
 ein Angreifer die Ressource durch einen einmaligen Aufruf dauerhaft sperren könnte, wenn er seine Anfrage nicht zuende führt.
 
-Bei Bearbeitung der Anfrage, wird die Ressource zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben.
+Bei Bearbeitung einer Anfrage, wird die Ressource zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben.
 Nur die Bearbeitung einer ClientHello-Nachricht mit korrektem Cookie führt im weiteren Verlauf zu einer erneuten Sperrung, da hier ein Zustand erzeugt wird, der erst
 in der darauffolgenden Anfrage abgearbeitet wird.
+
+Übertragen werden mit Hilfe der Block-1-Option eine ClientHello-Nachricht oder eine Kombination aus den Nachrichten ClientKeyExchange, ChangeCipherSpec und Finished,
+wobei die Länge von Letzterem mit insgesamt 114 Byte, durch die einzig definierte \glos{ciphersuite}, konstant ist. Anders ist dies bei der ClientHello-Nachricht,
+welche durch eine Vielzahl, vom Client beherrschter \glospl{ciphersuite}, sehr viel größer werden kann. Aufgrund der begrenzten Ressourcen ist die maximale Länge einer
+Block-1-Nachricht auf 128 Byte begrenzt, die durch vier Blöcke a 32 Byte oder acht Blöcke a 16 Byte ausgenutzt werden kann. Wird diese Länge überschritten, erfolgt
+eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO LARGE"', mit einem Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an \glospl{ciphersuite}
+reduzieren kann, um der maximalen Größe gerecht zu werden.
 
 psk wird nur benötigt bis pre master secret berechnet\\
 am ende des handshakes wird alter psk vernichtet und neuer generiert\\
@@ -73,18 +80,4 @@ kann durch uri /psk über sichere leitung abgerufen werden so dass weitere hands
 
 für hello verify cookie: cmac(client-ip + clienthello)
 
-verschlüsselung von finish mit seq\_num 0. erste app daten beginnen also bei seq\_num 1.\\
-seq\_num wird im ram gehalten da bei flash update bei jedem paket hoher verschleiß.\\
-
 uri syntax \cite{rfc3986}. beachten wegen session-id
-
-Übertragen werden mit Hilfe der Option ein ClientHello oder ClientKeyExchange + ChangeCipherSpec + Finished, wobei die Länge von Letzterem mit
-insgesamt 114 (87 + 3 + 22) Byte, durch die einzig definierte \glos{ciphersuite}, fest ist. Anders ist dies bei dem ClientHello, welches durch
-eine Vielzahl, vom Client beherrschter \glospl{ciphersuite}, sehr viel größer werden kann.
-
-Hier erfolgt dann jedoch eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO LARGE"' mit einem Hinweis auf die begrenzte Maximalgröße,
-so dass ein Client sein Angebot an \glospl{ciphersuite} reduzieren kann, um der maximalen Größe gerecht zu werden.
-
-auswertung cookie -> query. cookie in packet ist doof
-
-problem: handshake: uri prüfen !
