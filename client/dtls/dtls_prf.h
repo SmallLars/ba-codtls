@@ -5,20 +5,20 @@
 #include <stdint.h>
 
 /**
-  * \brief  Pseudorandom-Funktion basierend auf CBC-MAC
+  * \brief  Pseudorandom-Funktion basierend auf CMAC
   *
   *         Erzeugt len Zufallsbyte an Position dst. Zur Berechnung
   *         werden seed_len Bytes an Position seed herangezogen.
-  *         Anstatt HMAC wird hier der CBC-MAC mit dem derzeit gültigen
+  *         Anstatt HMAC wird hier der CMAC mit dem derzeit gültigen
   *         Pre-shared Key verwendet.
   *
   *         PRF(secret, label, seed) = P_hash(secret + label + seed)
   *
-  *         P_hash(seed) = CBC-MAC(A(1) + seed) +
-  *                        CBC-MAC(A(2) + seed) +
-  *                        CBC-MAC(A(3) + seed) + ...
+  *         P_hash(seed) = CMAC(A(1) + seed) +
+  *                        CMAC(A(2) + seed) +
+  *                        CMAC(A(3) + seed) + ...
   *         A(0) = seed
-  *         A(i) = CBC-MAC(A(i-1))
+  *         A(i) = CMAC(A(i-1))
   *
   * \param  dst         Zeiger auf die Position an dem die Zufallswerte
   *                     hinterlegt werden sollen

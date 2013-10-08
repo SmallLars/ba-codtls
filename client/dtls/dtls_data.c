@@ -49,6 +49,7 @@ void createSession(uint8_t ip[16], uint8_t id[8]) {
     } else {
         memcpy(session[i].id, id, 8);
     }
+    PRINTF("createSession: Index: %i\n", i);
 }
 
 uint16_t getEpoch(uint8_t ip[16]) {
@@ -107,7 +108,7 @@ int findIP(uint8_t ip[16]) {
     int i;
     for (i = 0; i < SESSION_LIST_LEN; i++) {
         if (ip == NULL) {
-            if (session[i].valid == 0) return 1;
+            if (session[i].valid == 0) return i;
         } else {
             if (session[i].valid == 1) {
                 if (!memcmp(session[i].ip, ip, 16)) return i;

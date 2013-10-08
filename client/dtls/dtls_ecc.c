@@ -194,53 +194,6 @@ int ecc_fieldSub(const uint32_t *x, const uint32_t *y, const uint32_t *modulus, 
     return 0;
 }
 
-// finite Field multiplication
-// 32bit * 32bit = 64bit
-// int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-//  uint32_t temp[length * 2];
-//  ecc_setZero(temp, length * 2);
-//  ecc_setZero(result, length * 2);
-//  uint8_t k, n;
-//  uint64_t l;
-//  for (k = 0; k < length; k++){
-//      for (n = 0; n < length; n++){ 
-//          l = (uint64_t)x[n]*(uint64_t)y[k];
-//          temp[n+k] = l&0xFFFFFFFF;
-//          temp[n+k+1] = l>>32;
-//          ecc_add(&temp[n+k], &result[n+k], &result[n+k], (length * 2) - (n + k));
-
-//          ecc_setZero(temp, length * 2);
-//      }
-//  }
-//  return 0;
-// }
-
-// int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_t length){
-//  uint8_t k, n, carry;
-//  uint32_t tempResult[length * 2];
-//  uint32_t tempResult2[2];
-//  uint32_t tempResult3[2];
-//  ecc_setZero(result, length*2);
-//  for (k = 0 ; k < length ; k++){
-//      for ( n = 0; n < length; n++){
-//          tempResult[0] = (x[n]&0x0000FFFF)*(y[k]&0x0000FFFF);
-//          tempResult[1] = (x[n]>>16)*(y[k]>>16);
-//          tempResult2[0] = (x[n]>>16)*(y[k]&0x0000FFFF);
-//          tempResult2[1] = (x[n]&0x0000FFFF)*(y[k]>>16);
-//          carry = ecc_add(&tempResult2[0], &tempResult2[1], tempResult2, 1);
-//          tempResult2[1] = carry<<16 | tempResult2[0]>>16;
-//          tempResult2[0] = tempResult2[0]<<16;
-//          ecc_add(tempResult, tempResult2, tempResult3, 2);
-//          ecc_setZero(tempResult, length * 2);
-//          copy(tempResult3, &tempResult[n+k], 2);
-//          ecc_add(&tempResult[n+k], &result[n+k], &result[n+k],(length * 2) - (n + k));
-
-//          ecc_setZero(tempResult, length * 2);
-//      }
-//  }
-//  return 0;
-// }
-
 void ecc_lshift(uint32_t *x, int length, int shiftSize){
     uint32_t temp[shiftSize];
     uint32_t oldTemp[shiftSize];
@@ -280,104 +233,36 @@ int ecc_fieldMult(const uint32_t *x, const uint32_t *y, uint32_t *result, uint8_
     return 0;
 }
 
-/*
-void hyperopt(uint32_t *dst, const uint32_t *src, const uint32_t pattern) {
-    uint8_t i;
-    uint8_t value;
-    for (i = 0; i < 8; i++) {
-        value = (pattern >> (i << 2)) & 0x0000000F;
-        dst[i] = (value ? src[value] : 0);
-    }
-}*/
-
-#define hyperopt(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
+#define SETARRAY(dst,a,b,c,d,e,f,g,h) dst[0]=a;dst[1]=b;dst[2]=c;dst[3]=d;dst[4]=e;dst[5]=f;dst[6]=g;dst[7]=h
 
 //TODO: maximum:
 //fffffffe00000002fffffffe0000000100000001fffffffe00000001fffffffe00000001fffffffefffffffffffffffffffffffe000000000000000000000001_16
 void ecc_fieldModP(uint32_t *A, const uint32_t *B) {
     uint32_t tempm[8];
     uint32_t tempm2[8];
-    //uint8_t n;
-    /* A = T */ 
-    copy(B,A,arrayLength);
 
-    /* Form S1 */
-    //hyperopt(tempm, B, 0xFEDCB000);
-    hyperopt(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);
-    //for(n=0;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<8;n++) tempm[n]=B[n+8];
-
-    /* tempm2=T+S1 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* A=T+S1+S1 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form S2 */
-    //hyperopt(tempm, B, 0x0FEDC000);
-    hyperopt(tempm, 0, 0, 0, B[12], B[13], B[14], B[15], 0);
-    //for(n=0;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<7;n++) tempm[n]=B[n+9]; 
-    //for(n=7;n<8;n++) tempm[n]=0;
-    /* tempm2=T+S1+S1+S2 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* A=T+S1+S1+S2+S2 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form S3 */
-    //hyperopt(tempm, B, 0xFE000A98);
-    hyperopt(tempm, B[8], B[9], B[10], 0, 0, 0, B[14], B[15]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+8]; 
-    //for(n=3;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<8;n++) tempm[n]=B[n+8];
-    /* tempm2=T+S1+S1+S2+S2+S3 */ 
-    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);
-    /* Form S4 */
-    //hyperopt(tempm, B, 0x8DFEDBA9);
-    hyperopt(tempm, B[9], B[10], B[11], B[13], B[14], B[15], B[13], B[8]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+9]; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+10]; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+7]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+1];
-    /* A=T+S1+S1+S2+S2+S3+S4 */ 
-    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);
-    /* Form D1 */ 
-    //hyperopt(tempm, B, 0xA8000DCB);
-    hyperopt(tempm, B[11], B[12], B[13], 0, 0, 0, B[8], B[10]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+11]; 
-    //for(n=3;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+2]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+3];
-    /* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
-    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D2 */ 
-    //hyperopt(tempm, B, 0xB900FEDC);
-    hyperopt(tempm, B[12], B[13], B[14], B[15], 0, 0, B[9], B[11]);
-    //for(n=0;n<4;n++) tempm[n]=B[n+12]; 
-    //for(n=4;n<6;n++) tempm[n]=0; 
-    //for(n=6;n<7;n++) tempm[n]=B[n+3]; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+4];
-    /* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
-    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
-    /* Form D3 */ 
-    //hyperopt(tempm, B, 0xC0A98FED);
-    hyperopt(tempm, B[13], B[14], B[15], B[8], B[9], B[10], 0, B[12]);
-    //for(n=0;n<3;n++) tempm[n]=B[n+13]; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+5]; 
-    //for(n=6;n<7;n++) tempm[n]=0; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+5];
-    /* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
-    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);
-    /* Form D4 */ 
-    //hyperopt(tempm, B, 0xD0BA90FE);
-    hyperopt(tempm, B[14], B[15], 0, B[9], B[10], B[11], 0, B[13]);
-    //for(n=0;n<2;n++) tempm[n]=B[n+14]; 
-    //for(n=2;n<3;n++) tempm[n]=0; 
-    //for(n=3;n<6;n++) tempm[n]=B[n+6]; 
-    //for(n=6;n<7;n++) tempm[n]=0; 
-    //for(n=7;n<8;n++) tempm[n]=B[n+6];
-    /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
-    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);
+    copy(B,A,8); /* A = T */ 
+    SETARRAY(tempm, 0, 0, 0, B[11], B[12], B[13], B[14], B[15]);            /* Form S1 */
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);                               /* tempm2=T+S1 */ 
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);                               /* A=T+S1+S1 */ 
+    SETARRAY(tempm, 0, 0, 0, B[12], B[13], B[14], B[15], 0);                /* Form S2 */
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);                               /* tempm2=T+S1+S1+S2 */ 
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);                               /* A=T+S1+S1+S2+S2 */ 
+    SETARRAY(tempm, B[8], B[9], B[10], 0, 0, 0, B[14], B[15]);              /* Form S3 */
+    ecc_fieldAdd(A,tempm,ecc_prime_r,tempm2);                               /* tempm2=T+S1+S1+S2+S2+S3 */ 
+    SETARRAY(tempm, B[9], B[10], B[11], B[13], B[14], B[15], B[13], B[8]);  /* Form S4 */
+    ecc_fieldAdd(tempm2,tempm,ecc_prime_r,A);                               /* A=T+S1+S1+S2+S2+S3+S4 */ 
+    SETARRAY(tempm, B[11], B[12], B[13], 0, 0, 0, B[8], B[10]);             /* Form D1 */ 
+    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);                               /* tempm2=T+S1+S1+S2+S2+S3+S4-D1 */ 
+    SETARRAY(tempm, B[12], B[13], B[14], B[15], 0, 0, B[9], B[11]);         /* Form D2 */ 
+    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);                               /* A=T+S1+S1+S2+S2+S3+S4-D1-D2 */ 
+    SETARRAY(tempm, B[13], B[14], B[15], B[8], B[9], B[10], 0, B[12]);      /* Form D3 */ 
+    ecc_fieldSub(A,tempm,ecc_prime_m,tempm2);                               /* tempm2=T+S1+S1+S2+S2+S3+S4-D1-D2-D3 */ 
+    SETARRAY(tempm, B[14], B[15], 0, B[9], B[10], B[11], 0, B[13]);         /* Form D4 */ 
+    ecc_fieldSub(tempm2,tempm,ecc_prime_m,A);                               /* A=T+S1+S1+S2+S2+S3+S4-D1-D2-D3-D4 */ 
     if(isGreater(A, ecc_prime_m, arrayLength) >= 0){
         ecc_fieldSub(A, ecc_prime_m, ecc_prime_m, tempm);
-        copy(tempm, A, arrayLength);
+        copy(tempm,A,8);
     }
 }
 

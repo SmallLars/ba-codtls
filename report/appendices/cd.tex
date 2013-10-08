@@ -11,20 +11,20 @@
 
 Im Folgenden werden die Ordner der CD, sowie deren Inhalte, in der obersten Ebene beschrieben.
 
-\begin{description}
-  \item[blaster] todo
-  \item[border-router] todo
-  \item[client] todo
-  \item[contiki] todo
-  \item[dokumente] todo
-  \item[expose] todo
-  \item[kolloquien] todo
-  \item[libmc1322x] todo
-  \item[report] todo
-  \item[server] todo
-  \item[server-min] todo
-  \item[server-tiny] todo
-  \item[sniffer] todo
-  \item[windows] todo
-  \item[wireshark] todo
-\end{description}
+\begin{itemize}
+  \item \textbf{blaster}: Programm blaster, das die Server-Software vor dem Flashen mit gerätespezifischen Informationen ergänzt.
+  \item \textbf{border-router}: Aus Contiki entnommener Border-Router, der mit der IP-Adresse aaaa::60b1:60b1:60b1:0022 konfiguriert ist.
+  \item \textbf{client}: Client inklusive libcoap und \acr{dtls}.
+  \item \textbf{contiki}: SmartAppContiki mit zusätzlichen Apps, wie \acr{dtls}, \acr{ecc} und flash-store.
+  \item \textbf{dokumente}: Einige in dieser Arbeit genutzte Dokumente und Software, inklusive Quellenangaben.
+  \item \textbf{expose}: Exposé zur Bachelorarbeit.
+  \item \textbf{kolloquien}: Präsentationen der beiden Kolloquien in denen die Bachelorarbeit vorgestellt wurde.
+  \item \textbf{libmc1322x}: Bibliothek zur Nutzung des \glos{mc1322}, die in dieser Arbeit erweitert wurde.
+  \item \textbf{report}: Quellcode dieses Dokuments inklsive der erzeugten PDF-Datei.
+  \item \textbf{server}: Server mit einigen Ressourcen, der auf Contiki basiert. Vorkonfiguriert mit der IP-Adresse aaaa::60b1:60b1:60b1:0019.
+  \item \textbf{server-min}: Minimaler \acr{coap}-Server mit einer Ressource und dem unveränderten Contiki.
+  \item \textbf{server-tiny}: \acr{dtls}-Server mit TinyDTLS. Zu groß für den \glos{mc1322}: aber notwendig für den Größenvergleich einiger Komponenten.
+  \item \textbf{sniffer}: Aus Contiki entnommener Sniffer, der mit der IP-Adresse aaaa::60b1:60b1:60b1:0028 konfiguriert ist. Außerdem sind einige Mitschnitte von \glospl{handshake} enthalten.
+  \item \textbf{windows}: Notwendige Treiber und ein Script, um die Datenausgabe des Servers per USB auch in Windows abzurufen.
+  \item \textbf{wireshark}: Wireshark-Dissector für das in dieser Arbeit entwickelte Protokoll, mit Wireshark in der genutzten Version.
+\end{itemize}

@@ -13,5 +13,8 @@ dort hinterlegt werden kann. Hat der Index den Wert $ 0 $xFFFF folgen keine weit
 Das führt zum Verlust der Session-Daten, wodurch ein Handshake erneut erforderlich ist. Um dies zu verhindern ist es zukünftig denkbar,
 die erforderlichen Daten vor einem Neustart zu sichern, um diese im Anschluss wieder herzustellen.
 
-Bedingt durch die zuverlässige Übertragung kann der Client sicherstellen, dass alle Datenblöcke angekommen sind, bevor der Neustart ausgelöst wird.
-\TODO{ausfall während der übertragung - error}
+Bedingt durch die zuverlässige Übertragung durch \acr{coap} kann der Client sicherstellen, dass alle Datenblöcke angekommen sind, bevor der Neustart ausgelöst wird.
+Ein Risiko besteht jedoch darin, dass das Endgerät ausgeschaltet wird, bevor die Übertragung der neuen Software beendet ist. Kommt es dazu, wird das Endgerät
+nicht mehr starten und es ist die Verbindung mit einem Computer notwendig, um eine neue Software aufzuspielen. Um dieses Risiko zu vermeiden, wäre es notwendig,
+die neue Software zunächst zu speichern, ohne die alte zu löschen, um im Anschluss auf die neue Software umzuschalten. Dies ist jedoch aufgrund des begrenzten
+Speicherplatzes nicht möglich.
