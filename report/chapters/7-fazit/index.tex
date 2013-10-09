@@ -5,10 +5,15 @@ generell machbar
 vor und nachteile abwägen
 
 trotz dtls-cookie -> zustand durch block 1\\
-ausblick -> cookie unterteilen\\
-ersten 2 byte als 4 stelligen hex wert als query anhängen -> hash von den ersten 32 byte\\
-ist alles doof, falls cookie weiterhin in clienthello enthalten -> cookie als query var
+cookie wie vorgeschlagen auf mitgesendeten hash
 
-contiki speicher weiter optimieren - stacks notwendig ?
+dtls-acks wie im neuen draft \cite{draftpractical} vorgeschlagen nicht sinnvoll\\
+in der hinsicht funktioniert coap super. dtls-acks lediglich sinnvoll für betrieb gänzlich ohne coap, sonst code/funktions-duplizierung
 
-sessions als sub-ressource ist doof -> weglassen
+contiki speicher weiter optimieren - stacks notwendig ?\\
+-mcallee-super-interworking weglassen. bringt 4,32 KiB
+
+sessions als sub-ressource ist doof -> weglassen, wegen block 1 übertragung -> mehrfacher versand\\
+information nur bei session resuming notwendig und dort im clienthello enthalten
+
+verwedung im Masterporjekt GOBI erwünscht inklusive weiterentwicklung
