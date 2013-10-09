@@ -7,7 +7,7 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
         Für ftditools:         libftdi-dev
         Zum Flashen mit Perl:  libdevice-serialport-perl, libterm-readkey-perl
 
-    Kompiler:
+    Compiler:
         arm-2008q3-66-arm-none-eabi-i686-pc-linux-gnu.tar.bz2 entpacken
         Pfad in .bashrc anpassen: export PATH=$PATH:/?...?/arm-2008q3/bin
 
@@ -16,25 +16,30 @@ Vorbereitung (getestet unter Ubuntu 12.04.2 LTS 32/64 bit):
         libmc1322x/tests:           make TARGET=redbee-econotag
         libmc1322x/tools:           gcc mc1322x-load.c -o mc1322x-load
         libmc1322x/tools/ftditools: make
+        client:                     make
 
-client kompilieren:
-    client/libcoap-4.0.1: ./configure
-    client                make
+server:
+    MAC                       : 62:B1:60:B1:60:B1:00:19
+    Kompilieren               : make
+    Bereinigen                : make clean
+    Flashen                   : make upload    (/dev/ttyUSB1)
+    Flash löschen             : make clear     Index 0
+    Ausgabe von Daten per USB : make listen    (/dev/ttyUSB1)
 
-border-router und econotag:
-    Der border-router ist mit der MAC 62:B1:60:B1:60:B1:00:22 konfiguriert.
-    Der server ist mit der MAC 62:B1:60:B1:60:B1:00:19 konfiguriert.
+border-router:
+    MAC              : 62:B1:60:B1:60:B1:00:22
+    Kompilieren      : make
+    Bereinigen       : make clean
+    Flashen          : make upload    (/dev/ttyUSB1)
+    Flash löschen    : make clear     Index 0
+    Brücke erstellen : make border    (/dev/ttyUSB1)
 
-    Kompilieren:   make
-    Bereinigen:    make clean
-    Flashen:       make upload
-    Flash löschen: make clear
-
-    Nur bei server: "make listen" zur Ausgabe von /dev/ttyUSB1 auf der Konsole.
-    Nur bei border-router: "make border" zur Aktivierung von Tunslip über /dev/ttyUSB1
-
-    make clear löscht in beiden Fällen das Gerät an Index 0
-    make upload verwendet in beiden Fällen /dev/ttyUSB1
+sniffer:
+    MAC                           : 62:B1:60:B1:60:B1:00:28
+    Flashen                       : make upload     (/dev/ttyUSB1)
+    Flash löschen                 : make clear      Index 0
+    Mitschnitt in Wireshark pipen : make listen     (/dev/ttyUSB3)
+    Mitschnitt direkt speichern   : make listen2    (/dev/ttyUSB3)
 
 
 

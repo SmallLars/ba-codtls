@@ -11,7 +11,10 @@ all: client
 %.o: %.c $(HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< ${DEFINES}
 
-libcoap-4.0.1/libcoap.a:
+libcoap-4.0.1/Makefile:
+	cd libcoap-4.0.1 && ./configure
+
+libcoap-4.0.1/libcoap.a: libcoap-4.0.1/Makefile
 	make -C libcoap-4.0.1
 
 dtls/dtls.a:

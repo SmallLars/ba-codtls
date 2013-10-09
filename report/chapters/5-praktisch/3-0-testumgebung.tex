@@ -1,14 +1,31 @@
-\section{Testumgebung}
+\section{Entwicklungsumgebung}
 
-flasher überarbeitet. libmc1322x-update
+Für die Erstellung der Programme und die Weiterentwicklung von einigen Werkzeugen wird im Allgemeinen Ubuntu 12.04.2 LTS (32 bit) benutzt.
+Damit bei einem Betrieb der Endgeräte an einem Windows-Recher, ebenfalls die vom Redbee Econotag an die USB-Schnittstelle gesendeten
+Daten abgerufen werden können, wird ein Skript für die Windows-PowerShell-Umgebung erstellt, wobei zusätzliche Treiber notwendig sind.
 
-flashen zunächst generell an ttyUSB1
+Im Bachelorprojekt GOBI wurde die libmc1322x \cite{libmc1322x} angepasst, damit die von Blaster produzierten Dateien auf den
+\glos{mc1322} geladen werden können. Um diesen Flash-Vorgang durchzuführen, sind zwei Komponenten notwendig. Zum einen ist dies eine
+Software für den \glos{mc1322}, Flasher genannt, die zuerst in den RAM-Speicher übertragen wird, um im Anschluss die Software für
+das Endgerät anzunehmen, und im Flash-Speicher abzulegen. Zum anderen ist dies eine Software, Loader genannt, die sowohl die erste
+Software als auch die Software für das Endgerät per USB an den \glos{mc1322} sendet. Während der Flasher ausschließlich in C
+implementiert ist, sind für den Loader eine C-Variante und eine Perl-Variante verfügbar. Angepasst wurden im Bachelorporjekt GOBI
+nur die beiden C-Programme, wobei diese sich ausschließlich für von Blaster produzierte Dateien eignen. Um diese Situation zu verbessern,
+werden die beiden C-Programme und das Perl-Programm erneut angepasst. Zur gewährleistung der Abwärtskompatibilität, sind beide Varianten
+so angepasst, dass ohne weitere Aktionen die gängigen Dateien übertragen werden können. Erst durch Nutzung des Parameters -l, bei einem
+Flash-Vorgang, wird das von Blaster produzierten Dateieformat berücksichtigt. Zusätzlich wird in die libmc1322x eine Methode eingefügt,
+die den Neustart des \glos{mc1322} ermöglicht. Die Methode, zum Vergleich von Daten im RAM-Speicher mit Daten im Flash-Speicher, aus dem
+Bachelorprojekt GOBI, wird übernommen. Die Änderungen an der libmc1322x sind in einem Fork des originalen Repositorys veröffentlicht,
+und wurden Mariano Alvira zur Übernahme angeboten.
 
-border-router per "`make border"' an ttyUSB1
+Um die Überwachung in Wireshark \cite{wireshark} angemessen zu realisieren, wird ein Dissector ergänzt. Dieser wertet die übertragenen
+Daten des angepassten \acr{dtls}-Protokolls aus und stellt diese übersichtlich dar. Da die Übertragung des ersten \glospl{handshake}
+unverschlüsselt erfolgt, werden die Daten aus Epoche 0 an den bereits enthaltenen \acr{coap}-Dissector weitergereicht, so dass
+diese ebenfalls dargestellt werden. Da der \acr{coap}-Dissector blockweise übertragene Daten nicht zusammensetzt, ist eine Darstellung
+der \glos{handshake}-Daten selbst bisher nicht möglich.
 
-sniffer per "`make listen2"' an ttyUSB3\\
-"`make listen"' würde direkt in wireshark pipen. funktioniert nicht
-
-server nach initialem flash -> update per client über coap
-
-dissector in wireshark
+Für den Server, den Border-Router und den Sniffer sind die Make-Regeln clear und upload verfügbar. upload überträgt die Programme in den
+Flash-Speicher des Redbee Econotag, während clear den Flash-Speicher löscht. Für die beiden Vorgänge ist generell /dev/ttyUSB1 vorgesehen.
+Um die, an die USB-Schnittstelle gesendeten, Daten des Servers abzurufen, kann die Regel listen verwendet werden. Die Netzwerkbrücke
+zur Inbetriebnahme des Border-Routers wird mit der Regel border erzeugt. Für den Sniffer sind schließlich die Regeln listen und listen2
+vorhanden. listen leitet die Daten direkt in Wireshark, während listen2 die Daten in die Datei cap.pcap schreibt.
