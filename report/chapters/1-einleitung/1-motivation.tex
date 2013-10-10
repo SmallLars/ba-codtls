@@ -1,15 +1,19 @@
 \section{Motivation}
+Im Bachelorprojekt \glos{gobi} war das Ziel, ein System zur Heimautomatisierung, mit Hilfe von offenen Standards, zu realisieren.
+Bezüglich der Sicherheit ist dies nicht gelungen, und es wurde ein eigenes kleines Sicherheitsprotokoll implementiert. Dieses ist
+zu unsicher für den praktischen Einsatz, hat jedoch geholfen, ein Verständnis für die Materie zu entwickeln.
+Dieses Potential soll in dieser Arbeit genutzt werden, um mit Hilfe offener Standards eine Lösung zu entwickeln.
+
 Während es im Internet schon seit Mitte der 1990 Jahre das \acr{ssl} gibt, um den Datenverkehr
 über das \acr{tcp} abzusichern, fehlte lange Zeit ein Standard, um den Datenverkehr über das \acr{udp} zu sichern.
 Während \acr{ssl} weiterentwickelt, und schließlich in \acr{tls} \cite{rfc5246} umbenannt wurde, nahm die
 Beliebtheit von \acr{udp}, unter anderem im Bereich der Onlinespiele, zu \cite[Kapitel 1]{rfc6347}. Um dort ebenfalls
 eine sichere Datenübertragung zu ermöglichen, begann die \acr{ietf} 2004 damit, ein Protokoll nach dem Vorbild von \acr{tls} zu entwickeln,
 was 2006 schließlich zu der Standardisierung des \acr{dtls} \cite{rfc6347} führte. Dieses ist fast identisch mit \acr{tls}, wurde jedoch um
-Mechanismen ergänzt, die in \acr{udp} im Gegensatz zu \acr{tcp} fehlen. Dazu gehört insbesondere die Zuverlässigkeit der Datenübertragung,
-die beim Verbindungsaufbau und somit der Aushandlung der Sicherheitsmechanismen notwendig ist. \acr{tls} und \acr{dtls} haben sich im Internet
+Mechanismen ergänzt, die in \acr{udp}, im Gegensatz zu \acr{tcp}, fehlen. Dazu gehört insbesondere die Zuverlässigkeit der Datenübertragung,
+die beim Verbindungsaufbau, und somit der Aushandlung der Sicherheitsmechanismen, notwendig ist. \acr{tls} und \acr{dtls} haben sich im Internet
 bewährt, sind jedoch zu einer Zeit entstanden, als das \acr{wot} noch nicht vertreten war. Die dort verwendeten Endgeräte haben nur sehr wenig
 Ressourcen zur Verfügung. Dies betrifft neben wenig Rechenleistung und Speicher, der vielfach unter 100 KiB liegt, auch den Energievorrat, der
-über eine Batterie realisiert wird. Etabliert hat sich dort das \acr{coap} \cite{draftcoap13} über \acr{udp} aufgrund seines schlanken Designs.
+oft über eine Batterie realisiert wird. Etabliert hat sich dort das \acr{coap} \cite{draftcoap13} über \acr{udp} aufgrund seines schlanken Designs.
 Passend zu \acr{udp} ist \acr{dtls}, das sich, aufgrund seines Umfangs, jedoch nicht so einfach auf den vorher beschriebenen Endgeräten realisieren
-lässt. Genau hier soll diese Arbeit ansetzen und \acr{dtls} entsprechend anpassen damit es auch auf Geräten mit wenig Ressourcen funktionieren kann.
-\TODO{gobi bezug erwähnen}
+lässt. Genau hier soll diese Arbeit ansetzen und \acr{dtls} entsprechend anpassen, damit es auch auf Geräten mit wenig Ressourcen funktionieren kann.

@@ -1,9 +1,9 @@
 \subsection{Contiki-App: "`flash-store"'}
 
-Für eine Nutzung des erweiterten Flash-Speichers wird die App "`flash-store"' verwendet. Als Basis für die Implementierung, dient Code aus dem Bachelor-Projekt
-GOBI. Dieser war jedoch noch nicht als Contiki-App organisiert sondern direkt mit in den Code eingebunden. Auch ist die Aufteilung der 4 KiB großen
+Für eine Nutzung des erweiterten Flash-Speichers wird die App "`flash-store"' verwendet. Als Basis für die Implementierung, dient Code aus dem Bachelorprojekt
+\glos{gobi}. Dieser war jedoch noch nicht als Contiki-App organisiert sondern direkt mit in den Code eingebunden. Auch ist die Aufteilung der 4 KiB großen
 Flash-Speicher-Blöcke eine andere. Diese Aufteilung ist in Abbildung \ref{tbl:2-1_2-persistent} zu sehen. Während oben die 8 Speicherblöcke mit ihren Adressen
-aufgeführt sind, werden darunter die Aufteilungen für unterschiedliche Zwecke angegeben, wobei dort sowohl die GOBI-Aufteilung als auch die neue
+aufgeführt sind, werden darunter die Aufteilungen für unterschiedliche Zwecke angegeben, wobei dort sowohl die \glos{gobi}-Aufteilung als auch die neue
 Aufteilung aufgeführt sind.
 
 \begin{figure}[!ht]
@@ -15,7 +15,7 @@ Aufteilung aufgeführt sind.
   $ 0x18000\newline -\newline 0x18 $FFF & $0x19000\newline -\newline 0x19 $FFF & $ 0x1 $A$ 000\newline -\newline 0x1 $AFFF & $ 0x1 $B$ 000\newline -\newline 0x1 $BFFF & $ 0x1 $C$ 000\newline -\newline 0x1 $CFFF & $ 0x1 $D$ 000\newline -\newline 0x1 $DFFF & $ 0x1 $E$ 000\newline -\newline 0x1 $EFFF & $ 0x1 $F$ 000\newline -\newline 0x1 $FFFF\\
   \hline
   \multicolumn{8}{l}{~}\\
-  \multicolumn{8}{l}{Aufteilung innerhalb des Bachelor-Projekts GOBI:}\\
+  \multicolumn{8}{l}{Aufteilung innerhalb des Bachelorprojekts \glos{gobi}:}\\
   \hline
   RO 1 & \multicolumn{2}{l|}{RW 1} & \multicolumn{2}{l|}{RW 2} & \multicolumn{2}{l|}{RO 2} & SR\\
   \hline

@@ -1,7 +1,7 @@
 \section{Client}
 \label{sec:client}
 
-Als Grundlage für den Clienten wird die Implementierung aus dem Bachelorprojekt GOBI übernommen. Diese ist in der Lage, die im Sensornetz eingebundenen
+Als Grundlage für den Clienten wird die Implementierung aus dem Bachelorprojekt \glos{gobi} übernommen. Diese ist in der Lage, die im Sensornetz eingebundenen
 Endgeräte vom Border-Router abzurufen, und in einer Liste darzustellen. Über den Listen-Index ist es dann möglich, mit den Endgeräten zu kommunizieren,
 so dass nicht jedesmal die IP-Adresse angegeben werden muss.
 
@@ -14,7 +14,7 @@ folgen. Hier übernimmt der Server die Kontrolle über die Datenübertragung, w�
 nicht durch den \acr{coap}-Clienten selbst realisiert, sondern muss manuell, durch mehrere Anfragen, umgesetzt werden. Dieser erweiterte \acr{coap}-Client
 ist nicht für die Verwendung in anderen Projekten gedacht, und soll hier nur als provisorisches Werkzeug dienen, um \acr{dtls} zu realisieren.
 
-Für die Berechnung von elliptischen Kurven wird direkt der Code, aus dem Bachelor-Projekt GOBI, von Jens Trillmann übernommen. Weitere Anpassungen
+Für die Berechnung von elliptischen Kurven wird direkt der Code, aus dem Bachelorprojekt \glos{gobi}, von Jens Trillmann übernommen. Weitere Anpassungen
 sind hier nicht notwendig, da die Berechnung auf einem gängigen Computer mit ausreichender Geschwindigkeit durchgeführt wird.
 
 Die \acr{aes}-Verschlüsselung erfolgt auf der Serverseite durch den \glos{mc1322}. Da dieser hier nicht verfügbar ist, wird dafür die

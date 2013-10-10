@@ -4,7 +4,7 @@ Um die \acr{aes}-Funktionen des \glos{mc1322} \cite{mc1322} zu nutzen, dient die
 verwendet in der \acr{prf} \acr{aes}-\acr{cmac} \cite{rfc4493}. Außerdem wird für die Verschlüsselung \acr{aes}-\acr{ccm} \cite{rfc3610} verwendet. Beide Verfahren
 werden vom \glos{mc1322} nicht direkt unterstützt. Bereitgestellt wird nur der reine \acr{aes}-Verschlüsselungsprozess im \acr{ctr}- und \acr{cbc}-Mode.
 
-Damit die \acr{aes}-Hardware genutzt werden kann, muss diese zunächst initialisiert werden. Die dafür notwendige Methode wurde zum Großteil aus dem Bachelorprojekt GOBI
+Damit die \acr{aes}-Hardware genutzt werden kann, muss diese zunächst initialisiert werden. Die dafür notwendige Methode wurde zum Großteil aus dem Bachelorprojekt \glos{gobi}
 übernommen und leicht modifiziert. Neben der Aktivierung der \acr{aes}-Hardware wir dort ein Selbsttest mit einem internen Schlüssel durchgeführt. Ist dieser
 erfolgreich, werden die beiden Modi \acr{ctr} und \acr{cbc}, für die spätere Nutzung, aktiviert.
 
