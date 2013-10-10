@@ -1,9 +1,11 @@
 \chapter{DTLS}
 \label{chp:dtls}
 
-\TODO{motivation für das kapitel}
+Um eine Grundlage für die Anpassungen im folgenden Kapitel zu schaffen, und in der Evaluation einen Vergleich zu ermöglichen,
+wird hier zunächst \acr{dtls}, wie es in RFC 6347 \cite{rfc6347} standardisiert ist, erläutert. Da \acr{dtls} basierend auf
+\acr{tls}, gemäß RFC 5246 \cite{rfc5246}, definierte ist, wird auch auf den Unterschied zwischen beiden eingegangen.
 
-Das Sicherheitsprotokoll \acr{tls} \cite{rfc5246} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
+Das Sicherheitsprotokoll \acr{tls} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
 Wurde eine Verbindung mit \acr{tcp} hergestellt, können Daten beliebieger Größe in jede Richtung
 übertragen werden. \acr{tcp} sorgt dafür, dass der eingegebene Bytestrom vollständig und in der
 richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls}-bezogenen Daten nun
@@ -15,7 +17,7 @@ das \glos{handshake}-Protokoll für die Aushandlung der Sicherheitsparameter zum
 werden die zuletzt ausgehandelten Sicherheitsparameter aktiviert. Sollte es beim \glos{handshake} oder der Übertragung
 von Anwendungsdaten zu Fehlern kommen, werden diese mit Hilfe des Alert-Protokolls übertragen.
 
-Da bei \acr{dtls} \cite{rfc6347} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
+Da bei \acr{dtls} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, bei dem die Länge eines
 Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei einem
 \glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
 so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
@@ -133,8 +135,9 @@ Schließlich wird noch eine Finished-Nachricht ausgetauscht, die wieder zum \glo
 Nachrichten und wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. So wird der \glos{handshake} verifiziert und die neuen Sicherheitsparemeter auf Korrektheit
 geprüft.
 
-\TODO{anschließend können Nutzdaten über das App-Data-Protokoll versendet werden}
-\TODO{es werden die gerade ausgehandelten Sicherheitsparameter genutzt}
+Ist der \glos{handshake} erfolgreich verlaufen, können anschließend Anwendungsdaten über das Application-Data-Protokoll versendet werden,
+wobei die während des letzten \glospl{handshake} ausgehandelten Sicherheitsparameter benutzt werden. Sollte es zu einem weiteren \glos{handshake}
+kommen, wird dieser ebenfalls mit den Sicherheitsparametern der aktuell gültigen Epoche durchgeführt.
 
 \section{Alert}
 
@@ -143,7 +146,8 @@ Der Header (siehe Abbildung \ref{fig:alertlayer}) enthält neben dem AlertLevel,
 die Beschreibung des Fehlers. Während Fehler der Stufe \textit{fatal} zu einem unmittelbaren Verbindungsabbruch führen, sind Fehler der Stufe
 \textit{warning} zur Information der Gegenseite über mögliche Probleme gedacht. Das Alert-Protokoll unterscheidet sich bei \acr{tls} und \acr{dtls}
 nicht voneinander, da eine zuverlässige Übertragung nicht notwendig ist. Sollte aufgrund einer verloren gegangenen Alert-Nachricht eine Anfrage
-wiederholt werden, wird erneut eine Alert-Nachricht generiert. \TODO{wie auch alle anderen pakete -> sicherheitsparameter der aktuellen epoche, verschlüsselt}
+wiederholt werden, wird erneut eine Alert-Nachricht generiert. Alert-Nachrichten werden, wie auch alle anderen Daten, mit den Sicherheitsparametern
+der aktuell gültigen Epoche übertragen.
 
 \begin{figure}[ht]
   \centering
