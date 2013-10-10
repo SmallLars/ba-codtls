@@ -1,6 +1,6 @@
 \section{Datenverkehr während des Handshakes}
 
-Um einen fairen Vergleich durchzuführen, wird neben dem originalen \acr{dtls} auch eine \acr{dtls}-Version mit Stateless Header Compression herangezogen.
+Um einen fairen Vergleich durchzuführen, wird neben dem originalen \acr{dtls} auch eine \acr{dtls}-Version mit Stateless-Header-Compression herangezogen.
 Dazu werden in den folgenden 3 Abschnitten die Datenmengen ermittelt, während im 4. Abschnitt der Vergleich erfolgt. Die Datenmengen basieren auf einem
 \glos{handshake}, bei dem weder Paketverluste noch Angriffe von dritten, oder andere Fehler, auftreten.
 
@@ -99,7 +99,7 @@ für die jeweiligen Block-Optionen, während CT die Content-Type-Option beschrei
     & <-> & 90 & 294 & 21 & 405 & Gesamt 810 \\
   \showrowcolors
 \end{tabular}
-\caption[test 1]{Datenaustausch während eines Handshake mit angepasstem DTLS}
+\caption{Datenaustausch während eines Handshake mit angepasstem DTLS}
 \label{tbl:6-1_data-dtls-neu}
 \end{figure}
 
@@ -163,11 +163,11 @@ Für den Record-Header werden generell 13 Byte benötigt, während der \glos{han
 Diese ist keine \glos{handshake}-Nachricht, womit hier der \glos{handshake}-Header wegfällt. Entsprechend der maximalen Datenmenge von 38 Byte sind die Handshake-Nachrichten
 auf mehrere Pakete verteilt. Insgesamt werden 18 Pakete mit 831 Byte übertragen.
 
-\subsection{DTLS mit Stateless Header Compression}
+\subsection{DTLS mit Stateless-Header-Compression}
 
-In diesem Abschnitt wird der \glos{handshake}, gemäß Abbildung \ref{fig:handshake}, mit einer Stateless Header Compression analysiert. Dieser erfordert,
+In diesem Abschnitt wird der \glos{handshake}, gemäß Abbildung \ref{fig:handshake}, mit einer Stateless-Header-Compression analysiert. Dieser erfordert,
 wie auch der \glos{handshake} aus dem vorigen Abschnitt, die Übertragung von 18 Datenpaketen, die in Abbildung \ref{tbl:6-1_data-dtls-comp} dargestellt sind.
-Die Stateless Header Compression wird dabei direkt aus dem \acr{ietf}-Entwurf \cite[Kapitel 3]{draftcodtls} übernommen.
+Die Stateless-Header-Compression wird dabei direkt aus dem \acr{ietf}-Entwurf \cite[Kapitel 3]{draftcodtls} übernommen.
 
 Die maximale Datenmenge wird ebenfalls ausgehend von 71 Byte ermittelt. Neben dem 8 Byte langem \acr{mac} müssen dort der maximale Record-Header mit 15 Byte, und
 der maximale \glos{handshake}-Header mit 14 Byte, berücksichtigt werden, so dass 34 Byte pro Paket verbleiben.
@@ -206,7 +206,7 @@ der maximale \glos{handshake}-Header mit 14 Byte, berücksichtigt werden, so das
     & <-> & 54 & 56 & 405 & Gesamt 515\\
   \showrowcolors
 \end{tabular}
-\caption{Datenaustausch während eines Handshake mit DTLS und stateless header compression}
+\caption{Datenaustausch während eines Handshake mit DTLS und Stateless-Header-Compression}
 \label{tbl:6-1_data-dtls-comp}
 \end{figure}
 
@@ -230,7 +230,7 @@ mit insgesamt 56 Byte pro Paket, berücksichtigt.
   \hline
   DTLS mit Anpassungen                                         & 30 & 810 & 2490\\
   DTLS                                                         & 18 & 831 & 1839\\
-  DTLS mit Stateless Header Compression                        & 18 & 515 & 1523\\
+  DTLS mit Stateless-Header-Compression                        & 18 & 515 & 1523\\
   \hline
   \hline
   DTLS mit Anpassungen (ohne \acr{coap}-ACK)                   & 16 & 694 & 1590\\
@@ -249,4 +249,4 @@ so dass dafür im Gegenzug einiges an Programmcode wegfällt, der diese Dinge au
 wodurch das verfügbare Volumen der Datenpakete maximal ausgenutzt wird.
 
 Werden die \acr{dtls} spezifischen Datenmengen verglichen, schneidet die angepasste \acr{dtls}-Variante besser ab als das originale \acr{dtls}.
-\acr{dtls} mit Stateless Header Compression ist jedoch, bezogen auf die Datenmenge, am effizientesten, da hier keine \acr{coap}-Header übertragen werden.
+\acr{dtls} mit Stateless-Header-Compression ist jedoch, bezogen auf die Datenmenge, am effizientesten, da hier keine \acr{coap}-Header übertragen werden.

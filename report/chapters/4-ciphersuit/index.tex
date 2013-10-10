@@ -130,6 +130,6 @@ Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildun
 
 Um den Hash für die Berechnung der Finished-Nachricht zu ermitteln, wird nun ebenfalls der definierte \acr{cmac} benutzt.
 Um die Berechnung zu vereinfachen wird der Hash entgegen dem Vorschlag von K. Hartke und O. Bergmann \cite{draftcodtls} aus den
-\glos{handshake}-Nachrichten ermittelt, wie sie über das Netz versendet wurden. Sollte also eine Stateless Header Compression wie in Kapitel
+\glos{handshake}-Nachrichten ermittelt, wie sie über das Netz versendet wurden. Sollte also eine Stateless-Header-Compression wie in Kapitel
 \ref{sec:headercompression} verwendet werden, dann wird der Hash auf Grundlage der komprimierten Nachrichten berechnet. So können
 die ein- und ausgehenden Nachrichten direkt für die Berechnung des Hashs gespeichert werden, ohne weitere Berechnungen vornehmen zu müssen.

@@ -1,7 +1,7 @@
 \subsection{Contiki-App: "`er-13-dtls"'}
 
 Um diese Contiki-App zu realisieren, sind zunächst einige Anpassungen in er-coap-13 notwendig. Um nach wie vor einen Betrieb ohne \acr{dtls} realsisieren zu können,
-werden diese Anpassungen nur dann aktiv, wenn die Compiler-Anweisung WITH\_DTLS gesetzt ist, was im Makefile für ein Contiki-Programm durch "`CFLAGS += -DWITH\_DTLS=1"'
+werden diese Anpassungen nur dann aktiv, wenn die Kompiler-Anweisung WITH\_DTLS gesetzt ist, was im Makefile für ein Contiki-Programm durch "`CFLAGS += -DWITH\_DTLS=1"'
 realisiert werden kann. Bei der Verwendung von \acr{dtls} wird der Port gemäß \cite[Seite 93]{portnumbers} von 5683 auf 5684 geändert. Außerdem wird der Datenverkehr
 über \acr{dtls}-Funktionen geleitet, die den Record-Layer realisieren und die Daten bei Bedarf ent- oder verschlüsseln. Kernstück ist die Ressource "`/dtls"', die für
 die Durchführung des \glospl{handshake} in CoAP eingebunden wird.

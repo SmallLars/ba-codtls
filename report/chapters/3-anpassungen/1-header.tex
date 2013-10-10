@@ -2,7 +2,7 @@
 \label{sec:headercompression}
 
 Da die maximale Datenmenge eines Pakets im genutzen Datenübertragungsstandard IEEE 802.15.4 \cite{ieee802154} auf 127 Byte begrenzt ist würde der in DTLS
-definierte Header mit 13 Byte schon mehr als 10\% des Datenvolumens ausmachen. Um das zu vermeiden wird die Stateless Header Compression aus dem Entwurf
+definierte Header mit 13 Byte schon mehr als 10\% des Datenvolumens ausmachen. Um das zu vermeiden wird die Stateless-Header-Compression aus dem Entwurf
 von K. Hartke und O. Bergmann \cite[Kapitel 3]{draftcodtls} angewendet. Diese zeichnet sich durch eine verlustfreie Komprimierung aus, für die keine weiteren
 Informationen bereitgestellt werden müssen. Damit lässt sich der Header im besten Fall auf 2 Byte, wie in Abbildung \ref{fig:com_handshake_header} dargestellt,
 komprimieren.

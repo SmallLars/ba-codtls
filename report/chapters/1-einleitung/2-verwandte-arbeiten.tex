@@ -13,7 +13,7 @@ viele Daten ausgetauscht werden, was bei der Verwendung von \acr{dtls} die Paket
 eingeschränkten Umgebungen mit Hilfe von \acr{6lowpan} \cite{rfc4944} realisiert wird, würde sich das Problem durch eine Nutzung der IP-\glos{fragmentierung}
 lösen lassen. Das führt aber bei Verlust einzelner Pakete, zu einem neuen Versand aller IP-\glospl{fragment}, und erzeugt somit umfangreichen Datenverkehr,
 der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin, die Menge der Daten sowohl beim Verbindungsaufbau als auch bei der
-Datenübertragung durch Komprimierung der Headerdaten zu verringern. Dafür schlagen die Autoren eine Stateless Header Compression vor. Bei Nutzung von
+Datenübertragung durch Komprimierung der Headerdaten zu verringern. Dafür schlagen die Autoren eine Stateless-Header-Compression vor. Bei Nutzung von
 \acr{coap} wäre es auch möglich, den Verbindungsaufbau über \acr{coap} zu realisieren. Dadurch ist die Zuverlässigkeit des Transports gegeben und große Pakete
 könnten mit einer blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden müssten.
 

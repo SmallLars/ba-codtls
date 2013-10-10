@@ -1,20 +1,42 @@
 \chapter{Fazit}
 \label{chp:fazit}
 
-generell machbar
+Abschließend lässt sich sagen, dass es gelungen ist, \acr{dtls} so anzupassen, dass es sich für den Einsatz auf dem
+Redbee Econotag mit dem \glos{mc1322} Mikrocontroller eignet. Das gesamte Programm ist ausreichend klein, um die
+Funktionalitäten der Endgeräte selbst ergänzen zu können. Trotz der Anpassungen sind die Elemente von \acr{dtls}
+nach wie vor erhalten.
 
-vor und nachteile abwägen
+Möglich wurde dies unter anderem durch die Nutzung des Flash-Speichers zur Ablage der Session-Daten. Insgesamt
+sind 148 Byte pro Session notwendig, von denen sich 140 Byte für die Ablage im Flash-Speicher eignen. Durch die
+Begrenzung auf maximal zehn Sessions, werden 1400 Byte im Flash-Speicher genutzt. Dabei hat ein Anwender, durch
+die genutzte \glos{ciphersuite} und den Wechsel des \acr{psk}, die volle Kontrolle über die Nutzung dieser zehn
+Sessions. Sind mehr als zehn Sessions erforderlich, erlauben die auf dem Redbee Econotag verfübaren Ressourcen,
+eine Erweiterung auf mehr als 50 Sessions. Soll auf die Nutzung des Flash-Speichers verzichtet werden, wäre es
+auch denkbar, die Anzahl der Sessions weiter zu reduzieren und die Daten vollständig im RAM-Speicher abzulegen.
 
-trotz dtls-cookie -> zustand durch block 1\\
-cookie wie vorgeschlagen auf mitgesendeten hash
+In der Evaluation hat sich jedoch gezeigt, dass weitere Verbesserungen möglich sind. So eignet sich die blockweise
+Übertragung der \glos{handshake}-Daten durch \acr{coap} bestens, während in Kombination mit dieser, die Modellierung
+der \acr{dtls}-Sessions als \acr{coap}-Ressource keine Option ist. Auch werden durch die blockweise Übertragung neue
+\acr{dos}-Angriffe ermöglicht, die der in \acr{dtls} definierte Cookie nicht verhindern kann. Ein Idee, um diesem
+entgegen zu wirken, konnte in diese Arbeit erarbeitet werden, wurde jedoch praktisch noch nicht umgesetzt.
 
-dtls-acks wie im neuen draft \cite{draftpractical} vorgeschlagen nicht sinnvoll\\
-in der hinsicht funktioniert coap super. dtls-acks lediglich sinnvoll für betrieb gänzlich ohne coap, sonst code/funktions-duplizierung
+Im \acr{ietf}-Entwurf "`Practical Issues with Datagram Transport Layer Security in Constrained Environments"' \cite{draftpractical}
+von K. Hartke, sind einige weitere Lösungsansätze aufgeführt. Dieser Entwurf ist erst kurz vor Fertigstellung dieser
+Arbeit erschienen, und wurde deswegen nicht mehr berücksichtigt. Trotzdem soll hier auf einen Vorschlag dieses Entwurfs
+eingegangen werden, der die Verwendung von Bestätigungsnachrichten (Acknowledgements) beschreibt. Dieses Verfahren
+kommt dem Verhalten von \acr{coap} sehr nahe. Von Vorteil ist dieser Vorschlag, da sich \acr{dtls} auch in eingeschränkten
+Umgebungen ohne \acr{coap} realisieren lässt. Dort wo \acr{coap} Verwendung findet, würde dies den Programmcode jedoch
+unnötig vergrößern, da die Mechanismen in \acr{coap} bereits zur Verfügung stehen. Da die Acknowledgement-Nachrichten von
+\acr{coap}, während des \acr{dtls}-\glospl{handshake}, in der Evaluation dieser Arbeit auch separat betrachtet werden,
+liefert diese Arbeit für zukünftige \acr{dtls}-Implementierungen, ohne \acr{coap} und mit Acknowledgements, Vergleichsmaterial.
 
-contiki speicher weiter optimieren - stacks notwendig ?\\
--mcallee-super-interworking weglassen. bringt 4,32 KiB
+Zukünftig sind weitere Optimierungen von Contiki denkbar. Die in dieser Arbeit vorgenommenen Anpassungen der Stack- und Heap-Größe,
+sind nur einige der möglichen Optionen. Neben dem System-Stack, beinhaltet Contiki fünf weitere Stacks, deren Größe noch zu überprüfen ist.
+Auch ist mit den richtigen Kompileroptionen eine weitere Reduzierung der Programmgröße möglich. So hat sich gezeigt, dass durch
+entfernen der Option -mcallee-super-interworking 4,32 KiB eingespart werden kann. Diese ermöglicht generell den Aufruf, der im 16-Bit-Modus
+kompilierten Funktionen, durch 32-Bit-Code. Da dies im Allgemeinen garnicht notwendig ist, scheint diese überflüssig.
+Auch wenn diese Anpassungen noch gründlich überprüft werden müssen, zeigt dies, das mehr Raum für weiteren Programmcode geschaffen werden kann.
 
-sessions als sub-ressource ist doof -> weglassen, wegen block 1 übertragung -> mehrfacher versand\\
-information nur bei session resuming notwendig und dort im clienthello enthalten
-
-verwedung im Masterporjekt GOBI erwünscht inklusive weiterentwicklung
+Wünschenswert ist die Verwendung, der in dieser Arbeit entstandenen \acr{dtls}-Variante, im Masterporjekt GOBI.
+Dort kann diese sich im praktischen Einsatz bewähren und weiterentwickelt werden, um die genannten Verbesserungen
+einzubringen.

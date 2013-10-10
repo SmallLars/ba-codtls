@@ -18,7 +18,6 @@ wenn beide Kommunikationspartner vorher einen gemeinsamen \acr{psk} vereinbart h
 aus einer Verschlüsselung der Daten mit \acr{aes} im \acr{ctr}-Modus, während der dazugehörende \acr{mac} durch \acr{aes} im \acr{cbc}-Modus
 berechnet wird. Die Anzahl der möglichen sicheren Verbindungen soll beschränkt werden, um den Speicherverbrauch gering zu halten.
 
-Bei der Evaluation soll die Datenmenge der Header-Daten sowohl beim Verbindungsaufbau als auch bei der Übertragung von Anwendungsdaten
-mit einer reinen \acr{dtls}-Implementierung verglichen werden. Dabei werden nicht nur fehlerfreie Übertragungen betrachtet, sondern auch Paketverluste
-mit einbezogen. Verglichen wird auch der notwendige Speicherbedarf bei Verbindungsaufbau und Übertragung der Anwendungsdaten.
-Ebenso soll der Umfang des zugrunde liegenden Quellcodes bewertet werden.
+Bei der Evaluation soll die Datenmenge der Header-Daten, und der für einen \glos{handshake} benötigten Daten, mit einer reinen \acr{dtls}-Implementierung
+verglichen werden, wobei auch eine \acr{dtls}-Variante herangezogen wird, die eine Stateless-Header-Compression benutzt. Bewertet wird auch die Programmgröße,
+wobei einige Komponenten denen von \acr{dtls} gegenübergestellt werden. Ebenso soll die Dauer des \glos{handshake} bewertet werden.
