@@ -1,24 +1,24 @@
 \section{Verwandte Arbeiten}
 
-Da die Anpassung von \acr{dtls}, für den Einsatz in eingeschränkten Umgebungen, ein aktuelles Thema ist, und bereits einige Vorschläge
-existieren, die in dieser Arbeit aufgegriffen werden sollen, werden in den folgen beiden Abschnitten zwei Entwürfe der \acr{ietf} betrachtet.
+Da die Anpassung von \acr{dtls} für den Einsatz in eingeschränkten Umgebungen ein aktuelles Thema ist, und bereits einige Vorschläge
+existieren, die in dieser Arbeit aufgegriffen werden sollen, werden in den folgenden beiden Abschnitten zwei Entwürfe der \acr{ietf} betrachtet.
 
 \subsection{Datagram Transport Layer Security in Constrained Environments}
 Im \acr{ietf}-Entwurf "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} haben K. Hartke und O. Bergmann
-bereits einige Probleme aufgezeigt, die der Einsatz von \acr{dtls} in eingeschränkten Umgebungen mit sich bringt und mögliche Lösungen vorgeschlagen.
+bereits einige Probleme aufgezeigt, die der Einsatz von \acr{dtls} in eingeschränkten Umgebungen mit sich bringt, und mögliche Lösungen vorgeschlagen.
 
-Als eines der Hauptprobleme nennen die Autoren die geringe Paketgröße in Netzen, die den Funkstandard IEEE 802.15.4 \cite{ieee802154} verwenden,
+Als eines der Hauptprobleme nennen die Autoren die geringe Paketgröße in Netzen die den Funkstandard IEEE 802.15.4 \cite{ieee802154} verwenden,
 da hier die Nutzdaten auf eine Länge von 127 Byte pro Paket beschränkt sind. Insbesondere beim Aufbau der sicheren Verbindung (\glos{handshake}) müssen
 viele Daten ausgetauscht werden, was bei der Verwendung von \acr{dtls} die Paketgröße überschreiten würde. Durch \acr{ipv6} \cite{rfc2460}, das in
 eingeschränkten Umgebungen mit Hilfe von \acr{6lowpan} \cite{rfc4944} realisiert wird, würde sich das Problem durch eine Nutzung der IP-\glos{fragmentierung}
-lösen lassen. Das führt aber bei Verlust einzelner Pakete, zu einem neuen Versand aller IP-\glospl{fragment}, und erzeugt somit umfangreichen Datenverkehr,
-der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin, die Menge der Daten sowohl beim Verbindungsaufbau als auch bei der
+lösen lassen. Das führt aber bei Verlust einzelner Pakete zu einem neuen Versand aller IP-\glospl{fragment}, und erzeugt somit umfangreichen Datenverkehr,
+der einen hohen Energieverbauch mit sich bringt. Ein weiterer Ansatz besteht darin, die Menge der Daten sowohl beim Verbindungsaufbau, als auch bei der
 Datenübertragung durch Komprimierung der Headerdaten zu verringern. Dafür schlagen die Autoren eine Stateless-Header-Compression vor. Bei Nutzung von
-\acr{coap} wäre es auch möglich, den Verbindungsaufbau über \acr{coap} zu realisieren. Dadurch ist die Zuverlässigkeit des Transports gegeben und große Pakete
+\acr{coap} wäre es auch möglich, den Verbindungsaufbau über \acr{coap} zu realisieren. Dadurch ist die Zuverlässigkeit des Transports gegeben, und große Pakete
 könnten mit einer blockweisen Übertragung effizient übertragen werden, so dass bei Paketverlusten nur die verlorenen Pakete erneut übertragen werden müssten.
 
 Beachtet werden müssen auch die Zeiten, nach denen ein Paket als verloren angesehen und erneut gesendet wird. Gerade beim Verbindungsaufbau
-kann es durch aufwendige Berechnungen, wie sie beispielsweise im Elliptic Curve Diffie-Hellman benötigt werden, zu einer erhöhten
+kann es durch aufwendige Berechnungen, wie sie beispielsweise im Elliptic Curve Diffie-Hellman Verfahren benötigt werden, zu einer erhöhten
 Antwortzeit kommen, was nicht zu einem erneuten Paketversand führen sollte.
 
 Beim Verbindungsaufbau werden viele Daten ausgetauscht, was gerade in eingeschränkten Umgebungen einige Zeit dauern kann. Um die Zeit
@@ -38,16 +38,16 @@ Verbindungen ankommt. Ein Sensor, der als Client agiert, wird mit großer Wahrsc
 zu hinterlegen, während ein als Server realisierter Sensor durchaus auch Anfragen von mehreren Clients erhalten kann. Je klarer die Position und die
 Umgebung des Sensors sind, desto weniger flexibel muss dieser sein, woraus eine spezialisierte Implementierung resultiert, die den Aufwand und die Codegröße reduziert.
 
-Im weiteren Verlauf gehen sie auf wichtige Design-Entscheidungen ein und erläutern deren Bedeutung und mögliche Auswirkungen.
+Im weiteren Verlauf gehen sie auf wichtige Design-Entscheidungen ein, und erläutern deren Bedeutung und mögliche Auswirkungen.
 
 Kernstück der Arbeit ist die Auswertung des Speicherverbrauchs, sowohl im \acr{rom} als auch im \acr{ram}, und die Menge der übertragenen Daten bei einem \glos{handshake}.
 Anhand eines modifizierten Prototyps zeigen sie dort auf, welche grundlegenden Teile von \acr{dtls}, ohne Berücksichtigung der \glos{ciphersuite} spezifischen Funktionen,
 wieviel Speicher verbrauchen und werten die Menge der übertragenen Daten in einem kompletten \glos{handshake} für die unterschiedlichen Protokollschichten aus.
-Des weiteren haben sie die Codegrößen von beispielsweise Hash-Funktionen und anderen für \acr{tls} notwendigen Berechnungen ausgewertet, wie sie in unterschiedlichen
+Des Weiteren haben sie die Codegrößen von beispielsweise Hash-Funktionen und anderen, für \acr{tls} notwendigen, Berechnungen ausgewertet, wie sie in unterschiedlichen
 \glospl{ciphersuite} verwendet werden.
 
 Abschließend stellen sie fest, dass sich \acr{tls}/\acr{dtls} durchaus auf eingeschränkte Umgebungen zuschneiden lässt, wobei mehr Flexibilität aber zu
-größerem Programmcode führt. \TODO{hier vielleicht ein paar Kennzahlen zitieren?}
+größerem Programmcode führt. % \TODO{hier vielleicht ein paar Kennzahlen zitieren?}
 
 % \subsection{Generic Header Compression}
 % todo

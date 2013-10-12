@@ -3,16 +3,16 @@
 
 Um eine Grundlage für die Anpassungen im folgenden Kapitel zu schaffen, und in der Evaluation einen Vergleich zu ermöglichen,
 wird hier zunächst \acr{dtls}, wie es in RFC 6347 \cite{rfc6347} standardisiert ist, erläutert. Da \acr{dtls} basierend auf
-\acr{tls}, gemäß RFC 5246 \cite{rfc5246}, definierte ist, wird auch auf den Unterschied zwischen beiden eingegangen.
+\acr{tls}, gemäß RFC 5246 \cite{rfc5246}, definiert ist, wird auch auf den Unterschied zwischen beiden eingegangen.
 
 Das Sicherheitsprotokoll \acr{tls} wird im Allgemeinen mit dem stromorientierten \acr{tcp} verwendet.
-Wurde eine Verbindung mit \acr{tcp} hergestellt, können Daten beliebieger Größe in jede Richtung
+Wurde eine Verbindung mit \acr{tcp} hergestellt, können Daten beliebiger Größe in jede Richtung
 übertragen werden. \acr{tcp} sorgt dafür, dass der eingegebene Bytestrom vollständig und in der
 richtigen Reihenfolge auf der Gegenseite wieder ausgegeben wird. Um die \acr{tls}-bezogenen Daten nun
 zu kennzeichnen und voneinander abzugrenzen, existiert das Record-Layer-Protokoll, dessen Header in Abbildung \ref{fig:recordlayer}
-dargestellt ist. Dort ist neben der Art des Inhalts und der Protokollversion auch die Länge enthalten, so dass
+dargestellt ist. Dort ist, neben der Art des Inhalts und der Protokollversion, auch die Länge enthalten, so dass
 aufeinanderfolgende Pakete im Datenstrom voneinander abgegrenzt werden können. Als Inhalt kommen vier Sub-Protokolle
-in Frage. Währen das Application-Data-Protokoll für den Transport der Anwendungsdaten genutzt wird, kommt
+in Frage. Während das Application-Data-Protokoll für den Transport der Anwendungsdaten genutzt wird, kommt
 das \glos{handshake}-Protokoll für die Aushandlung der Sicherheitsparameter zum Einsatz. Über das Change-Cipher-Spec-Protokoll
 werden die zuletzt ausgehandelten Sicherheitsparameter aktiviert. Sollte es beim \glos{handshake} oder der Übertragung
 von Anwendungsdaten zu Fehlern kommen, werden diese mit Hilfe des Alert-Protokolls übertragen.
@@ -21,11 +21,11 @@ Da bei \acr{dtls} im Allgemeinen das paketorientierte \acr{udp} verwendet wird, 
 Paketinhalts bekannt ist, wirkt die Längenangabe zunächst überflüssig. Jedoch ist es insbesondere bei einem
 \glos{handshake} sinnvoll, mehrere \acr{dtls}-Pakete innerhalb eines \acr{udp}-Pakets zusammenzufassen,
 so dass auch hier wieder eine Längenangabe benötigt wird, um die Pakete voneinander abzugrenzen.
-Zusätzlich sind bei \acr{dtls}, gegenüber \acr{tls}, nun die Datenfelder für die Epoche und die Sequenz-Nummer hinzugekommen.
-Während diese beiden Werte bei \acr{tls} durch die gewährleistete Reihenfolge der Daten durch \acr{tcp}
+Zusätzlich sind bei \acr{dtls}, gegenüber \acr{tls}, nun die Datenfelder für die Epoche und die Sequenznummer hinzugekommen.
+Während diese beiden Werte bei \acr{tls}, durch die gewährleistete Reihenfolge der Daten durch \acr{tcp},
 implizit bekannt sind, müssen diese bei \acr{dtls} explizit angegeben werden, da \acr{udp} weder die
-Reihenfolge noch den fehlerfreien Transport der Daten garantiert. Die Epoche wird bei einem erfolgreichen \glos{handshake}
-erhöht und ordnet so die dazugehörenden Daten den im \glos{handshake} ausgehandelten Sicherheitsparametern zu,
+Reihenfolge, noch den fehlerfreien Transport der Daten garantiert. Die Epoche wird bei einem erfolgreichen \glos{handshake}
+erhöht, und ordnet so die dazugehörenden Daten den im \glos{handshake} ausgehandelten Sicherheitsparametern zu,
 während die Sequenznummer in jeder Epoche bei $ 0 $ beginnt und bei jedem Paketversand erhöht wird.
 
 \begin{figure}[ht]
@@ -109,20 +109,20 @@ den \acr{psk} realisiert werden soll und auf die Zertifikate verzichtet wird, um
 
 Eingeleitet wird der \glos{handshake} mit einer Nachricht vom Typ ClientHello, in der der Client seine Möglichkeiten bekannt gibt. Dazu gehören u. a. die unterstützten
 Protokollversionen, \glospl{ciphersuite} und Kompressionsmethoden. Während der Server bei \acr{tls} nun direkt mit einer ServerHello-Nachricht und weiteren
-\glos{handshake}-Nachrichten antworten kann, lässt sich das bei DTLS so nicht realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem
+\glos{handshake}-Nachrichten antworten kann, lässt sich dies bei DTLS so nicht realisieren. Da UDP kein verbindungsorientiertes Protokoll ist, können Pakete mit gefälschtem
 Absender versendet werden. Auf diese Art könnte Angriff vom Typ \acr{dos} durchgeführt werden, in dem zahllose Pakete mit unterschiedlichen Absendern an den Server
 gesendet werden, welche alle ein ClientHello enthalten. Problematisch ist hierbei der Zustand, der für jedes ClientHello im Server erzeugt wird. Neben dem
 Speicherverbrauch kann die Berechnung des ServerKeyExchange eine Menge Rechenleistung benötigen, so dass die Ressourcen des Servers schnell aufgebraucht sind.
 Um dies zu vermeiden und den Absender zu validieren, wurde in DTLS ein Cookie ergänzt. Dieser wird aus dem ClientHello generiert und als Antwort an den Client
 gesendet. So kann der Server den Cookie bei einem erneuten ClientHello wieder berechnen und mit dem mitgelieferten vergleichen. Dadurch wird bei der ersten Anfrage
-ein Zustand vermieden und der Client validiert. Trotz dieses Verfahrens ist es jedoch möglich, den Energievorrat des Servers durch unzählige Anfragen zu redzuieren,
+ein Zustand vermieden und der Client validiert. Trotz dieses Verfahrens ist es jedoch möglich, den Energievorrat des Servers durch unzählige Anfragen zu reduzieren,
 da auch die erste Anfrage (ohne Cookie) bearbeitet werden muss. Lediglich der dafür notwendige Aufwand ist geringer. Auch schützt dieses Verfahren nicht gegen
 einen \glos{mitma}.
 
 Im ServerHello gibt der Server bekannt, welche der vom Client genannten Möglichkeiten, wie beispielsweise die unterstützten \glospl{ciphersuite}, ausgewählt wurden.
 Folgen können dann ein Zertifikat, Daten für einen Schlüsselaustausch sowie eine Anfrage für das Zertifikat des Clients. Abschließend folgt ein ServerHelloDone, um
-dem Client zu signalisieren, dass er wieder an der Reihe ist. Dieser sendet nun sein eigenes Zertifikat, falls vom Server angefordert. Es folgen Daten für den
-Schlüsselaustausch und Daten, die es dem Server ermöglichen, das Zertifikat des Clients zu überprüfen, falls dieses die Möglichkeit bietet, Daten zu signieren.
+dem Client zu signalisieren, dass der \glos{handshake} fortgesetzt werden kann. Dieser sendet nun sein eigenes Zertifikat, falls vom Server angefordert. Es folgen Daten
+für den Schlüsselaustausch und Daten, die es dem Server ermöglichen, das Zertifikat des Clients zu überprüfen, falls dieses die Möglichkeit bietet, Daten zu signieren.
 Damit sind zunächst alle Daten ausgetauscht, die für die Aushandlung der Sicherheitsmechanismen notwendig sind.
 
 Während die bisher genannten \glos{handshake}-Nachrichten mit den Sicherheitsparametern der aktuell gültigen Epoche versendet werden, folgt nun der Versand eines
@@ -132,11 +132,11 @@ Nach dem Versand des Pakets werden alle folgenden Pakete mit den Sicherheitspara
 Pakets dazu führt, dass alle folgenden eingehenden Pakete mit Hilfe der neuen Sicherheitsparameter gelesen werden.
 
 Schließlich wird noch eine Finished-Nachricht ausgetauscht, die wieder zum \glos{handshake}-Protokoll gehört. Diese enthält einen Hashwert von allen bisher ausgetauschten
-Nachrichten und wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. So wird der \glos{handshake} verifiziert und die neuen Sicherheitsparemeter auf Korrektheit
+Nachrichten und wird mit den Sicherheitsparametern der neuen Epoche verschlüsselt. So wird der \glos{handshake} verifiziert, und die neuen Sicherheitsparemeter auf Korrektheit
 geprüft.
 
 Ist der \glos{handshake} erfolgreich verlaufen, können anschließend Anwendungsdaten über das Application-Data-Protokoll versendet werden,
-wobei die während des letzten \glospl{handshake} ausgehandelten Sicherheitsparameter benutzt werden. Sollte es zu einem weiteren \glos{handshake}
+wobei die, während des letzten \glospl{handshake} ausgehandelten, Sicherheitsparameter benutzt werden. Sollte es zu einem weiteren \glos{handshake}
 kommen, wird dieser ebenfalls mit den Sicherheitsparametern der aktuell gültigen Epoche durchgeführt.
 
 \section{Alert}

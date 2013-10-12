@@ -2,16 +2,15 @@
 
 Im Vordergrund soll die Implementierung eines Sicherheitsprotokolls stehen, das sich an den Prinzipien von \acr{dtls} orientiert
 und Vorschläge aus dem \acr{ietf}-Draft "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} aufgreift.
-Ein besonderes Interesse liegt darauf, den \glos{handshake} über \acr{coap} \cite{draftcoap13} zu realisieren und somit einige in \acr{dtls} eingefügte
-Mechanismen überflüssig zu machen. Die Implementierung wird im Anschluss durch einen Vergleich mit \acr{dtls} evaluiert, wobei folgende Punkte eine
-Rolle spielen: Volumen des generierten Datenaufkommens, Umfang des Quellcodes und die vom Protokoll benötigte Speichermenge.
+Ein besonderes Interesse besteht darin, den \glos{handshake} über \acr{coap} \cite{draftcoap13} zu realisieren und somit einige in \acr{dtls} eingefügte
+Mechanismen überflüssig zu machen. Die Implementierung soll im Anschluss, unter anderem durch einen Vergleich mit \acr{dtls}, evaluiert werden.
 
 Die Implementierung besteht aus dem Client auf einem gängigen PC, bei dem es keine speziellen Einschränkungen an Energie,
 Speicher oder Effizienz gibt, und aus dem Server, der für einen Redbee Econotag \cite{econotag} mit dem \glos{mc1322} \cite{mc1322}
 Mikrocontroller optimiert werden soll. Da der genannte Mikrocontroller die Verschlüsselung mit dem \acr{aes} im \acr{ctr}- und \acr{cbc}-Mode
-in Hardware unterstützt und die Rechenleistung sowie der Speicher beschränkt ist, soll nur eine \glos{ciphersuite} realisiert werden.
+in Hardware unterstützt, und die Rechenleistung sowie der Speicher beschränkt ist, soll nur eine \glos{ciphersuite} realisiert werden.
 Für diese dient "`TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8"' aus RFC 6655 \cite{rfc6655} als Grundlage, wobei dort, aufgrund von Erfahrungen
-aus dem Bachelorprojekt, Anpassungen notwendig sind. Durch diese wird für den Verbindungsaufbau ein Schlüsselaustausch vorgegeben, wobei zusätzlich
+aus dem Bachelorprojekt \glos{gobi}, Anpassungen notwendig sind. Durch diese wird für den Verbindungsaufbau ein Schlüsselaustausch vorgegeben, wobei zusätzlich
 ein \acr{psk} verwendet wird, damit sich die Kommunikationspartner gegenseitig authentifzieren können. Ein Verbindungsaufbau ist somit nur möglich,
 wenn beide Kommunikationspartner vorher einen gemeinsamen \acr{psk} vereinbart haben. Die Verschlüsselung der Anwendungsdaten erfolgt dann im Modus
 "`\acr{aead}"' \cite{rfc5116} wobei sich hier "`\acr{ccm}"' \cite{rfc3610} aufgrund der Hardwarevorraussetzungen am besten eignet. Dieser besteht

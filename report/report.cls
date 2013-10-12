@@ -333,7 +333,7 @@
   gobble=2,
   upquote=true,
   tabsize=4,
-  numbers=left,
+  numbers=none, % left
   numberstyle=\footnotesize\rmfamily,
   stepnumber=1,
   basicstyle=\small\ttfamily,
