@@ -73,6 +73,8 @@ int coap_block1_handler(void* request, void* response, uint8_t *target, size_t *
     return -1;
   }
 
+  //TODO prüfen ob das Offset zu den bisher erhaltenen Daten passt
+
   if (target && len) {
     memcpy(target + packet->block1_offset, payload, pay_len);
     *len = packet->block1_offset + pay_len;

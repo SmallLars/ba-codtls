@@ -2,8 +2,8 @@
 \label{sec:entwicklungsumgebung}
 
 Für die Erstellung der Programme und die Weiterentwicklung von einigen Werkzeugen wird im Allgemeinen Ubuntu 12.04.2 LTS (32 bit) benutzt.
-Damit bei einem Betrieb der Endgeräte an einem Windows-Recher, ebenfalls die vom Redbee Econotag an die USB-Schnittstelle gesendeten
-Daten abgerufen werden können, wird ein Skript für die Windows-PowerShell-Umgebung erstellt, wobei zusätzliche Treiber notwendig sind.
+Damit bei einem Betrieb der Endgeräte an einem Windows-Recher ebenfalls die vom Redbee Econotag an die USB-Schnittstelle gesendeten
+Daten abgerufen werden können, wird ein Skript für die Windows-PowerShell-Umgebung erstellt, wofür zusätzliche Treiber notwendig sind.
 
 Im Bachelorprojekt \glos{gobi} wurde die libmc1322x \cite{libmc1322x} angepasst, damit die von Blaster produzierten Dateien auf den
 \glos{mc1322} geladen werden können. Um diesen Flash-Vorgang durchzuführen, sind zwei Komponenten notwendig. Zum einen ist dies eine
@@ -12,12 +12,12 @@ das Endgerät anzunehmen, und im Flash-Speicher abzulegen. Zum anderen ist dies 
 Software als auch die Software für das Endgerät per USB an den \glos{mc1322} sendet. Während der Flasher ausschließlich in C
 implementiert ist, sind für den Loader eine C-Variante und eine Perl-Variante verfügbar. Angepasst wurden im Bachelorporjekt \glos{gobi}
 nur die beiden C-Programme, wobei diese sich ausschließlich für von Blaster produzierte Dateien eignen. Um diese Situation zu verbessern,
-werden die beiden C-Programme und das Perl-Programm erneut angepasst. Zur gewährleistung der Abwärtskompatibilität, sind beide Varianten
-so angepasst, dass ohne weitere Aktionen die gängigen Dateien übertragen werden können. Erst durch Nutzung des Parameters -l, bei einem
+werden die beiden C-Programme und das Perl-Programm erneut angepasst. Zur Gewährleistung der Abwärtskompatibilität, sind beide Varianten
+so angepasst, dass ohne weitere Aktionen die gängigen Dateien übertragen werden können. Erst durch Nutzung des Parameters -l bei einem
 Flash-Vorgang, wird das von Blaster produzierten Dateieformat berücksichtigt. Zusätzlich wird in die libmc1322x eine Methode eingefügt,
-die den Neustart des \glos{mc1322} ermöglicht. Die Methode, zum Vergleich von Daten im RAM-Speicher mit Daten im Flash-Speicher, aus dem
+die den Neustart des \glos{mc1322} ermöglicht. Die Methode zum Vergleich von Daten im RAM-Speicher mit Daten im Flash-Speicher aus dem
 Bachelorprojekt \glos{gobi}, wird übernommen. Die Änderungen an der libmc1322x sind in einem Fork des originalen Repositorys veröffentlicht,
-und wurden Mariano Alvira zur Übernahme angeboten.
+und wurden dem Autor der Bibliothek, Mariano Alvira, zur Übernahme angeboten. Zum 10.11.2013 hat dieser die Änderungen übernommen.
 
 Um die Überwachung in Wireshark \cite{wireshark} angemessen zu realisieren, wird ein Dissector ergänzt. Dieser wertet die übertragenen
 Daten des angepassten \acr{dtls}-Protokolls aus und stellt diese übersichtlich dar. Da die Übertragung des ersten \glospl{handshake}

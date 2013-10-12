@@ -1,19 +1,19 @@
 \subsection{Contiki-App: "`er-13-dtls"'}
 
-Um diese Contiki-App zu realisieren, sind zunächst einige Anpassungen in er-coap-13 notwendig. Um nach wie vor einen Betrieb ohne \acr{dtls} realsisieren zu können,
+Um diese Contiki-App zu realisieren, sind zunächst einige Anpassungen in er-coap-13 notwendig. Um nach wie vor einen Betrieb ohne \acr{dtls} realisieren zu können,
 werden diese Anpassungen nur dann aktiv, wenn die Kompiler-Anweisung WITH\_DTLS gesetzt ist, was im Makefile für ein Contiki-Programm durch "`CFLAGS += -DWITH\_DTLS=1"'
 realisiert werden kann. Bei der Verwendung von \acr{dtls} wird der Port gemäß \cite[Seite 93]{portnumbers} von 5683 auf 5684 geändert. Außerdem wird der Datenverkehr
 über \acr{dtls}-Funktionen geleitet, die den Record-Layer realisieren und die Daten bei Bedarf ent- oder verschlüsseln. Kernstück ist die Ressource "`/dtls"', die für
 die Durchführung des \glospl{handshake} in CoAP eingebunden wird.
 
-Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige Module notwendig, die im Folgenden zunächst beschrieben werden.
+Für die Realisierung des Record-Layers und der \acr{dtls}-Ressource sind einige Module notwendig, die im Folgenden zunächst beschrieben werden.
 
 \begin{description}
   \item[er-dtls-13-alert.{$[$h|c$]$}] Stellt zwei Funktionen für den Versand einer Alert-Nachricht zur Verfügung.
 					Während die eine, ohne Verwendung von CoAP, eine Nachricht an den Kommunikationspartner sendet,
 					konfiguriert die andere eine CoAP-Antwort. Dieser Unterschied ist notwendig, da einige Fehler während
 					des \glospl{handshake} auftauchen, und per CoAP kommentiert werden, damit es nicht zu einer neuen Anfrage kommt.
-					Würden diese Nachrichten direkt mit dem Record-Protokoll versand, müsste sich der Empfänger darum kümmern,
+					Würden diese Nachrichten direkt mit dem Record-Protokoll versendet, müsste sich der Empfänger darum kümmern,
 					die Anfrage aus dem CoAP-Layer zu entfernen.
   \item[er-dtls-13-data.{$[$h|c$]$}] Erstellt und verwaltet sessionspezifische Daten. Die Anzahl der Sessions ist hier auf maximal zehn begrenzt.
 					Damit die dafür notwendigen 1400 Byte nicht dauerhaft den RAM-Speicher belegen, sind diese im Flash-Speicher
@@ -26,7 +26,7 @@ Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige
 					defragmentieren oder Zeiger einer verketteten Liste zu aktualisieren. Da pro Session zwei Keyblöcke benötigt werden,
 					falls es zu einem erneuten \glos{handshake} kommt, sind diese in einem separaten Array mit der Länge 20 hinterlegt.
 					Der Index der Keyblöcke ergibt sich dabei aus dem Index der Session. Liegt diese im ersten Array an Index $ i $,
-					Sind die dazu gehörenden Keyblöcke an Index $ i\cdot2 $ und $ i\cdot2+1 $ hinterlegt. Dabei liegt der derzeit gültige
+					sind die dazu gehörenden Keyblöcke an Index $ i\cdot2 $ und $ i\cdot2+1 $ hinterlegt. Dabei liegt der derzeit gültige
 					Keyblock immer an Index $ i\cdot2 $. Bei einer Weiterentwicklung der Epoche, wird der 2. Keyblock an den Index
 					des ersten kopiert. Da die Sequenznummern im RAM-Speicher abgelegt sind, gehen diese bei einem Batteriewechsel,
 					oder Neustart des Endgeräts, verloren, womit die Session nicht fortgesetzt werden kann. Da es keine sinnvolle Lösung gibt,
@@ -39,19 +39,19 @@ Für die Realisierung des Recory-Layers und der \acr{dtls}-Ressource sind einige
 					der Berechnung gespeichert und genutzt werden muss.
   \item[er-dtls-13-psk.{$[$h|c$]$}] Verwaltet den \acr{psk} und generiert bei Bedarf einen neuen. Der \acr{psk} wird im Vorfeld durch das Programm Blaster
 					generiert und im Flash-Speicher abgelegt. Soll ein neuer \acr{psk} generiert werden, um den Werks-\acr{psk} zu deaktivieren,
-					wird ein Byte im RW-Block des Flash-Speichers gesetzt und dort ebenfalls ein neuer \acr{psk} hinterelgt. Wird der \acr{psk}
-					abgerufen, kann anhand des gesetzten Bytes erkannt werden, ob der Werks-\acr{psk} gilt oder ein neuer Verfügbar ist.
-					Kommt es zu einem Batteriewechsel oder Neustart des Endgeräts, ist der Werks-\acr{psk} wieder gültigt, da der RW-Block
+					wird ein Byte im RW-Block des Flash-Speichers gesetzt und dort ebenfalls ein neuer \acr{psk} hinterlegt. Wird der \acr{psk}
+					abgerufen, kann anhand des gesetzten Bytes erkannt werden, ob der Werks-\acr{psk} gilt oder ein neuer verfügbar ist.
+					Kommt es zu einem Batteriewechsel oder Neustart des Endgeräts, ist der Werks-\acr{psk} wieder gültig, da der RW-Block
 					zurückgesetzt wurde.
   \item[er-dtls-13-random.{$[$h|c$]$}] Bietet Funktionen für die Generierung von Zufallszahlen an. Dieses Modul benutzt das MACA\_RANDOM Register des \glos{mc1322},
 					das durch Contiki bereits initialisiert wurde. Durch Auslesen des Registers können beliebig viele Zufallswerte erzeugt werden.
 \end{description}
 
-Im Record-Layer wird das Modul für die Sessionverwaltung und das Modul für die Alert-Nachrichten genutzt. Bei der Bearbeitung einer Nachricht, werden die benötigten
+Im Record-Layer wird das Modul für die Sessionverwaltung und das Modul für die Alert-Nachrichten genutzt. Bei der Bearbeitung einer Nachricht werden die benötigten
 Session-Daten abgerufen und zur Bearbeitung der Nachricht genutzt. Sollten dabei Fehler auftreten, wird eine Alert-Nachricht an den Client gesendet und das Paket verworfen.
 Zu beachten ist bei eingehenden Daten, dass sowohl \glos{handshake}-Nachrichten als auch Anwendungsdaten \acr{coap}-Pakete enthalten. Während \glos{handshake}-Nachrichten in
 Epoche 0, ohne Verschlüsselung, gestattet sind, ist dies bei Anwendungsdaten nicht erlaubt. Bei \glos{handshake}-Nachrichten wird somit sichergestellt, dass die erste,
-im \acr{coap}-Paket enthaltene, \acr{uri} "`dtls"' entspricht, da ein Angreifer ansonsten beliebige \acr{coap}-Anfragen als \glos{handshake}-Nachricht tarnen könnte.
+im \acr{coap}-Paket enthaltene, \acr{uri} dem Wert "`dtls"' entspricht, da ein Angreifer ansonsten beliebige \acr{coap}-Anfragen als \glos{handshake}-Nachricht tarnen könnte.
 
 In der \acr{coap}-Ressource "`/dtls"' werden schließlich \glos{handshake}-Nachrichten bearbeitet. Falls es hier zu Fehlern kommt wird der Client darüber in einer
 \acr{coap}-Antwort, die durch das Modul für die Alert-Nachrichten generiert wird, informiert. Ein Fehler resultiert in einem Abbruch des Ressource-Handlers,
@@ -61,16 +61,16 @@ Um Speicher zu sparen, und die Block-1-Option von \acr{coap} einfach nutzen zu k
 Ressource-Handlers, anhand einer globalen Variable, überprüft, ob die Ressource gerade in Benutzung ist. Ist dies der Fall, wird die Absender-IP verglichen.
 Stimmt diese mit der Absender-IP der letzten Anfrage überein, kann die Anfrage trotzdem bearbeitet werden. Besteht keine Übereinstimmung, wird die Zeit herangezogen,
 seit der die Ressource gesperrt ist. Liegt diese mehr als 60 Sekunden zurück, kann die Anfrage ebenfalls bearbeitet werden. Diese Überprüfung ist notwendig, da
-ein Angreifer die Ressource durch einen einmaligen Aufruf dauerhaft sperren könnte, wenn er seine Anfrage nicht zuende führt.
+ein Angreifer die Ressource durch einen einmaligen Aufruf dauerhaft sperren könnte, wenn er seine Anfrage nicht zu Ende führt.
 
 Bei Bearbeitung einer Anfrage, wird die Ressource zunächst generell gesperrt. Ist eine Block-1-Übertragung abgeschlossen, wird die Ressource generell wieder freigegeben.
 Nur die Bearbeitung einer ClientHello-Nachricht mit korrektem Cookie führt im weiteren Verlauf zu einer erneuten Sperrung, da hier ein Zustand erzeugt wird, der erst
 in der darauffolgenden Anfrage abgearbeitet wird.
 
 Übertragen werden mit Hilfe der Block-1-Option eine ClientHello-Nachricht oder eine Kombination aus den Nachrichten ClientKeyExchange, ChangeCipherSpec und Finished,
-wobei die Länge von Letzterem mit insgesamt 114 Byte, durch die einzig definierte \glos{ciphersuite}, konstant ist. Anders ist dies bei der ClientHello-Nachricht,
-welche durch eine Vielzahl, vom Client beherrschter \glospl{ciphersuite}, sehr viel größer werden kann. Aufgrund der begrenzten Ressourcen ist die maximale Länge einer
-Block-1-Nachricht auf 128 Byte begrenzt, die durch vier Blöcke a 32 Byte oder acht Blöcke a 16 Byte ausgenutzt werden kann. Wird diese Länge überschritten, erfolgt
+wobei die Länge von letzterem mit insgesamt 114 Byte, durch die einzig definierte \glos{ciphersuite}, konstant ist. Anders ist dies bei der ClientHello-Nachricht,
+welche durch eine Vielzahl vom Client beherrschter \glospl{ciphersuite}, sehr viel größer werden kann. Aufgrund der begrenzten Ressourcen ist die maximale Länge einer
+Block-1-Nachricht auf 128 Byte begrenzt, die durch vier Blöcke á 32 Byte oder acht Blöcke á 16 Byte ausgenutzt werden kann. Wird diese Länge überschritten, erfolgt
 eine \acr{coap}-Fehlermeldung "`4.13 REQUEST ENTITY TOO LARGE"', mit einem Hinweis auf die begrenzte Maximalgröße, so dass ein Client sein Angebot an \glospl{ciphersuite}
 reduzieren kann, um der maximalen Größe gerecht zu werden.
 
@@ -81,4 +81,4 @@ abgerufen werden. Somit ist es einem Angreifer nicht möglich, einige aufgezeich
 
 Für die Generierung der Session-ID, wird schließlich der RFC 3986 \cite{rfc3986} herangezogen. Da diese als Sub-Ressource im \acr{uri} enthalten ist,
 dürfen dort nur die im RFC beschrieben Zeichen verwendet werden. Gemäß dem dort enthaltenen Abschnitt 2.3 dürfen nur Buchstaben, Zahlen und die vier
-Sonderzeichen -, ., \_ und \textasciitilde verwendet werden.
+Sonderzeichen "`-"', "`."', "`\_"' und "`\textasciitilde"' verwendet werden.

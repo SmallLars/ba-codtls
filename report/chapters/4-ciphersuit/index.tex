@@ -1,57 +1,59 @@
 \chapter{Definition des Cipher-Suites}
 \label{chp:ciphercuite}
 
-Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des \glospl{handshake} ist es notwendig eine geeignete \glos{ciphersuite} zu definieren.
-Dieses gibt vor, welche Mechanismen für die Authentisierung genutzt werden und auf Grundlage welcher Algorithmen diese durchgeführt wird. Auch kann
+Neben den grundlegenden Anpassungen im \acr{dtls}-Record-Layer und der Änderung des \glospl{handshake} ist es notwendig, eine geeignete \glos{ciphersuite} zu definieren.
+Diese gibt vor, welche Mechanismen für die Authentisierung genutzt werden und auf Grundlage welcher Algorithmen diese durchgeführt wird. Auch kann
 ein Verfahren zum Schlüsselaustausch definiert werden. Für die Übertragung von Anwendungsdaten ist schließlich ein Verschlüsselungsverfahren festgelegt,
 das Vertraulichkeit und/oder Integrität sicherstellen soll. Die \glos{ciphersuite} beeinflusst somit wesentlich, welche und wieviel Daten während des \glospl{handshake}
-ausgetauscht werden und welche Berechnungen notwendig sind. Je nach Verfahren können diese sehr Umfangreich werden und sind somit insbesondere für eingeschränkte
+ausgetauscht werden und welche Berechnungen notwendig sind. Je nach Verfahren können diese sehr umfangreich werden und sind somit insbesondere für eingeschränkte
 Umgebungen nicht immer geeignet.
 
 Da der Mikrocontroller die Verschlüsselung mit \acr{aes}-128 im CTR- und CBC-Mode in Hardware unterstützt, kommen zunächst die im RFC 6655 \cite{rfc6655}
-aufgeführten \glospl{ciphersuite} in Frage. Diese nutzen für die Verschlüsselung den \acr{ccm}-Modus der durch die Hardware einfach und effizient realisiert werden
-kann. Während in Kapitel 3 einige \glospl{ciphersuite} definiert sind, die zur Berechnung des Schlüssels das rechenaufwendige \glos{rsa} benutzen, sind in Kapitel 4
-einige \glospl{ciphersuite} für \acr{aes}-128 definiert, die einen \acr{psk} verwenden und von RFC 4279 \cite{rfc4279} abgleitet wurden. Der einzige Unterschied besteht
-hier darin, dass für die Berechnung des MAC in RFC 4279 der \acr{sha} verwendet wird.
+aufgeführten \glospl{ciphersuite} in Frage. Diese nutzen für die Verschlüsselung den \acr{ccm}-Modus, der durch die Hardware einfach und effizient realisiert
+werden kann. Während in Kapitel 3 des RFC's einige \glospl{ciphersuite} definiert sind, die zur Berechnung des Schlüssels das rechenaufwendige \glos{rsa} benutzen,
+sind in Kapitel 4 des RFC's einige \glospl{ciphersuite} für \acr{aes}-128 definiert, die einen \acr{psk} verwenden und von RFC 4279 \cite{rfc4279} abgleitet wurden.
+Der einzige Unterschied besteht hier darin, dass für die Berechnung des MAC in RFC 4279, der \acr{sha} verwendet wird, der hier nicht genutzt werden soll. Es kommen
+somit die vier folgenden \glospl{ciphersuite} aus Kapitel 4 des RFC's in Frage:
+
 \begin{enumerate}
   \item TLS\_PSK\_WITH\_AES\_128\_CCM
   \item TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM
   \item TLS\_PSK\_WITH\_AES\_128\_CCM\_8
   \item TLS\_PSK\_DHE\_WITH\_AES\_128\_CCM\_8
 \end{enumerate}
-Während 1 und 2 einen 16 Byte langen MAC benutzen, ist dieser bei 3 und 4 nur 8 Byte lang. Da der MAC an jedes verschlüsselte Datenpaket angehangen wird um die
-Integrität sicherzustellen, verkürzt sich dadurch die ohnehin geringe Menge an Anwendungsdaten (siehe Kapitel \ref{sec:handshake}). Zwar ist es leichter
-einen 8 Byte langen MAC zu fälschen, da dieser anstatt $ 2^128 $ Werten, wie bei einem 16 Byte MAC, nur $ 2^64 $ Werte annehmen kann, aber dennoch fällt die
-Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Version womit \glos{ciphersuite} 1 und 2 nicht weiter betrachtet werden.
 
-Im Unterschied zu \glos{ciphersuite} 3 wird bei \glos{ciphersuite} 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
+Während 1 und 2 einen 16 Byte langen MAC benutzen, ist dieser bei 3 und 4 nur 8 Byte lang. Da der MAC an jedes verschlüsselte Datenpaket angehangen wird um die
+Integrität sicherzustellen, verkürzt sich dadurch der ohnehin geringe Platz für Anwendungsdaten (siehe Kapitel \ref{sec:handshake}). Zwar ist es leichter,
+einen 8 Byte langen MAC zu fälschen, da dieser anstatt $ 2^{128} $ Werten, wie bei einem 16 Byte MAC, nur $ 2^{64} $ Werte annehmen kann, aber dennoch fällt die
+Wahl hier zugunsten der größeren möglichen Datenmenge auf die 8 Byte lange Version, womit \glos{ciphersuite} 1 und 2 nicht weiter betrachtet werden.
+Im Unterschied zu \glos{ciphersuite} 3, wird bei \glos{ciphersuite} 4 nicht nur der \acr{psk} verwendet um den Schlüssel zu berechnen. Zusätzlich wird ein
 Diffie-Hellman-Schlüsselaustausch durchgeführt und dessen Ergebnis mit dem \acr{psk} kombiniert. Der große Unterschied besteht darin, dass
-ein Angreifer mit Kenntnis des \acr{psk} ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch jederzeit in der Lage ist den Schlüssel zu
-berechnen und die übertragenen Daten zu entschlüssel oder zu manipulieren, unabhängig davon ob er während des \glospl{handshake} gelauscht hat.
-Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs ist er nicht in der Lage den Schlüssel zu berechnen und die Daten zu
-entschlüssel. Problematisch bleibt nur ein \glos{mitma} während des \glospl{handshake}. Verhindert ein Angreifer die direkte
+ein Angreifer, mit Kenntnis des \acr{psk}, ohne zusätzlichen Diffie-Hellman-Schlüsselaustausch, jederzeit in der Lage ist den Schlüssel zu
+berechnen. Damit kann Dieser die übertragenen Daten entschlüsseln oder manipulieren, unabhängig davon, ob er während des \glospl{handshake} gelauscht hat.
+Bei zusätzlicher Verwendung des Diffie-Hellman-Schlüsselaustauschs, ist er nicht in der Lage, den Schlüssel zu berechnen und die Daten zu
+entschlüsseln. Problematisch bleibt nur ein \glos{mitma} während des \glospl{handshake}. Verhindert ein Angreifer die direkte
 Kommunikation und leitet den \glos{handshake} über sich, kann er mit dem \acr{psk} eine Verbindung zu beiden Parteien herstellen und den
 zukünftigen Datenverkehr mitlesen. Dies fällt erst dann auf, wenn der Angreifer verschwindet, da die beiden Parteien ohne ihn nicht
 direkt kommunizieren können. Die Verwendung von \glos{ciphersuite} 3 kommt somit nicht in Frage, womit \glos{ciphersuite} 4 hier zunächst das Mittel
 der Wahl ist.
 
-Problematisch ist jedoch, dass ein Diffie-Hellman-Schlüsselaustausch sehr rechenintensiv ist. Ein Versuch innerhab des \glos{gobi}-Projektes hat
-gezeigt, dass ein Diffie-Hellman-Schlüsselaustausch mit 128-Bit-Zahlen 2 mal ca. 30 Sekunden auf dem verwendeten Mikrocontroller benötigt.
-Um bei dem derzeitigen Stand der Technik eine ausreichende Sicherheit gewähleisten zu können, müssen jedoch minimal 1024-Bit-Zahlen
+Problematisch ist jedoch, dass ein Diffie-Hellman-Schlüsselaustausch sehr rechenintensiv ist. Ein Versuch innerhalb des Bachelorprojekts \glos{gobi} hat
+gezeigt, dass ein Diffie-Hellman-Schlüsselaustausch mit 128-Bit-Zahlen, bei den zwei benötigten Berechnungen, jeweils ca. 30 Sekunden auf dem verwendeten
+Mikrocontroller benötigt. Um bei dem derzeitigen Stand der Technik eine ausreichende Sicherheit gewähleisten zu können, müssen jedoch minimal 1024-Bit-Zahlen
 verwendet werden, was außerhalb der Möglichkeiten des Mikrocontrollers liegt. Ein weiteres Manko ist auch die definierte \acr{prf}.
-Diese basiert auf \acr{hmac} mit \acr{sha}2 was die größe des Programms relevant erhöht. Laut dem Internet-Entwurf "`A Hitchhiker's
+Diese basiert auf \acr{hmac} mit \acr{sha}2, was die Größe des Programms relevant erhöht. Laut dem Internet-Entwurf "`A Hitchhiker's
 Guide to the (Datagram) Transport Layer Security Protocol"' \cite{draftmintls} von H. Tschofenig, S.S. Kumar und S. Keoh werden
-2.928 Byte für \acr{hmac} und 2.432 Byte für \acr{sha} benötigt. \acr{sha}2 ist hier leider nicht mit aufgeführt. Zu Beachten ist bei diesen Angaben
+2.928 Byte für \acr{hmac} und 2.432 Byte für \acr{sha} benötigt. \acr{sha}2 ist hier leider nicht mit aufgeführt. Zu beachten ist bei diesen Angaben
 jedoch, dass es sich hier um 64-Bit-Code handelt. Da der in dieser Arbeit benutzte Mikrocontroller jedoch mit 16-Bit-Code betrieben wird, ist hier
 eher eine Größe von ca 1200 - 1500 Byte zu berücksichtigen, die nur für die \acr{prf} benötigt wird. Um diese Probleme zu lösen bzw. die benötigte
 Codegröße und Rechenleistung zu reduzieren wird nun eine neue \glos{ciphersuite} definiert.
 
 \section{TLS\_PSK\_ECDH\_WITH\_AES\_128\_CCM\_8}
 
-In Ahnlehnung an das \glos{ciphersuite} 4 soll nun zunächst die Effizienz des öffentlichen Schlüsselaustauschs verbessert werden. Um das zu realisieren
+In Anlehnung an das \glos{ciphersuite} 4 soll nun zunächst die Effizienz des öffentlichen Schlüsselaustauschs verbessert werden. Um dieses zu realisieren,
 wird hier nun die \acr{ecc} gemäß RFC 4492 \cite{rfc4492} für einen Diffie-Hellman-Schlüsselaustausch verwendet werden. Bei der Verwendung von
 256-Bit-Zahlen ist hier eine höhere Sicherheit gegeben als bei der Verwendung von 2048-Bit-Zahlen in einem gewöhnlichen Diffie-Hellman-Schlüsselaustausch.
-\acr{ecc} und \acr{aes}-\acr{ccm} wurden zwar Internet-Entwurf "`AES-CCM ECC Cipher Suites for TLS"' \cite{draftaesecc} schon kombiniert, jedoch
+\acr{ecc} und \acr{aes}-\acr{ccm} wurden zwar im Internet-Entwurf "`AES-CCM ECC Cipher Suites for TLS"' \cite{draftaesecc} schon kombiniert, jedoch
 werden hier Zertifikate anstatt eines \acr{psk} verwendet, die hier nicht genutzt werden sollen.
 
 Durch die Verwendung von \acr{ecc} bekommt die \glos{ciphersuite} nun ihren Namen:
@@ -61,11 +63,11 @@ Durch die Verwendung von \acr{ecc} bekommt die \glos{ciphersuite} nun ihren Name
 Da dieses keine offizielle \glos{ciphersuite} gemäß den "`Transport Layer Security (TLS) Parameters"' \cite{tlsparams} ist, wird hier die Nummer
 \{0xFF,0x01\} benutzt, da diese für die private Nutzung reserviert ist.
 
-Alle weiteren für einen Diffie-Hellman-Schlüsselaustausch unter Verwendung von \acr{ecc} sind Teil der Aushandlung im \glos{handshake} und müssen
-hier somit nicht weiter definiert werden.
+Alle weiteren Parameter für einen Diffie-Hellman-Schlüsselaustausch, unter Verwendung von \acr{ecc}, sind Teil der Aushandlung im \glos{handshake},
+und müssen hier somit nicht weiter definiert werden.
 
 Die Nonce setzt sich gemäß dem  RFC 5116 \cite{rfc5116} für die Umsetzung von \acr{aead}-Algorithmen zusammen. Es wird hier eine 12 Byte lange
-Nonce verwendet, aus einem Initialisierungsvektor, der Epoche und der Sequenznummer zusammensetzt (siehe Abbildung \ref{fig:aes_nonce}).
+Nonce verwendet, die sich aus einem Initialisierungsvektor, der Epoche und der Sequenznummer zusammensetzt (siehe Abbildung \ref{fig:aes_nonce}).
 \begin{figure}[ht]
   \centering
   \begin{lstlisting}[language=c]
@@ -78,10 +80,11 @@ Nonce verwendet, aus einem Initialisierungsvektor, der Epoche und der Sequenznum
   \caption{Nonce für AES-CCM}
   \label{fig:aes_nonce}
 \end{figure}
-Während die Epoche und die Sequenznummer im \acr{dtls}-Header enthalten sind und in der selben Ordnung (Network Byte Order == Most Signifikant
-Byte first) in der Nonce hinterlegt werden, wird der Initialisierungsvektor nicht mit übertragen und ist implizit bekannt durch Erzeugung des
-Schlüsselblocks innerhalb des \glospl{handshake}. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{prf} erzeugt und muss somit
+Während die Epoche und die Sequenznummer im \acr{dtls}-Header enthalten sind, und in der selben Ordnung (Network Byte Order == Most Significant
+Byte First) in der Nonce hinterlegt werden, wird der Initialisierungsvektor nicht mit übertragen, und ist implizit bekannt durch Erzeugung des
+Keyblocks innerhalb des \glospl{handshake}. Dieser wird gemäß RFC 5246 \cite{rfc5246} Kapitel 6.3 durch die \acr{prf} erzeugt und muss somit
 40 Byte lang sein, welche wie folgt aufgeteilt sind:
+
 \begin{itemize}
   \item ~~0 Byte: client\_write\_MAC\_key
   \item ~~0 Byte: server\_write\_MAC\_key
@@ -90,18 +93,19 @@ Schlüsselblocks innerhalb des \glospl{handshake}. Dieser wird gemäß RFC 5246 
   \item ~~4 Byte: client\_write\_IV
   \item ~~4 Byte: server\_write\_IV
 \end{itemize}
+
 Separate Schlüssel für die Verschlüsselung der Daten und der Erzeugung des \acr{mac} sind hier nicht mehr notwendig, da bei der Verwendung
 von \acr{aes}-\acr{ccm} mit einem Schlüssel beide Dinge erledigt werden.
 
 In RFC 5116 \cite{rfc5116} wird für die Umsetzung von \acr{aes}-\acr{ccm} auf eine Veröffentlichung des \acr{nist} mit der Nummer 800-38C \cite{nsp3610} verwiesen.
-Diese beschreibt das Verfahren in gleicher weise wie RFC 3610 \cite{rfc3610}, wobei dieser bei den weiteren Erläuterungen nun Anwendungen finden soll.
-Für die Umsetzung sind 2 Parameter notwendig. Zum einen muss die Länge des \acr{mac} (M) definiert werden, welche in diesem Fall schon durch den Wert 8 festgelegt
+Diese beschreibt das Verfahren in gleicher Weise wie RFC 3610 \cite{rfc3610}, wobei dieser bei den weiteren Erläuterungen nun Anwendungen finden soll.
+Für die Umsetzung sind zwei Parameter notwendig. Zum einen muss die Länge des \acr{mac} (M) definiert werden, welche in diesem Fall schon durch den Wert 8 festgelegt
 ist. Zum anderen muss die Größe des Längenfeldes (L) definiert werden, welches die Länge der zu verschlüsselnden Daten enthält und somit die Länge der Daten begrenzt.
 Da sich die Länge der Nonce durch 15 - L ergibt, und die Länge der Nonce bereits auf 12 festgelegt ist, ergibt sich hier der Wert für L von 3. 
-Damit ist die Länge beschränkt auf 3 MiB, was aber mehr als ausreicht, da in dem betrachteten Umfeld ein Paket maximal 127 Byte groß sein kann, und die zu
+Damit ist die Länge beschränkt auf drei MiB, was aber mehr als ausreicht, da in dem betrachteten Umfeld ein Paket maximal 127 Byte groß sein kann, und die zu
 verschlüsselnde Datenmenge aufgrund der abzuziehenden Header noch weit darunter liegt.
 
-Um auf \acr{hmac} und \acr{sha}2 verzichten zu können wird nun noch die \acr{prf} für diese \glos{ciphersuite} definiert.
+Um auf \acr{hmac} und \acr{sha}2 verzichten zu können, wird nun noch die \acr{prf} für diese \glos{ciphersuite} definiert.
 Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
 \begin{description}
   \item[master\_secret] PRF(pre\_master\_secret, "`master secret"', client\_random + server\_random)

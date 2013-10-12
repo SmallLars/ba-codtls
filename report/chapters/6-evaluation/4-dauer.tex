@@ -1,13 +1,13 @@
 \section{Dauer}
 
-Der \glos{handshake} dauert unter idealen Bedingungen insgesamt 10 Sekunden wobei dort zwei Faktoren eine wesentlich Rolle spielen.
+Der \glos{handshake} dauert unter idealen Bedingungen insgesamt 10 Sekunden wobei dort zwei Faktoren eine wesentliche Rolle spielen.
 Zum einen werden während des \glospl{handshake} zwei Multiplikationen auf elliptischen Kurven durchgeführt, wobei eine Multiplikation derzeit \o 4,5 Sekunden dauert.
 Zum anderen sind während des \glospl{handshake} drei Schreiboperationen, in die RW-Blöcke des Flash-Speichers, notwendig, die insgesamt 0,6 Sekunden benötigen.
 Abzüglich dieser Operationen verbleiben 0,4 Sekunden, die für den Datenaustausch und weitere Berechnungen benötigt werden.
 
-Beachtet werden muss auch, dass bei der ersten Anfrage nach dem \glos{handshake}, eine weitere Schreiboperation in den RW-Block des Flash-Speichers notwendig ist.
+Beachtet werden muss auch, dass, bei der ersten Anfrage nach dem \glos{handshake}, eine weitere Schreiboperation in den RW-Block des Flash-Speichers notwendig ist.
 Diese ist notwendig, um die Sicherheitsparameter der neuen Epoche final zu aktivieren und die alten Sicherheitsparameter zu löschen. Dadurch verzögert sich
 die Antwort um 0,2 Sekunden.
 
-Ausgehend von dem Szenario, das neue Endgeräte bei Aktivierung von einer zentralen Software erkannt werden, die einen Handshake unmittelbar durchführt,
+Ausgehend von dem Szenario, dass neue Endgeräte bei Aktivierung von einer zentralen Software erkannt werden, die einen Handshake unmittelbar durchführt,
 wird ein Benutzer davon nichts mitbekommen.

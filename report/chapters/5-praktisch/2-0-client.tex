@@ -7,9 +7,9 @@ so dass nicht jedesmal die IP-Adresse angegeben werden muss.
 
 Während der Client bisher direkt über \acr{udp} mit den Endgeräten kommuniziert hat, wird nun die libcoap \cite{libcoap} genutzt, um eine Kommunikation
 über \acr{coap} zu realisieren. Da es in dieser Arbeit primär um die Realisierung von \acr{dtls} gehen soll, wird der \acr{coap}-Client, aus den in der
-Bibliothek enthaltenen Beispielen, übernommen, und für die Verwendung engepasst. Anpassungen sind hier notwendig da der \acr{coap}-Client ein
+Bibliothek enthaltenen Beispielen, übernommen, und für die Verwendung angepasst. Anpassungen sind hier notwendig da der \acr{coap}-Client ein
 Kommandozeilen-Tool ist. Die enthaltenen main()-Methode wird dafür umbenannt, und die Ausgabe der Antwort erfolgt in den vom Aufrufer übergebenen Speicher.
-Außerdem wird die fehlende Funktionalitat ergänzt, Antworten mit einer Block-2-Option zu empfangen, die auf eine Separate-Antwort oder eine Block-1-Anfrage
+Außerdem wird die fehlende Funktionalität ergänzt, Antworten mit einer Block-2-Option zu empfangen, die auf eine Separate-Antwort oder eine Block-1-Anfrage
 folgen. Hier übernimmt der Server die Kontrolle über die Datenübertragung, während der Client Empfangsbestätigungen sendet. Eine Block-1-Anfrage wird
 nicht durch den \acr{coap}-Clienten selbst realisiert, sondern muss manuell, durch mehrere Anfragen, umgesetzt werden. Dieser erweiterte \acr{coap}-Client
 ist nicht für die Verwendung in anderen Projekten gedacht, und soll hier nur als provisorisches Werkzeug dienen, um \acr{dtls} zu realisieren.
@@ -18,12 +18,12 @@ Für die Berechnung von elliptischen Kurven wird direkt der Code, aus dem Bachel
 sind hier nicht notwendig, da die Berechnung auf einem gängigen Computer mit ausreichender Geschwindigkeit durchgeführt wird.
 
 Die \acr{aes}-Verschlüsselung erfolgt auf der Serverseite durch den \glos{mc1322}. Da dieser hier nicht verfügbar ist, wird dafür die
-crypto-Bibliothek von OpenSSL \cite{openssl} genutzt. 
+"`crypto"'-Bibliothek von OpenSSL \cite{openssl} genutzt. 
 
 Nach dem Vorbild von libcoap, sind die Module von \acr{dtls} ebenfalls in einem Archiv organisiert, das der Linker beim Kompilieren des Clients einbindet.
 
 Bei Start des Clients, ruft dieser die Liste der verfügbaren Endgeräte vom Border-Router ab, so das folgende Aktionen möglich sind:
-"`handshake | name | ecc | uuid | time | model | flash <nr>"'. Bevor Informationen von einem Endgerät abgerufen werden können, muss
+"`[handshake | name | ecc | uuid | time | model | flash] <nr>"'. Bevor Informationen von einem Endgerät abgerufen werden können, muss
 ein \glos{handshake} durchgeführt werden. Ohne diesen versucht der Client derzeit, Anwendungsdaten in Epoche 0 zu übertragen, was vom
 Server nicht akzeptiert, und mit einer Alert-Nachricht beantwortet wird. Da Alert-Nachrichten noch nicht vom Client berücksichtigt
 werden, wird die Anfrage deshalb nach 90 Sekunden durch den \acr{coap}-Client mit einem Fehler abgebrochen. Neben der Berücksichtigung

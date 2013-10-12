@@ -40,7 +40,7 @@ dass jedes \acr{coap}-Paket in ein einzelnes IP-Paket passt.
 \label{tbl:contiki-speicher}
 \end{figure}
 
-Das wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerkzeuge. Durch Definieren von periodischen Ausgaben der benutzen Heap
+Dies wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerkzeuge. Durch Definieren von periodischen Ausgaben der benutzen Heap
 sowie Sys Stack Größe, in "`contiki/platform/redbee-econotag/contiki-mc1322x-main.c"', können die Auslastungen beobachtet werden. Um diesen Prozess
 effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die periodischen Ausgaben deaktiviert. In "`server/server.c"' lässt sich nun,
 durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
@@ -51,15 +51,15 @@ auf 80,44 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit steh
 Verfügung, wobei auch berücksichtig werden muss, dass noch die Funktionen des Geräts selbst implementiert werden müssen.
 
 Bei der Benutzung der, in SmartAppContiki enthaltenen, \acr{coap} 13 Implementierung, hat sich herausgestellt, dass die Unterstützung für die \acr{coap}-Option
-Block-1 fehlt. Diese Option kann von einem Clienten benutzt werden, um größere Datenmengen, in einer \acr{coap}-Anfrage, in Blöcke zu unterteilen, damit es nicht
+Block-1 fehlt. Diese Option kann von einem Clienten benutzt werden, um größere Datenmengen in einer \acr{coap}-Anfrage in Blöcke zu unterteilen, damit es nicht
 zu einer Fragmentierung auf IP-Ebene kommt. Laut Aussage von Matthias Kovatsch wird "`auf die atomare Variante aus Platzgründen verzichtet, da man Block1 ganz
 einfach im Resource-Handler lösen kann"`. Da diese Option für den \acr{dtls}-\glos{handshake} generell benötigt wird, und ohne Code-Duplizierung auch anderen Ressourcen
-zur Verfügung stehen soll, wird sie in ähnlicher Form wie die Separate-Option implementiert. Das Separate-Modul bietet Methoden an, um den Client, während der
-Bearbeitung einer Anfrage, zu informieren, dass die Bearbeitung einige Zeit dauert, und die Beantwortung der Anfrage später fortzusetzen. In diesem Sinne bietet
+zur Verfügung stehen soll, wird sie in ähnlicher Form wie die Separate-Option implementiert. Das Separate-Modul bietet Methoden an, um den Client während der
+Bearbeitung einer Anfrage zu informieren, dass die Bearbeitung einige Zeit dauert, und die Beantwortung der Anfrage später fortzusetzen. In diesem Sinne bietet
 das Block-1-Modul eine Methode an, mit der die Parameter der Block-1-Option überprüft und bearbeitet werden, wobei bei Bedarf die entsprechenden Fehler generiert
-werden, oder die erhaltenen Daten auf Wunsch zusammengesetzt werden. Genau wie das Separate-Modul kann das Block1-Modul optional in einer Ressource benutzt werden.
+, oder die erhaltenen Daten auf Wunsch zusammengesetzt werden. Genau wie das Separate-Modul kann das Block1-Modul optional in einer Ressource benutzt werden.
 Dabei ist nach wie vor ein Empfang von Daten ohne Block-1-Option möglich. Durch den Rückgabewert der Methode, lässt sich in der Ressource entscheiden, ob schon
-die einzelnen Datenblöcke bearbeitet werden, oder erst die vollständige Nachricht, nach Erhalt aller Blöcke. Damit das Separate-Modul auch in Kombination mit dem
+die einzelnen Datenblöcke bearbeitet werden, oder erst die vollständige Nachricht nach Erhalt aller Blöcke. Damit das Separate-Modul auch in Kombination mit dem
 Block-1-Modul genutzt werden kann, wurde das Separate-Modul entsprechend angepasst um die Block-1-Option zu berücksichtigen.
 
 Während bisher allgemeine Anpassungen von SmartAppContiki bzw. dem darin enthaltenen \acr{coap} 13 beschrieben wurden, folgt in den nächsten vier Abschnitten

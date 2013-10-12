@@ -15,20 +15,20 @@ dargestellt wird. Zusätzlich sind zwei Register notwendig, um den Verschlüssel
 
 \begin{description}
   \item[KEY<X>] Schlüssel zur Ver- und Entschlüsselung. Verbleibt so lange im Register, bis das \acr{aes}-Modul zurückgesetzt, oder das Register überschrieben wird.
-  \item[DATA<X>] Datenpaket mit Klar- oder Geheimtext.
+  \item[DATA<X>] Klar- oder Geheimtext.
   \item[CTR<X>] Zähler für den \acr{ctr}-Mode. Dieser wird nicht automatisch erhöht und muss somit vor jeder Berechnung gesetzt werden.
   \item[CTR<X>\_RESULT] Ergebnis der \acr{ctr}-Berechnung. Dafür wurde der hinterlegte Zähler verschlüsselt und durch die XOR-Funktion mit dem Datenpaket verknüpft. Dieses Register kann nur gelesen werden.
   \item[CBC<X>\_RESULT] Ergebnis der \acr{cbc}-Berechnung. Dafür wurde das Datenpaket durch die XOR-Funktion mit dem Ergebnis der letzten Verschlüsselung verknüpft und dann verschlüsselt. Dieses Register kann nur gelesen werden.
-  \item[MAC<X>] Kann mit einem Initialisierungsvector belegt werden, der für die \acr{cbc}-Berechnung herangezogen wird.
-  \item[CONTROL$0$bits] Enthät u. a. ein Bit, durch das die Verwendung des Initilalisierungsvectors gekennzeichnet wird. Außerdem ist ein Bit dafür vorgesehen, den Ver- und Entschlüsselungsprozess zu starten.
-  \item[STATUSbits]  Enthät u. a. ein Bit, das kennzeichnet, ob die aktuelle Berechnung abgeschlossen ist.
+  \item[MAC<X>] Kann mit einem Initialisierungsvektor belegt werden, der für die \acr{cbc}-Berechnung herangezogen wird.
+  \item[CONTROL$0$bits] Enthält u. a. ein Bit, durch das die Verwendung des Initilalisierungsvektors gekennzeichnet wird. Außerdem ist ein Bit dafür vorgesehen, den Ver- und Entschlüsselungsprozess zu starten.
+  \item[STATUSbits]  Enthät u. a. ein Bit, das kennzeichnet, ob die aktuelle Berechnung abgeschlossen wurde.
 \end{description}
 
 Da der Ent- und Verschlüsselungsprozess derselbe ist, reicht eine Methode für die Umsetzung von \acr{aes}-\acr{ccm} aus. Diese arbeitet in-place, was bedeutet,
 dass die Daten direkt an ihrer Position im Speicher konvertiert werden, und zusätzlich nur eine konstante, von der Datenmenge unabhängige, Menge Speicher benötigt
-wird. Während für die Verschlüsselung ein Aufruf der Methode ausreicht, da die Daten verschlüsselt werden, und der \acr{mac} berechnet wird, sind für die Entschlüsselung
+wird. Während für die Verschlüsselung ein Aufruf der Methode ausreicht, da die Daten verschlüsselt werden und der \acr{mac} berechnet wird, sind für die Entschlüsselung
 zwei Aufrufe notwendig. Zunächst werden die Daten entschlüsselt, wobei automatisch ein neuer \acr{mac}, auf Basis des Geheimtextes, generiert wird. Dieser hat jedoch
-keinen Nutzen. Im 2. Schritt wird die Funktion erneut aufgerufen, um ausschließlich den \acr{mac} zu generieren, damit dieser mit dem erhaltenen verglichen werden kann.
+keinen Nutzen. Im 2. Schritt wird die Funktion erneut aufgerufen, um ausschließlich den \acr{mac} zu generieren, damit dieser mit dem Erhaltenen verglichen werden kann.
 Das führt im 1. Schritt zwar zu unnötigen Berechnungen, verlangsamt aber den Prozess nicht, da Entschlüsselung und \acr{mac}-Berechnung parallel in der Hardware
 durchgeführt werden. Der Vorteil liegt hier in der geringen Programmgröße.
 
