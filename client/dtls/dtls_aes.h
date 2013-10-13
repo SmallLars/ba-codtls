@@ -38,22 +38,24 @@ void aes_encrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
 void aes_decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce[NONCE_LEN]);
 
 /**
-  * \brief  CBC-MAC-Berechnung
+  * \brief  CMAC-Berechnung
   *
-  *         Berechnet die CBC-MAC der Daten an Position data. Für die
-  *         Berechnung werden data_len Bytes einbezogen. Die CBC-MAC
-  *         wird in 16 Byte Blöcken berechnet. Der letzte Block wird bei
-  *         Bedarf mit 0en aufgefüllt. Das 16 Byte lange Ergebnis wird
-  *         an der Position mac hinterlegt. Zu beginn muss der Speicher an
-  *         Position mac genullt sein, falls ein neuer MAC berechnet werden
+  *         Berechnet den CMAC der Daten an Position data. Für die
+  *         Berechnung werden data_len Bytes einbezogen. Der CMAC
+  *         wird in 16 Byte Blöcken berechnet. Der letzte Block wird entsprechend
+  *         CMAC-Vorgabe behandelt, falls finish 1 ist. Das 16 Byte lange
+  *         Ergebnis wird an der Position mac hinterlegt. Zu beginn muss der Speicher
+  *         an Position mac genullt sein, falls ein neuer MAC berechnet werden
   *         soll. Ansonsten werden die Daten an Position MAC als Initialisierungs-
   *         vektor genutzt, so dass eine MAC-Berechnung jederzeit fortgesetzt
-  *         werden kann. Als Schlüssel wird der derzeit gültige Pre-shared Key benutzt.
+  *         werden kann.
   *
   * \param  mac         Position an der der IV liegt bzw. die MAC abgelegt wird (16 Byte)
   * \param  data        Position der Daten für die ein MAC berechnet werden soll
   * \param  data_len    Länge der Daten für die ein MAC berechnet werden soll
+  * \param  key         Zeiger auf den 16 Byte langen Schlüssel
+  * \param  finish      Falls 1, wird der letzte Block entsprechend CMAC-Vorgabe behandelt
   */
-void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish);
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t finish);
 
 #endif /* __DTLS_CCM__ */

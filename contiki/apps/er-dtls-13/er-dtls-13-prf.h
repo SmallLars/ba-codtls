@@ -12,13 +12,13 @@
   *         Anstatt HMAC wird hier der CMAC mit dem derzeit gültigen
   *         Pre-shared Key verwendet.
   *
-  *         PRF(secret, label, seed) = P_hash(secret + label + seed)
+  *         PRF(label, seed) = P_hash(label + seed)
   *
-  *         P_hash(seed) = CMAC(A(1) + seed) +
-  *                        CMAC(A(2) + seed) +
-  *                        CMAC(A(3) + seed) + ...
+  *         P_hash(seed) = CMAC(psk, A(1) + seed) +
+  *                        CMAC(psk, A(2) + seed) +
+  *                        CMAC(psk, A(3) + seed) + ...
   *         A(0) = seed
-  *         A(i) = CMAC(A(i-1))
+  *         A(i) = CMAC(psk, A(i-1))
   *
   * \param  dst         Zeiger auf die Position an dem die Zufallswerte
   *                     hinterlegt werden sollen

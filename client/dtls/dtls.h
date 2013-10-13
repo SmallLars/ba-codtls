@@ -66,8 +66,22 @@ typedef struct {
 
 /* ------------------------------------------------------------------------- */
 
+/**
+  * \brief  Funktion für den Datenversand über DTLS
+  *
+  *         Funktion für den Datenversand über DTLS mit dem gleichen Verhalten
+  *         wie die bekannte sendto()-Funktion. Die notwendigen Session-Daten
+  *         werden dabei automatisch anhand der IP-Adresse ermittelt.
+  */
 ssize_t dtls_sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr, socklen_t addrlen);
 
+/**
+  * \brief  Funktion für den Datenempfang über DTLS
+  *
+  *         Funktion für den Datenempfang über DTLS mit dem gleichen Verhalten
+  *         wie die bekannte recvfrom()-Funktion. Die notwendigen Session-Daten
+  *         werden dabei automatisch anhand der IP-Adresse ermittelt.
+  */
 ssize_t dtls_recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *src_addr, socklen_t *addrlen);
 
 #endif /* __DTLS_H__ */

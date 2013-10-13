@@ -28,6 +28,20 @@ typedef struct {
     uint8_t cookie[0];
 } __attribute__ ((packed)) HelloVerifyRequest_t;
 
+/**
+  * \brief  Erzeugung einer ClientHello-Nachricht
+  *
+  *         Erzeugt eine ClientHello-Nachricht mit den übergebenen Parametern
+  *         an Position target. Cookie kann dabei NULL sein.
+  *
+  * \param  target     Position an der die ClientHello-Nachricht abgelegt wird
+  * \param  time       Unix-Timestamp, der in die ClientHello-Nachricht eingefügt wird
+  * \param  random     Zeige auf einen 28 Byte langen Random-Wert, der in die ClientHello-Nachricht eingefügt wird
+  * \param  cookie     Falls vorhanden, Zeiger auf einen Cookie, der in die ClientHello-Nachricht eingefügt wird
+  * \param  cookie_len Länge des Cookies der in die ClientHello-Nachricht eingefügt wird
+  *
+  * \return Länge der erzeugten ClientHello-Nachricht
+  */
 size_t makeClientHello(uint8_t *target, time_t time, uint8_t *random, uint8_t *cookie, uint8_t cookie_len);
 
 #endif /* __DTLS_CLIENTHELLO_H__ */

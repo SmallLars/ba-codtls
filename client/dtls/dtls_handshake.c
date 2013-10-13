@@ -126,6 +126,12 @@ void dtls_handshake(uint8_t ip[16]) {
     for (i = 0; i < ntohs(ske->pskHint_len); i++) PRINTF("%02X", ske->pskHint[i]);
     PRINTF("\n");
 
+    uint8_t psk[16];
+    getPSK(psk, ske->pskHint);
+    PRINTF("PSK ermittelt: ");
+    for (i = 0; i < 16; i++) PRINTF("%02X", psk[i]);
+    PRINTF("\n");
+
     #if DEBUG_ECC
         printf("_S_PUB_KEY-X: ");
         for (i = 0; i < 8; i++) printf("%08X", htonl(ske->public_key.x[i]));
@@ -150,7 +156,7 @@ void dtls_handshake(uint8_t ip[16]) {
     uint8_t prf_buffer[160];
     prf_buffer[0] = 0;
     prf_buffer[1] = 16;
-    getPSK(prf_buffer + 2, NULL);
+    memcpy(prf_buffer + 2, psk, 16);
     prf_buffer[18] = 0;
     prf_buffer[19] = 64;
     memcpy(prf_buffer + 20, result_x, 32);
@@ -173,7 +179,7 @@ void dtls_handshake(uint8_t ip[16]) {
     #endif
 
     uint8_t master_secret[48];
-    prf(master_secret, 48, prf_buffer, 153);
+    prf(master_secret, 48, psk, prf_buffer, 153);
     #if DEBUG_PRF
         printf("Master-Secret:\n    ");
         for (i = 0; i < 24; i++) printf("%02X", master_secret[i]);
@@ -186,7 +192,7 @@ void dtls_handshake(uint8_t ip[16]) {
     memcpy(prf_buffer + 88, "key expansion", 13);
     memcpy(prf_buffer + 101, sh->random.random_bytes, 28);
     memcpy(prf_buffer + 129, random, 28);
-    prf(prf_buffer, 40, prf_buffer + 40, 117);
+    prf(prf_buffer, 40, psk, prf_buffer + 40, 117);
     #if DEBUG_PRF
         printf("Key-Block:\n    ");
         for (i = 0; i < 20; i++) printf("%02X", prf_buffer[i]);
@@ -243,11 +249,11 @@ void dtls_handshake(uint8_t ip[16]) {
     uint8_t server_finished[12];
 
     memset(finished_source + 63, 0, 16);
-    aes_cmac(finished_source + 63, handshake_messages, handshake_messages_len, 1);
+    aes_cmac(finished_source + 63, handshake_messages, handshake_messages_len, psk, 1);
     memcpy(finished_source, master_secret, 48);
 
     memcpy(finished_source + 48, "client finished", 15);
-    prf(client_finished, 12, finished_source, 79);
+    prf(client_finished, 12, psk, finished_source, 79);
     #if DEBUG_PRF
         printf("Client Finished: ");
         for (i = 0; i < 12; i++) printf("%02X", client_finished[i]);
@@ -274,7 +280,7 @@ void dtls_handshake(uint8_t ip[16]) {
     paylen += (fin_len + MAC_LEN);
 
     memcpy(finished_source + 48, "server finished", 15);
-    prf(server_finished, 12, finished_source, 79);
+    prf(server_finished, 12, psk, finished_source, 79);
     #if DEBUG_PRF
         printf("Server Finished: ");
         for (i = 0; i < 12; i++) printf("%02X", server_finished[i]);

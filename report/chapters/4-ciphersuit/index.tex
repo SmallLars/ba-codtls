@@ -113,8 +113,7 @@ Anwendung findet diese in 3 Fällen zur Berechnung folgender Werte:
   \item[finished] PRF(master\_secret, finished\_label, Hash(handshake\_messages)) \newline wobei finished\_label = "`client finished"' oder "`server finished"'
 \end{description}
 Grundlage zur Berechnung soll ein \acr{cmac} auf Basis von \acr{aes} sein, der in RFC 4493 \cite{rfc4493} definiert ist, wobei der \acr{psk} direkt als Schlüssel genutzt wird.
-Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildung \ref{fig:def_psr} definiert, wobei
-+ die Konkatenation 2er Zeichenketten bedeutet.
+Nach Vorbild von RFC 5246 \cite{rfc5246} wird die \acr{prf} nun gemäß Abbildung \ref{fig:def_psr} definiert, wobei + die Konkatenation 2er Zeichenketten bedeutet.
 \begin{figure}[ht]
   \centering
   \begin{lstlisting}[language=c]

@@ -21,8 +21,6 @@
 
 #define min(x,y) ((x)<(y)?(x):(y))
 
-extern uint8_t psk[16];
-
 /* Private Funktionsprototypen --------------------------------------------- */
 
 void getBlockKey(uint8_t *out, uint8_t *key, uint8_t *nonce, uint32_t index);
@@ -42,7 +40,7 @@ void aes_decrypt(uint8_t data[], size_t data_len, uint8_t key[16], uint8_t nonce
     setAuthCode(data, data_len, key, nonce);
 }
 
-void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) {
+void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t key[16], uint8_t finish) {
     uint32_t i;
 
     if (data_len == 0) {
@@ -56,13 +54,13 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
 
     #if DEBUG
         printf("Key      ");
-        print_hex(psk, 16);
+        print_hex(key, 16);
         printf("\n");
     #endif
 
     EVP_CIPHER_CTX ctx;
     EVP_CIPHER_CTX_init(&ctx);
-    EVP_EncryptInit(&ctx, EVP_aes_128_cbc(), psk, NULL);
+    EVP_EncryptInit(&ctx, EVP_aes_128_cbc(), key, NULL);
 
     uint8_t buf[16], result[16];
     int32_t cypherLen;
@@ -79,7 +77,7 @@ void aes_cmac(uint8_t mac[16], uint8_t data[], size_t data_len, uint8_t finish) 
 
     EVP_CIPHER_CTX_cleanup(&ctx);
     EVP_CIPHER_CTX_init(&ctx);
-    EVP_EncryptInit(&ctx, EVP_aes_128_cbc(), psk, mac);
+    EVP_EncryptInit(&ctx, EVP_aes_128_cbc(), key, mac);
 
     for (i = 0; 1; i+=16) {
         if (finish && data_len <= 16) break;
