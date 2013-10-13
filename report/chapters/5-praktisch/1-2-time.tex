@@ -5,7 +5,7 @@ Angeboten wird vom \glos{mc1322} das Register "`MACA\_CLK"' welches mit einem Ta
 seine Breite von 32 Bit, jedoch alle 4,77 Stunden über, so dass ohne weitere Eingriffe keine direkte Berechnung der Zeit möglich ist.
 Ähnlich verhält es sich mit dem Register "`CRM\_RTC\_COUNT"' welches im Takt von "`CRM\_RTC\_TIMEOUT"' Hz erhöht wird.
 Dieser Wert wird von Contiki eingestellt und liegt bei \textasciitilde 20 KHz. Dadurch erfolgt hier ein Überlauf nach ungefähr 60 Stunden.
-Neben dem Überlauf haben beide Quellen das Problem, dass die Register bei Einschalten des Econotags bei 0 anfangen, und die Werte somit
+Neben dem Überlauf haben beide Quellen das Problem, dass die Register bei Einschalten des Econotags bei 0 anfangen und die Werte somit
 keinerlei Bezug zur Realzeit haben.
 
 Contiki löst einen Teil der genannten Probleme und stellt die Funktion "`clock\_seconds"' zur Verfügung. Diese kümmert sich um den Überlauf

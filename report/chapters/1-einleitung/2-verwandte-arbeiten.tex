@@ -7,7 +7,7 @@ existieren, die in dieser Arbeit aufgegriffen werden sollen, werden in den folge
 Im \acr{ietf}-Entwurf "`Datagram Transport Layer Security in Constrained Environments"' \cite{draftcodtls} haben K. Hartke und O. Bergmann
 bereits einige Probleme aufgezeigt, die der Einsatz von \acr{dtls} in eingeschränkten Umgebungen mit sich bringt, und mögliche Lösungen vorgeschlagen.
 
-Als eines der Hauptprobleme nennen die Autoren die geringe Paketgröße in Netzen die den Funkstandard IEEE 802.15.4 \cite{ieee802154} verwenden,
+Als eines der Hauptprobleme nennen die Autoren die geringe Paketgröße in Netzen, die den Funkstandard IEEE 802.15.4 \cite{ieee802154} verwenden,
 da hier die Nutzdaten auf eine Länge von 127 Byte pro Paket beschränkt sind. Insbesondere beim Aufbau der sicheren Verbindung (\glos{handshake}) müssen
 viele Daten ausgetauscht werden, was bei der Verwendung von \acr{dtls} die Paketgröße überschreiten würde. Durch \acr{ipv6} \cite{rfc2460}, das in
 eingeschränkten Umgebungen mit Hilfe von \acr{6lowpan} \cite{rfc4944} realisiert wird, würde sich das Problem durch eine Nutzung der IP-\glos{fragmentierung}

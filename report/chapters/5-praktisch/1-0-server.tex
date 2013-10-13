@@ -44,7 +44,7 @@ Dies wurde möglich durch Verwendung der in Contiki eingebauten Beobachtungswerk
 sowie Sys Stack Größe, in "`contiki/platform/redbee-econotag/contiki-mc1322x-main.c"', können die Auslastungen beobachtet werden. Um diesen Prozess
 effizienter zu gestalten, wird nur die Initialisierung durchgeführt und die periodischen Ausgaben deaktiviert. In "`server/server.c"' lässt sich nun,
 durch Aktivieren des Debug-Modus, ein Code einbinden, der auf Knopfdruck sowohl die Speicheraufteilung als auch die bisher genutzten Bytes des Sys Stack
-und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap garnicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des \glospl{handshake},
+und Heap ausgibt. Dadurch lässt sich erkennen, dass der Heap gar nicht benutzt wird, und somit unnötig Speicher belegt. Da insbesondere während des \glospl{handshake},
 unter anderem aufgrund der Berechnung von elliptischen Kurven, viele Daten zwischengespeichert werden müssen, wird ersichtlich, dass ein Sys Stack von 1024
 Byte nicht ausreicht, eine Größe von 2048 Byte jedoch optimal ist. Durch diese Anpassungen wurde der, für SmartAppContiki benötigte, Speicher von 83,73 KiB
 auf 80,44 KiB reduziert (siehe Abbildung \ref{tbl:contiki-speicher}). Somit stehen für die Umsetzung von \acr{dtls} \textasciitilde 15,5 KiB zur
@@ -60,7 +60,7 @@ das Block-1-Modul eine Methode an, mit der die Parameter der Block-1-Option übe
 , oder die erhaltenen Daten auf Wunsch zusammengesetzt werden. Genau wie das Separate-Modul kann das Block1-Modul optional in einer Ressource benutzt werden.
 Dabei ist nach wie vor ein Empfang von Daten ohne Block-1-Option möglich. Durch den Rückgabewert der Methode, lässt sich in der Ressource entscheiden, ob schon
 die einzelnen Datenblöcke bearbeitet werden, oder erst die vollständige Nachricht nach Erhalt aller Blöcke. Damit das Separate-Modul auch in Kombination mit dem
-Block-1-Modul genutzt werden kann, wurde das Separate-Modul entsprechend angepasst um die Block-1-Option zu berücksichtigen.
+Block-1-Modul genutzt werden kann, wurde das Separate-Modul entsprechend angepasst, um die Block-1-Option zu berücksichtigen.
 
 Während bisher allgemeine Anpassungen von SmartAppContiki bzw. dem darin enthaltenen \acr{coap} 13 beschrieben wurden, folgt in den nächsten vier Abschnitten
 die Erläuterung von vier implementierten Contiki-Apps, welche für die Realisierung von \acr{dtls} benutzt werden. Die Implementierung von \acr{dtls} wird dann
